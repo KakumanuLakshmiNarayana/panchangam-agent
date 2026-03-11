@@ -1,68 +1,88 @@
 """
-scraper.py — Fetches Panchang for 5 Telugu-American cities using exact geoname-id URLs.
+scraper.py — Uses Selenium with Chromium to fully render Drikpanchang pages.
 """
 
-import requests
-from bs4 import BeautifulSoup
+import json, re, sys, time, os
 from datetime import datetime, date
-import json, re, sys
-from zoneinfo import ZoneInfo
 
 CITIES = {
-    "New_York": {
-        "display":   "New York, NY",
-        "timezone":  "America/New_York",
-        "tz_label":  "ET",
-        "geoname_id": "5128581",
-    },
-    "Chicago": {
-        "display":   "Chicago, IL",
-        "timezone":  "America/Chicago",
-        "tz_label":  "CT",
-        "geoname_id": "4887398",
-    },
-    "Dallas": {
-        "display":   "Dallas, TX",
-        "timezone":  "America/Chicago",
-        "tz_label":  "CT",
-        "geoname_id": "4684888",
-    },
-    "California": {
-        "display":   "Los Angeles, CA",
-        "timezone":  "America/Los_Angeles",
-        "tz_label":  "PT",
-        "geoname_id": "4350049",
-    },
-    "Michigan": {
-        "display":   "Detroit, MI",
-        "timezone":  "America/Detroit",
-        "tz_label":  "ET",
-        "geoname_id": "4990729",
-    },
+    "New_York":   {"display": "New York, NY",    "timezone": "America/New_York",    "tz_label": "ET", "geoname_id": "5128581"},
+    "Chicago":    {"display": "Chicago, IL",     "timezone": "America/Chicago",     "tz_label": "CT", "geoname_id": "4887398"},
+    "Dallas":     {"display": "Dallas, TX",      "timezone": "America/Chicago",     "tz_label": "CT", "geoname_id": "4684888"},
+    "California": {"display": "Los Angeles, CA", "timezone": "America/Los_Angeles", "tz_label": "PT", "geoname_id": "4350049"},
+    "Michigan":   {"display": "Detroit, MI",     "timezone": "America/Detroit",     "tz_label": "ET", "geoname_id": "4990729"},
 }
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+
+def get_driver():
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
+
+    opts = Options()
+    opts.add_argument("--headless")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--window-size=1920,1080")
+    opts.add_argument("--disable-blink-features=AutomationControlled")
+    opts.add_argument(
+        "user-agent=Mozilla/5.0 (X11; Linux x86_64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/123.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-}
-
-
-def fetch_page(target_date, city_key):
-    city     = CITIES[city_key]
-    date_str = target_date.strftime("%d/%m/%Y")
-    url = (
-        f"https://www.drikpanchang.com/panchang/day-panchang.html"
-        f"?geoname-id={city['geoname_id']}&date={date_str}"
+        "Chrome/120.0.0.0 Safari/537.36"
     )
-    print(f"[scraper] {city['display']}: {url}")
-    resp = requests.get(url, headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    return BeautifulSoup(resp.text, "html.parser")
+
+    # Try system chromedriver first (installed by apt)
+    for chromedriver_path in [
+        "/usr/bin/chromedriver",
+        "/usr/lib/chromium-browser/chromedriver",
+        "/usr/lib/chromium/chromedriver",
+        "chromedriver",
+    ]:
+        if os.path.exists(chromedriver_path) or chromedriver_path == "chromedriver":
+            try:
+                service = Service(chromedriver_path)
+                driver = webdriver.Chrome(service=service, options=opts)
+                print(f"[scraper] Using chromedriver: {chromedriver_path}")
+                return driver
+            except Exception as e:
+                print(f"[scraper] Failed {chromedriver_path}: {e}")
+                continue
+
+    # Final fallback: webdriver-manager
+    from webdriver_manager.chrome import ChromeDriverManager
+    service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=opts)
+
+
+def fetch_rendered_html(url, driver, city_display):
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+
+    print(f"[scraper] Loading: {url}")
+    driver.get(url)
+
+    # Wait for Rahu Kalam text to appear (confirms JS has rendered)
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, "//*[contains(text(),'Rahu') or contains(text(),'Sunrise')]")
+            )
+        )
+        print(f"[scraper] Page rendered for {city_display}")
+    except Exception as e:
+        print(f"[scraper] Wait timeout ({e}), using current state")
+        time.sleep(5)
+
+    time.sleep(2)  # small extra wait for all content
+    html = driver.page_source
+
+    # Debug: save first 3000 chars of HTML so we can inspect
+    preview = html[:3000]
+    print(f"[scraper] HTML preview (first 3000 chars):\n{preview}\n--- END PREVIEW ---")
+
+    return html
 
 
 def extract_times(text):
@@ -71,12 +91,10 @@ def extract_times(text):
 
 def clean_time(t):
     t = t.strip().upper().replace(" ", "")
-    for fmt in ("%I:%M%p", "%H:%M"):
-        try:
-            return datetime.strptime(t, fmt).strftime("%I:%M %p")
-        except:
-            pass
-    return t.strip()
+    try:
+        return datetime.strptime(t, "%I:%M%p").strftime("%I:%M %p")
+    except:
+        return t.strip()
 
 
 def fmt(times, tz_label):
@@ -88,65 +106,42 @@ def fmt(times, tz_label):
 
 
 def parse_all_rows(soup, tz_label):
-    """
-    Scan every <tr> on the page.
-    Each row has pairs of cells: label | value | label | value
-    Build a flat dict of {label_lower: formatted_value}
-    """
     result = {}
     for row in soup.find_all("tr"):
         cells = row.find_all(["td", "th"])
-        # Process in pairs
         for i in range(0, len(cells) - 1, 2):
             if i + 1 >= len(cells):
                 break
             label = cells[i].get_text(separator=" ", strip=True)
             value = cells[i+1].get_text(separator=" ", strip=True)
-
             if not label or len(label) > 80:
                 continue
-
-            key = label.lower().strip()
-            # Remove any Ω or special symbols from label
-            key = re.sub(r'[^\w\s]', '', key).strip()
-
+            key = re.sub(r'[^\w\s]', '', label.lower()).strip()
             times = extract_times(value)
             if times:
                 result[key] = fmt(times, tz_label)
             elif value and len(value) < 150:
                 result[key] = value.strip()
-
     return result
 
 
 def lookup(table, *keys):
-    """Try multiple key variants to find a value."""
     for key in keys:
-        k = key.lower().strip()
-        # Exact match
+        k = re.sub(r'[^\w\s]', '', key.lower()).strip()
         if k in table:
             return table[k]
-        # Partial match — key is contained in a table key
         for tk, tv in table.items():
-            if k in tk and "raw" not in tk:
+            if k in tk:
                 return tv
     return "N/A"
 
 
 def find_text_field(soup, *labels):
-    """Find plain text value (Tithi name, Nakshatra etc.) from table rows."""
     for label in labels:
         for td in soup.find_all("td"):
             txt = td.get_text(strip=True)
-            # Match label exactly or as start of cell
-            if txt.lower().strip() == label.lower().strip():
-                nxt = td.find_next_sibling("td")
-                if nxt:
-                    val = nxt.get_text(separator=" ", strip=True)
-                    if val and len(val) < 200:
-                        return val
-            # Also try: label is contained in short cell text
-            if label.lower() in txt.lower() and len(txt) < 40:
+            if txt.lower().strip() == label.lower().strip() or \
+               (label.lower() in txt.lower() and len(txt) < 40):
                 nxt = td.find_next_sibling("td")
                 if nxt:
                     val = nxt.get_text(separator=" ", strip=True)
@@ -156,102 +151,91 @@ def find_text_field(soup, *labels):
 
 
 def first_part(val):
-    """Keep only the first part before 'upto', 'till', comma etc."""
     if not val or val == "N/A":
         return "N/A"
     val = re.split(r'\s+upto\s+|\s+till\s+', val, flags=re.I)[0]
-    val = val.split(",")[0].strip()
-    return val[:50] if val else "N/A"
+    return val.split(",")[0].strip()[:50]
 
 
-def parse_panchang(soup, ref_date, city_key):
+def parse_panchang(html, ref_date, city_key):
+    from bs4 import BeautifulSoup
+    soup     = BeautifulSoup(html, "html.parser")
     city     = CITIES[city_key]
     tz_label = city["tz_label"]
 
-    # Build complete row lookup
     table = parse_all_rows(soup, tz_label)
-
-    # Debug — print all keys found
     print(f"     Found {len(table)} table entries")
-    # Print keys that look like timing-related ones
-    timing_keys = [k for k in table.keys() if any(w in k for w in
-        ['rahu','muhurt','kalam','gulika','yama','abhijit','amrit',
-         'varj','sunrise','sunset','moon','tithi','nakshatra','yoga'])]
-    for k in timing_keys[:20]:
-        print(f"     KEY: '{k}' => '{table[k][:50]}'")
+    for k, v in table.items():
+        if any(w in k for w in ['rahu','muhurt','kalam','gulika','yama',
+                                  'abhijit','amrit','varj','sunrise',
+                                  'sunset','moon','tithi','nakshatra','yoga']):
+            print(f"     KEY: '{k}' => '{v[:60]}'")
 
     data = {
-        "date":     ref_date.isoformat(),
-        "weekday":  ref_date.strftime("%A"),
-        "city_key": city_key,
-        "city":     city["display"],
-        "timezone": city["timezone"],
-        "tz_label": tz_label,
+        "date": ref_date.isoformat(), "weekday": ref_date.strftime("%A"),
+        "city_key": city_key, "city": city["display"],
+        "timezone": city["timezone"], "tz_label": tz_label,
     }
 
-    # ── Basic Panchang fields ────────────────────────────────────
-    data["tithi"]     = first_part(find_text_field(soup, "Tithi"))
-    data["nakshatra"] = first_part(find_text_field(soup, "Nakshatra"))
-    data["yoga"]      = first_part(find_text_field(soup, "Yoga"))
-    data["karana"]    = first_part(find_text_field(soup, "Karana"))
-    data["masa"]      = first_part(find_text_field(soup, "Masa", "Maasa"))
-    data["paksha"]    = first_part(find_text_field(soup, "Paksha"))
-    data["samvat"]    = first_part(find_text_field(soup, "Samvat", "Vikram Samvat"))
-
-    # ── Inauspicious Timings ─────────────────────────────────────
-    data["rahukaal"]    = lookup(table, "rahu kalam", "rahukalam", "rahu kaal")
-    data["durmuhurtam"] = lookup(table, "dur muhurtam", "durmuhurtam", "durmuhurta")
-    data["gulika"]      = lookup(table, "gulikai kalam", "gulika kalam", "gulikai", "gulika")
-    data["yamagandam"]  = lookup(table, "yamaganda", "yamagandam", "yama gandam")
-    data["varjyam"]     = lookup(table, "varjyam", "varjam")
-
-    # ── Auspicious Timings ───────────────────────────────────────
-    data["brahma_muhurta"]  = lookup(table, "brahma muhurta", "brahma muhurtam")
+    data["tithi"]           = first_part(find_text_field(soup, "Tithi"))
+    data["nakshatra"]       = first_part(find_text_field(soup, "Nakshatra"))
+    data["yoga"]            = first_part(find_text_field(soup, "Yoga"))
+    data["karana"]          = first_part(find_text_field(soup, "Karana"))
+    data["masa"]            = first_part(find_text_field(soup, "Masa", "Maasa"))
+    data["paksha"]          = first_part(find_text_field(soup, "Paksha"))
+    data["rahukaal"]        = lookup(table, "rahu kalam", "rahukalam", "rahu kaal")
+    data["durmuhurtam"]     = lookup(table, "dur muhurtam", "durmuhurtam")
+    data["gulika"]          = lookup(table, "gulikai kalam", "gulika kalam", "gulika")
+    data["yamagandam"]      = lookup(table, "yamaganda", "yamagandam")
+    data["varjyam"]         = lookup(table, "varjyam", "varjam")
+    data["brahma_muhurta"]  = lookup(table, "brahma muhurta")
     data["abhijit"]         = lookup(table, "abhijit muhurta", "abhijit")
     data["vijaya_muhurta"]  = lookup(table, "vijaya muhurta")
     data["godhuli_muhurta"] = lookup(table, "godhuli muhurta")
     data["amrit_kalam"]     = lookup(table, "amrit kalam", "amritkalam")
-    data["pratah_sandhya"]  = lookup(table, "pratah sandhya")
-    data["sayahna_sandhya"] = lookup(table, "sayahna sandhya")
-    data["nishita_muhurta"] = lookup(table, "nishita muhurta")
+    data["sunrise"]         = lookup(table, "sunrise")
+    data["sunset"]          = lookup(table, "sunset")
+    data["moonrise"]        = lookup(table, "moonrise")
+    data["moonset"]         = lookup(table, "moonset")
 
-    # ── Sun / Moon ───────────────────────────────────────────────
-    data["sunrise"]  = lookup(table, "sunrise")
-    data["sunset"]   = lookup(table, "sunset")
-    data["moonrise"] = lookup(table, "moonrise")
-    data["moonset"]  = lookup(table, "moonset")
-
-    print(f"     Tithi:     {data['tithi']}")
-    print(f"     Nakshatra: {data['nakshatra']}")
-    print(f"     Rahukaal:  {data['rahukaal']}")
-    print(f"     Abhijit:   {data['abhijit']}")
-    print(f"     Sunrise:   {data['sunrise']}")
-
+    print(f"     Tithi: {data['tithi']} | Rahukaal: {data['rahukaal']} | Abhijit: {data['abhijit']}")
     return data
 
 
-def run(target_date=None, city_key="New_York"):
+def run(target_date=None, city_key="New_York", driver=None):
     if target_date is None:
         target_date = date.today()
-    soup = fetch_page(target_date, city_key)
-    return parse_panchang(soup, target_date, city_key)
+    city     = CITIES[city_key]
+    date_str = target_date.strftime("%d/%m/%Y")
+    url      = f"https://www.drikpanchang.com/panchang/day-panchang.html?geoname-id={city['geoname_id']}&date={date_str}"
+
+    own_driver = driver is None
+    if own_driver:
+        driver = get_driver()
+    try:
+        html = fetch_rendered_html(url, driver, city["display"])
+        return parse_panchang(html, target_date, city_key)
+    finally:
+        if own_driver:
+            driver.quit()
 
 
 def run_all_cities(target_date=None):
     if target_date is None:
         target_date = date.today()
+    driver  = get_driver()
     results = {}
-    for city_key in CITIES:
-        try:
-            results[city_key] = run(target_date, city_key)
-            print(f"  ✅ {results[city_key]['city']} done")
-        except Exception as e:
-            print(f"  ❌ {CITIES[city_key]['display']}: {e}")
-            results[city_key] = {
-                "city": CITIES[city_key]["display"],
-                "city_key": city_key,
-                "error": str(e)
-            }
+    try:
+        for city_key in CITIES:
+            try:
+                results[city_key] = run(target_date, city_key, driver=driver)
+                print(f"  ✅ {results[city_key]['city']} done")
+            except Exception as e:
+                print(f"  ❌ {CITIES[city_key]['display']}: {e}")
+                import traceback; traceback.print_exc()
+                results[city_key] = {"city": CITIES[city_key]["display"], "city_key": city_key, "error": str(e)}
+    finally:
+        driver.quit()
     return results
 
 
