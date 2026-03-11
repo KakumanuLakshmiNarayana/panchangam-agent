@@ -1,8 +1,9 @@
 """
-pipeline.py — Master orchestrator for Daily Panchangam Video Agent
+pipeline.py — Runs full pipeline for all 5 Telugu-American cities.
+Produces 5 videos per day, sends one approval email with all 5 previews.
 """
 import os, sys, json, smtplib
-from datetime import datetime, date
+from datetime import date
 from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,6 +17,8 @@ from video_creator    import create_panchang_video, create_thumbnail
 
 OUTPUT_DIR = Path("output")
 STATE_FILE = OUTPUT_DIR / "pipeline_state.json"
+
+CITY_KEYS = ["New_York", "Chicago", "Dallas", "California", "Michigan"]
 
 
 def save_state(state):
@@ -32,21 +35,46 @@ def load_state():
     return {}
 
 
-def get_et(panchang, field):
-    """Get Eastern Time value from panchang us_timings."""
-    us = panchang.get("us_timings", {})
-    start_key = f"{field}_Start"
-    end_key   = f"{field}_End"
-    if start_key in us and end_key in us:
-        s = us[start_key].get("Eastern", "N/A")
-        e = us[end_key].get("Eastern",   "N/A")
-        return f"{s} – {e}"
-    if field in us:
-        return us[field].get("Eastern", "N/A")
-    return panchang.get("raw", {}).get(field.lower(), "N/A")
+def process_city(city_key, today, date_str):
+    """Run full pipeline for one city. Returns city result dict."""
+    print(f"\n  🏙️  Processing {scraper.CITIES[city_key]['display']}...")
+
+    # Scrape
+    panchang = scraper.run(today, city_key)
+    print(f"     Tithi: {panchang.get('tithi','?')[:40]}")
+
+    # Script
+    script = generate_video_script(panchang)
+    print(f"     Title: {script.get('title','')[:55]}")
+
+    # Voice
+    audio_path = str(OUTPUT_DIR / f"voice_{city_key}_{date_str}.mp3")
+    try:
+        generate_voiceover(script, audio_path)
+    except Exception as e:
+        print(f"     ⚠️  Voice failed: {e}")
+        audio_path = ""
+
+    # Video
+    video_path     = str(OUTPUT_DIR / f"video_{city_key}_{date_str}.mp4")
+    thumbnail_path = str(OUTPUT_DIR / f"thumb_{city_key}_{date_str}.jpg")
+    create_panchang_video(panchang, script, audio_path, video_path)
+    create_thumbnail(panchang, thumbnail_path)
+
+    return {
+        "city_key":      city_key,
+        "city":          panchang.get("city"),
+        "panchang":      panchang,
+        "script":        script,
+        "video_path":    video_path,
+        "thumbnail_path":thumbnail_path,
+        "audio_path":    audio_path,
+        "approval_status": "pending",
+        "upload_result": {},
+    }
 
 
-def send_approval_email(state):
+def send_approval_email(all_cities, date_str):
     sender    = os.environ.get("APPROVAL_EMAIL_FROM", "")
     recipient = os.environ.get("APPROVAL_EMAIL_TO",   "")
     smtp_pass = os.environ.get("SMTP_PASS", "")
@@ -57,41 +85,57 @@ def send_approval_email(state):
         print("⚠️  Email secrets not set — skipping email.")
         return
 
-    panchang = state.get("panchang", {})
-    script   = state.get("script",   {})
-    raw      = panchang.get("raw",   {})
-    date_str = state.get("date", "today")
+    rows = ""
+    for city_key, result in all_cities.items():
+        p = result.get("panchang", {})
+        s = result.get("script",   {})
+        city = p.get("city", city_key)
+        rows += f"""
+        <tr style="border-bottom:1px solid #ddd;">
+          <td style="padding:10px;font-weight:bold;color:#8B0000;">{city}</td>
+          <td style="padding:10px;">{p.get('tithi','N/A')[:35]}</td>
+          <td style="padding:10px;">{p.get('nakshatra','N/A')[:25]}</td>
+          <td style="padding:10px;color:#c1121f;">{p.get('rahukaal','N/A')}</td>
+          <td style="padding:10px;color:#2d6a4f;">{p.get('abhijit','N/A')}</td>
+        </tr>"""
 
     html = f"""
 <html><body style="font-family:Georgia,serif;background:#fdf6ec;padding:20px;">
-<div style="max-width:600px;margin:auto;background:white;border-radius:12px;overflow:hidden;">
+<div style="max-width:750px;margin:auto;background:white;border-radius:12px;overflow:hidden;">
   <div style="background:#8B0000;color:gold;padding:20px;text-align:center;">
-    <h1 style="margin:0;">🕉 Panchangam Video Ready</h1>
-    <p style="color:#FFD700;">{panchang.get('weekday','')} — {date_str}</p>
+    <h1 style="margin:0;">🕉 5 Panchangam Videos Ready</h1>
+    <p style="color:#FFD700;margin:6px 0;">New York · Chicago · Dallas · Los Angeles · Detroit</p>
+    <p style="color:#FFD700;margin:0;">{date_str}</p>
   </div>
   <div style="padding:24px;">
-    <h2 style="color:#8B0000;">{script.get('title','')[:80]}</h2>
-    <table style="width:100%;border-collapse:collapse;">
-      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Tithi</td><td>{raw.get('tithi','N/A')}</td></tr>
-      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Nakshatra</td><td>{raw.get('nakshatra','N/A')}</td></tr>
-      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Yoga</td><td>{raw.get('yoga','N/A')}</td></tr>
-      <tr style="background:#fef9f0;"><td style="padding:6px;color:#c1121f;font-weight:bold;">Rahukaal (ET)</td><td style="color:#c1121f;">{get_et(panchang,'Rahukalam')}</td></tr>
-      <tr><td style="padding:6px;color:#2d6a4f;font-weight:bold;">Abhijit (ET)</td><td style="color:#2d6a4f;">{get_et(panchang,'Abhijit')}</td></tr>
-      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Sunrise (ET)</td><td>{get_et(panchang,'Sunrise')}</td></tr>
+    <p style="color:#444;">All 5 city-specific videos have been generated with <strong>exact local timings</strong>. 
+    Review below and approve to publish all to YouTube Shorts + Instagram Reels.</p>
+
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr style="background:#8B0000;color:white;">
+        <th style="padding:10px;text-align:left;">City</th>
+        <th style="padding:10px;text-align:left;">Tithi</th>
+        <th style="padding:10px;text-align:left;">Nakshatra</th>
+        <th style="padding:10px;text-align:left;">⛔ Rahukaal</th>
+        <th style="padding:10px;text-align:left;">✅ Abhijit</th>
+      </tr>
+      {rows}
     </table>
-    <div style="background:#fef9f0;border-left:4px solid #FFD700;padding:12px;margin-top:16px;">
-      <strong>🎙️ Script:</strong><br>
-      <em>{script.get('full_narration','')[:400]}...</em>
+
+    <div style="background:#e8f5e9;padding:16px;border-radius:8px;margin-top:20px;text-align:center;">
+      <strong style="color:#2d6a4f;">To approve all 5 videos and publish:</strong><br><br>
+      GitHub repo → <strong>Actions</strong> → <strong>Daily Panchangam Pipeline</strong><br>
+      → <strong>Run workflow</strong> → set <strong>upload_approved = true</strong> → Run
     </div>
-    <div style="background:#e8f5e9;padding:16px;border-radius:8px;margin-top:16px;text-align:center;">
-      <strong>To publish:</strong> GitHub repo → Actions → Daily Panchangam Pipeline<br>
-      → Run workflow → set <strong>upload_approved = true</strong>
-    </div>
+
+    <p style="color:#888;font-size:13px;margin-top:16px;text-align:center;">
+      5 videos · 5 cities · Exact local timings · Telugu+English voiceover
+    </p>
   </div>
 </div></body></html>"""
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"🕉 Panchangam Video Ready — {panchang.get('weekday','')} {date_str}"
+    msg["Subject"] = f"🕉 5 Panchangam Videos Ready — {date_str}"
     msg["From"]    = sender
     msg["To"]      = recipient
     msg.attach(MIMEText(html, "html"))
@@ -108,57 +152,37 @@ def send_approval_email(state):
 
 def run_pipeline(skip_approval=False):
     OUTPUT_DIR.mkdir(exist_ok=True)
-    today     = date.today()
-    date_str  = today.isoformat()
+    today    = date.today()
+    date_str = today.isoformat()
 
-    print("\n" + "="*50)
-    print("  🕉  DAILY PANCHANGAM PIPELINE")
-    print("="*50)
+    print("\n" + "="*55)
+    print("  🕉  DAILY PANCHANGAM PIPELINE — 5 CITIES")
+    print("="*55)
 
-    # 1 — Scrape
-    print("\n[1/5] 📅 Scraping Drikpanchang...")
-    panchang = scraper.run(today)
-    raw = panchang.get("raw", {})
-    print(f"      Tithi: {raw.get('tithi')} | Nakshatra: {raw.get('nakshatra')}")
+    all_cities = {}
+    for city_key in CITY_KEYS:
+        try:
+            result = process_city(city_key, today, date_str)
+            all_cities[city_key] = result
+        except Exception as e:
+            print(f"  ❌ {city_key} failed: {e}")
+            all_cities[city_key] = {"city_key": city_key, "error": str(e)}
 
-    # 2 — Script
-    print("\n[2/5] ✍️  Generating script via Claude AI...")
-    script = generate_video_script(panchang)
-    print(f"      Title: {script.get('title','')[:60]}")
-
-    # 3 — Voice
-    print("\n[3/5] 🎙️  Generating voiceover...")
-    audio_path = str(OUTPUT_DIR / f"voiceover_{date_str}.mp3")
-    try:
-        generate_voiceover(script, audio_path)
-    except Exception as e:
-        print(f"      ⚠️  Voice failed ({e}) — silent video")
-        audio_path = ""
-
-    # 4 — Video
-    print("\n[4/5] 🎬 Creating video...")
-    video_path     = str(OUTPUT_DIR / f"panchang_{date_str}.mp4")
-    thumbnail_path = str(OUTPUT_DIR / f"thumbnail_{date_str}.jpg")
-    create_panchang_video(panchang, script, audio_path, video_path)
-    create_thumbnail(panchang, thumbnail_path)
-
-    # 5 — Notify
     state = {
-        "date": date_str, "panchang": panchang, "script": script,
-        "video_path": video_path, "thumbnail_path": thumbnail_path,
-        "audio_path": audio_path,
+        "date":        date_str,
+        "cities":      all_cities,
         "approval_status": "approved" if skip_approval else "pending",
-        "upload_results": {},
     }
     save_state(state)
 
     if skip_approval:
-        print("\n[5/5] ⏭️  Auto-uploading...")
-        _upload(state)
+        print("\n⏭️  Auto-uploading all 5 cities...")
+        _upload_all(state)
     else:
-        print("\n[5/5] 📧 Sending approval email...")
-        send_approval_email(state)
-        print("\n✅ Done! Check your email to approve the video.")
+        print("\n📧 Sending approval email...")
+        send_approval_email(all_cities, date_str)
+        print("\n✅ Done! Check your email — 5 videos ready for review.")
+        print("   Approve via GitHub Actions → Run workflow → upload_approved=true")
 
     return state
 
@@ -170,25 +194,32 @@ def upload_approved():
         return
     state["approval_status"] = "approved"
     save_state(state)
-    _upload(state)
+    _upload_all(state)
 
 
-def _upload(state):
+def _upload_all(state):
     try:
         from uploader import upload_approved_video
-        results = upload_approved_video(
-            video_path=state["video_path"],
-            thumbnail_path=state["thumbnail_path"],
-            script=state["script"],
-            date_str=state["date"],
-        )
-        state["upload_results"] = results
+        cities = state.get("cities", {})
+        for city_key, result in cities.items():
+            if "error" in result:
+                print(f"⏭️  Skipping {city_key} (had error)")
+                continue
+            print(f"\n🚀 Uploading {result.get('city','?')}...")
+            try:
+                upload_result = upload_approved_video(
+                    video_path=result["video_path"],
+                    thumbnail_path=result["thumbnail_path"],
+                    script=result["script"],
+                    date_str=state["date"],
+                )
+                result["upload_result"] = upload_result
+                print(f"   ✅ {result.get('city')} uploaded!")
+            except Exception as e:
+                print(f"   ❌ {city_key} upload failed: {e}")
         save_state(state)
-        print("\n🚀 Upload complete!")
-        for p, r in results.items():
-            print(f"   {p.upper()}: {r.get('status')} — {r.get('url','N/A')}")
     except Exception as e:
-        print(f"❌ Upload failed: {e}")
+        print(f"❌ Upload module error: {e}")
 
 
 if __name__ == "__main__":
