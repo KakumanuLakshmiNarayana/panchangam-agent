@@ -36,11 +36,25 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg fonts-noto fonts-freefont-ttf fontconfig
+          sudo apt-get install -y \
+            ffmpeg \
+            fonts-noto fonts-freefont-ttf fontconfig \
+            chromium-browser chromium-chromedriver
           echo "FFmpeg: $(ffmpeg -version | head -1)"
+          echo "Chrome: $(chromium-browser --version)"
+          echo "Chromedriver: $(chromedriver --version)"
 
       - name: Install Python dependencies
-        run: pip install requests beautifulsoup4 lxml pytz anthropic gtts
+        run: |
+          pip install \
+            requests \
+            beautifulsoup4 \
+            lxml \
+            pytz \
+            anthropic \
+            gtts \
+            selenium \
+            webdriver-manager
 
       - name: Run Pipeline
         env:
@@ -83,8 +97,7 @@ jobs:
       - name: Summary
         run: |
           echo "## 🕉 Panchangam Pipeline Done" >> $GITHUB_STEP_SUMMARY
-          echo "📧 Check your email to approve the video." >> $GITHUB_STEP_SUMMARY
-          echo "🌐 Dashboard: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
+          echo "📧 Check your email to approve." >> $GITHUB_STEP_SUMMARY
 
   upload-approved:
     name: Upload Approved Video
@@ -106,7 +119,7 @@ jobs:
           name: panchangam-video-.*
           path: output/
 
-      - name: Mark approved and upload
+      - name: Upload approved video
         env:
           YOUTUBE_CLIENT_ID:      ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET:  ${{ secrets.YOUTUBE_CLIENT_SECRET }}
