@@ -2,7 +2,7 @@ name: Daily Panchangam Pipeline
 
 on:
   schedule:
-    - cron: '0 10 * * *'   # 5:00 AM Eastern every day
+    - cron: '0 10 * * *'
   workflow_dispatch:
     inputs:
       skip_approval:
@@ -14,6 +14,11 @@ on:
         required: false
         default: 'false'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   generate-video:
     name: Generate Daily Panchangam Video
@@ -21,11 +26,9 @@ jobs:
     if: github.event.inputs.upload_approved != 'true'
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -34,7 +37,6 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg fonts-noto fonts-freefont-ttf fontconfig
-          fc-cache -fv
           echo "FFmpeg: $(ffmpeg -version | head -1)"
 
       - name: Install Python dependencies
@@ -48,7 +50,6 @@ jobs:
           APPROVAL_EMAIL_TO:   ${{ secrets.APPROVAL_EMAIL_TO }}
           SMTP_HOST:           smtp.gmail.com
           SMTP_PORT:           587
-          SMTP_USER:           ${{ secrets.APPROVAL_EMAIL_FROM }}
           SMTP_PASS:           ${{ secrets.SMTP_PASS }}
         run: |
           mkdir -p output
@@ -62,7 +63,7 @@ jobs:
       - name: Copy state to dashboard
         run: cp output/pipeline_state.json dashboard/pipeline_state.json || true
 
-      - name: Upload video as artifact
+      - name: Upload video artifact
         uses: actions/upload-artifact@v4
         with:
           name: panchangam-video-${{ github.run_id }}
@@ -75,7 +76,6 @@ jobs:
 
       - name: Deploy dashboard to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: always()
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dashboard
