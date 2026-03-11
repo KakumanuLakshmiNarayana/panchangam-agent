@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>🪔 Panchangam Video — Approval Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Tiro+Devanagari+Hindi:ital@0;1&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --crimson:   #8B0000;
+    --dark-red:  #5c0000;
+    --gold:      #FFD700;
+    --gold-soft: #e8c547;
+    --amber:     #FFA500;
+    --bg:        #0d0604;
+    --card:      #1a0f08;
+    --border:    #3d2010;
+    --text:      #f5ead8;
+    --muted:     #9e8060;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grain overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative; z-index: 1;
+    background: linear-gradient(135deg, var(--dark-red) 0%, #2d0a00 50%, #1a0800 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: auto;
+    padding: 32px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .om-badge {
+    width: 72px; height: 72px;
+    background: radial-gradient(circle, var(--gold) 0%, var(--amber) 60%, transparent 100%);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+    flex-shrink: 0;
+    box-shadow: 0 0 32px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1);
+    animation: pulse-gold 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 32px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1); }
+    50%       { box-shadow: 0 0 48px rgba(255,215,0,0.7), 0 0 120px rgba(255,215,0,0.2); }
+  }
+
+  .header-text h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(22px, 4vw, 36px);
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-shadow: 0 2px 12px rgba(255,215,0,0.4);
+  }
+
+  .header-text p {
+    color: var(--amber);
+    font-size: 15px;
+    margin-top: 4px;
+    letter-spacing: 1px;
+    font-family: 'Tiro Devanagari Hindi', serif;
+  }
+
+  .header-date {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .header-date .day {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px;
+    color: var(--gold);
+  }
+
+  .header-date .date-str {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    background: rgba(255,215,0,0.08);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--muted);
+    position: relative; z-index: 1;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: blink 2s step-start infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Main layout ── */
+  main {
+    position: relative; z-index: 1;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, var(--dark-red), #2a0a00);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-header h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 16px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .card-body { padding: 20px; }
+
+  /* ── Video preview ── */
+  .video-wrapper {
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 9/16;
+    max-height: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .video-wrapper video {
+    width: 100%; height: 100%;
+    object-fit: contain;
+  }
+
+  .video-placeholder {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+  }
+
+  .video-placeholder .icon { font-size: 64px; margin-bottom: 12px; }
+  .video-placeholder p { font-size: 14px; }
+
+  /* ── Script section ── */
+  .script-block {
+    background: rgba(139,0,0,0.1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .script-block h4 {
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .script-block p {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.7;
+    font-family: 'Tiro Devanagari Hindi', serif;
+  }
+
+  /* ── Panchang info grid ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .info-item {
+    background: rgba(255,215,0,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .info-item .label {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .info-item .value {
+    color: var(--gold-soft);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ── Timing rows ── */
+  .timing-section h4 {
+    color: var(--amber);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 16px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .timing-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  .timing-row.inauspicious {
+    background: rgba(139,0,0,0.2);
+    border: 1px solid rgba(139,0,0,0.4);
+  }
+
+  .timing-row.auspicious {
+    background: rgba(45,106,79,0.2);
+    border: 1px solid rgba(45,106,79,0.4);
+  }
+
+  .timing-row .t-label { color: var(--muted); }
+  .timing-row .t-zones { color: var(--text); font-size: 12px; }
+
+  /* ── Action buttons ── */
+  .action-area {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  .video-title-display {
+    background: rgba(255,215,0,0.08);
+    border: 1px solid var(--gold-soft);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    color: var(--gold);
+    text-align: center;
+  }
+
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn {
+    padding: 16px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-approve {
+    background: linear-gradient(135deg, #1b5e20, #2d6a4f);
+    color: #a8d8a8;
+    border: 1px solid #2d6a4f;
+  }
+
+  .btn-approve:hover {
+    background: linear-gradient(135deg, #2d6a4f, #40916c);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(45,106,79,0.4);
+  }
+
+  .btn-reject {
+    background: linear-gradient(135deg, #5c0000, #8B0000);
+    color: #ffb3b3;
+    border: 1px solid #8B0000;
+  }
+
+  .btn-reject:hover {
+    background: linear-gradient(135deg, #8B0000, #b00000);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139,0,0,0.4);
+  }
+
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── Toast notifications ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 16px 24px;
+    color: var(--text);
+    font-size: 15px;
+    z-index: 999;
+    transform: translateX(200%);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    max-width: 340px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+  }
+
+  .toast.show { transform: translateX(0); }
+  .toast.success { border-color: #2d6a4f; }
+  .toast.error   { border-color: var(--crimson); }
+
+  /* ── Decorative top border ── */
+  .mandala-border {
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--gold) 0px, var(--gold) 8px,
+      transparent 8px, transparent 16px,
+      var(--amber) 16px, var(--amber) 24px,
+      transparent 24px, transparent 32px
+    );
+  }
+
+  /* ── Loading state ── */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--muted);
+  }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Status badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .badge-pending  { background: rgba(255,165,0,0.15); color: var(--amber); border: 1px solid var(--amber); }
+  .badge-approved { background: rgba(45,106,79,0.2);  color: #69b46c; border: 1px solid #2d6a4f; }
+  .badge-rejected { background: rgba(139,0,0,0.2);    color: #e07070; border: 1px solid #8B0000; }
+</style>
+</head>
+<body>
+
+<div class="mandala-border"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="om-badge">🪔</div>
+    <div class="header-text">
+      <h1>Panchangam Dashboard</h1>
+      <p>నిత్య పంచాంగం — Approval Portal</p>
+    </div>
+    <div class="header-date">
+      <div class="day" id="header-weekday">Loading...</div>
+      <div class="date-str" id="header-date">—</div>
+    </div>
+  </div>
+</header>
+
+<div class="status-bar">
+  <div class="status-dot"></div>
+  <span id="status-msg">Loading today's Panchangam video...</span>
+</div>
+
+<main id="main-content">
+  <div class="loading" style="grid-column:1/-1">
+    <div class="spinner"></div>
+    <p>Loading Panchangam data...</p>
+  </div>
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Utility ──────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => { t.className = 'toast'; }, 4000);
+}
+
+function fmt(obj) {
+  if (!obj || typeof obj !== 'object') return 'N/A';
+  const parts = [];
+  if (obj.Eastern)  parts.push(`ET: ${obj.Eastern}`);
+  if (obj.Central)  parts.push(`CT: ${obj.Central}`);
+  if (obj.Pacific)  parts.push(`PT: ${obj.Pacific}`);
+  if (obj.Mountain) parts.push(`MT: ${obj.Mountain}`);
+  return parts.join(' | ') || 'N/A';
+}
+
+function fmtRange(us, startKey, endKey) {
+  const s = us[startKey], e = us[endKey];
+  if (!s && !e) return 'N/A';
+  if (!e) return fmt(s);
+  return `ET: ${s?.Eastern||'?'} – ${e?.Eastern||'?'} | CT: ${s?.Central||'?'} | PT: ${s?.Pacific||'?'}`;
+}
+
+// ── Load metadata ────────────────────────────────────────────
+async function loadMetadata() {
+  const params = new URLSearchParams(window.location.search);
+  const dateStr = params.get('date') || new Date().toISOString().split('T')[0];
+  
+  // Try to load from pending folder
+  const metaUrl = `pending/${dateStr}/metadata.json`;
+  
+  try {
+    const resp = await fetch(metaUrl);
+    if (!resp.ok) throw new Error(`No metadata found for ${dateStr}`);
+    return await resp.json();
+  } catch (e) {
+    // Return demo data if no actual metadata
+    return generateDemoData(dateStr);
+  }
+}
+
+function generateDemoData(dateStr) {
+  const d = new Date(dateStr);
+  const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return {
+    date: dateStr,
+    status: 'pending',
+    video_file: null,
+    script: {
+      panchang_date: dateStr,
+      weekday: weekdays[d.getDay()],
+      video_title: `Daily Panchangam | ${dateStr} | నిత్య పంచాంగం`,
+      opening_shloka: 'శుక్లాం బరధరం విష్ణుం శశివర్ణం చతుర్భుజం | ప్రసన్నవదనం ధ్యాయేత్ సర్వ విఘ్నోప శాంతయే ||',
+      main_narration: `నమస్కారం! Welcome to today's Daily Panchangam. Today is ${weekdays[d.getDay()]}, ${dateStr}. నేటి పంచాంగం వివరాలు — Rahu Kalam today is from 7:30 AM to 9:00 AM Eastern Time. Dur Muhurtam: 10:15 AM to 11:00 AM ET. అభిజిత్ ముహూర్తం — Abhijit Muhurta, the most auspicious time of the day, falls between 11:52 AM and 12:44 PM ET. Amrit Kalam: 2:15 PM to 3:45 PM ET. గృహ ప్రవేశం, వివాహం, లేదా వ్యాపారం మొదలు పెట్టడానికి అభిజిత్ ముహూర్తం శ్రేష్ఠమైన కాలం.`,
+      closing_blessing: 'సర్వే జనాః సుఖినో భవంతు | ఓం శాంతి శాంతి శాంతిః ||',
+      video_description: '#Panchangam #TeluguPanchangam #DailyPanchang #HinduCalendar #RahuKalam #PanchangamUSA #Telugu #Shorts',
+      text_overlays: [
+        { timestamp_sec: 2,  text: '🪔 నమస్కారం! Namaskaram!' },
+        { timestamp_sec: 8,  text: `📅 ${weekdays[d.getDay()]}, ${dateStr}` },
+        { timestamp_sec: 14, text: '⚠️ Rahu Kalam: 7:30–9:00 AM ET' },
+        { timestamp_sec: 20, text: '⚠️ Dur Muhurtam: 10:15–11:00 AM ET' },
+        { timestamp_sec: 28, text: '✅ Abhijit Muhurta: 11:52 AM–12:44 PM ET' },
+        { timestamp_sec: 36, text: '✅ Amrit Kalam: 2:15–3:45 PM ET' },
+        { timestamp_sec: 48, text: '🙏 సర్వే జనాః సుఖినో భవంతు' },
+        { timestamp_sec: 54, text: '🔔 Follow for Daily Panchangam!' },
+      ]
+    },
+    panchang: {
+      weekday: weekdays[d.getDay()],
+      raw: {
+        tithi: 'Chaturdashi — చతుర్దశి',
+        nakshatra: 'Rohini — రోహిణి',
+        yoga: 'Siddha — సిద్ధ',
+        karana: 'Vishti — విష్టి',
+        sunrise_ist: '06:28 AM',
+        sunset_ist: '06:45 PM',
+        rahukalam_ist: '09:00 AM to 10:30 AM',
+        durmuhurtam_ist: '08:44 PM to 09:32 PM',
+        abhijit_ist: '11:52 AM to 12:44 PM',
+        amrit_kalam_ist: '02:15 PM to 03:45 PM',
+      },
+      us_timings: {
+        Sunrise: { Eastern:'06:28 AM EDT', Central:'05:28 AM CDT', Mountain:'04:28 AM MDT', Pacific:'03:28 AM PDT' },
+        Sunset:  { Eastern:'07:58 PM EDT', Central:'06:58 PM CDT', Mountain:'05:58 PM MDT', Pacific:'04:58 PM PDT' },
+        Rahukalam_Start: { Eastern:'07:30 AM EDT', Central:'06:30 AM CDT', Mountain:'05:30 AM MDT', Pacific:'04:30 AM PDT' },
+        Rahukalam_End:   { Eastern:'09:00 AM EDT', Central:'08:00 AM CDT', Mountain:'07:00 AM MDT', Pacific:'06:00 AM PDT' },
+        Durmuhurtam_Start: { Eastern:'10:15 AM EDT', Central:'09:15 AM CDT', Mountain:'08:15 AM MDT', Pacific:'07:15 AM PDD' },
+        Durmuhurtam_End:   { Eastern:'11:00 AM EDT', Central:'10:00 AM CDT', Mountain:'09:00 AM MDT', Pacific:'08:00 AM PDT' },
+        Abhijit_Start: { Eastern:'11:52 AM EDT', Central:'10:52 AM CDT', Mountain:'09:52 AM MDT', Pacific:'08:52 AM PDT' },
+        Abhijit_End:   { Eastern:'12:44 PM EDT', Central:'11:44 AM CDT', Mountain:'10:44 AM MDT', Pacific:'09:44 AM PDT' },
+        AmritKalam_Start: { Eastern:'02:15 PM EDT', Central:'01:15 PM CDT', Mountain:'12:15 PM MDT', Pacific:'11:15 AM PDT' },
+        AmritKalam_End:   { Eastern:'03:45 PM EDT', Central:'02:45 PM CDT', Mountain:'01:45 PM MDT', Pacific:'12:45 PM PDT' },
+      }
+    }
+  };
+}
+
+// ── Render dashboard ──────────────────────────────────────────
+function render(meta) {
+  const script  = meta.script   || {};
+  const panchang = meta.panchang || {};
+  const raw     = panchang.raw  || {};
+  const us      = panchang.us_timings || {};
+  const dateStr = meta.date;
+  const weekday = script.weekday || panchang.weekday || '';
+  const status  = meta.status   || 'pending';
+
+  // Update header
+  document.getElementById('header-weekday').textContent = weekday;
+  document.getElementById('header-date').textContent = dateStr;
+  document.getElementById('status-msg').textContent =
+    status === 'pending'  ? '⏳ Video ready — awaiting your approval' :
+    status === 'approved' ? '✅ Video approved and uploaded!' :
+    '❌ Video rejected';
+
+  const videoSrc = meta.video_file
+    ? `pending/${dateStr}/${meta.video_file}`
+    : null;
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+    <!-- LEFT: Video Preview -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <span>🎬</span>
+          <h2>Video Preview</h2>
+          <span class="badge badge-${status}" style="margin-left:auto">
+            ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+          </span>
+        </div>
+        <div class="card-body" style="padding:16px">
+          <div class="video-wrapper">
+            ${videoSrc
+              ? `<video controls src="${videoSrc}" style="max-height:480px"></video>`
+              : `<div class="video-placeholder">
+                  <div class="icon">🪔</div>
+                  <p style="color:var(--gold);font-size:18px;margin-bottom:8px">Video Generating...</p>
+                  <p>The video will appear here once the<br>GitHub Actions pipeline completes.</p>
+                  <p style="margin-top:16px;font-size:12px;color:var(--muted)">Check Actions tab for progress</p>
+                </div>`
+            }
+          </div>
+        </div>
+        <div class="action-area">
+          <div class="video-title-display">
+            "${script.video_title || 'Daily Panchangam'}"
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-approve" onclick="handleApprove('${dateStr}')"
+              ${status !== 'pending' ? 'disabled' : ''}>
+              ✅ Approve & Upload
+            </button>
+            <button class="btn btn-reject" onclick="handleReject('${dateStr}')"
+              ${status !== 'pending' ? 'disabled' : ''}>
+              ❌ Reject
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Script & Timings -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+      <!-- Script preview -->
+      <div class="card">
+        <div class="card-header">
+          <span>📜</span>
+          <h2>Script Preview</h2>
+        </div>
+        <div class="card-body">
+          <div class="script-block">
+            <h4>🪷 Opening Shloka</h4>
+            <p>${script.opening_shloka || '—'}</p>
+          </div>
+          <div class="script-block">
+            <h4>🎙️ Main Narration</h4>
+            <p>${script.main_narration || '—'}</p>
+          </div>
+          <div class="script-block">
+            <h4>🙏 Closing Blessing</h4>
+            <p>${script.closing_blessing || '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panchang info -->
+      <div class="card">
+        <div class="card-header">
+          <span>🌙</span>
+          <h2>Panchangam Details</h2>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Tithi</div>
+              <div class="value">${raw.tithi || '—'}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Nakshatra</div>
+              <div class="value">${raw.nakshatra || '—'}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Yoga</div>
+              <div class="value">${raw.yoga || '—'}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Karana</div>
+              <div class="value">${raw.karana || '—'}</div>
+            </div>
+          </div>
+
+          <div class="timing-section">
+            <h4>🌅 Sunrise / Sunset</h4>
+            <div class="timing-row">
+              <span class="t-label">Sunrise</span>
+              <span class="t-zones">${fmt(us.Sunrise)}</span>
+            </div>
+            <div class="timing-row">
+              <span class="t-label">Sunset</span>
+              <span class="t-zones">${fmt(us.Sunset)}</span>
+            </div>
+
+            <h4>⚠️ Inauspicious Timings — Avoid for New Work</h4>
+            <div class="timing-row inauspicious">
+              <span class="t-label">🚫 Rahu Kalam</span>
+              <span class="t-zones">${fmtRange(us,'Rahukalam_Start','Rahukalam_End')}</span>
+            </div>
+            <div class="timing-row inauspicious">
+              <span class="t-label">🚫 Dur Muhurtam</span>
+              <span class="t-zones">${fmtRange(us,'Durmuhurtam_Start','Durmuhurtam_End')}</span>
+            </div>
+            <div class="timing-row inauspicious">
+              <span class="t-label">🚫 Yamagandam</span>
+              <span class="t-zones">${fmtRange(us,'Yamagandam_Start','Yamagandam_End')}</span>
+            </div>
+            <div class="timing-row inauspicious">
+              <span class="t-label">🚫 Gulikai</span>
+              <span class="t-zones">${fmtRange(us,'Gulikai_Start','Gulikai_End')}</span>
+            </div>
+
+            <h4>✅ Auspicious Timings — Best for New Beginnings</h4>
+            <div class="timing-row auspicious">
+              <span class="t-label">🌟 Abhijit Muhurta</span>
+              <span class="t-zones">${fmtRange(us,'Abhijit_Start','Abhijit_End')}</span>
+            </div>
+            <div class="timing-row auspicious">
+              <span class="t-label">🌟 Amrit Kalam</span>
+              <span class="t-zones">${fmtRange(us,'AmritKalam_Start','AmritKalam_End')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+// ── Approval actions ──────────────────────────────────────────
+async function handleApprove(dateStr) {
+  if (!confirm('✅ Approve this video for upload to YouTube Shorts & Instagram Reels?')) return;
+
+  showToast('🚀 Triggering upload to YouTube & Instagram...', 'success');
+
+  // Trigger GitHub Actions workflow via API
+  const token = prompt(
+    'Enter your GitHub Personal Access Token (PAT) to trigger upload:\n(Create at: Settings → Developer settings → Personal access tokens → Fine-grained → repo:actions:write)',
+    ''
+  );
+  if (!token) { showToast('Upload cancelled.', 'error'); return; }
+
+  const repo = prompt('Enter your GitHub repo (e.g. username/panchangam-agent):');
+  if (!repo) return;
+
+  try {
+    const resp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/daily_panchangam.yml/dispatches`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ref: 'main',
+        inputs: { date: dateStr, skip_upload: 'false' }
+      })
+    });
+
+    if (resp.ok || resp.status === 204) {
+      showToast('✅ Upload triggered! Check GitHub Actions for progress.', 'success');
+      // Update local status display
+      document.querySelector('.badge').className = 'badge badge-approved';
+      document.querySelector('.badge').textContent = '✅ Approved';
+      document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+      document.getElementById('status-msg').textContent = '✅ Approved — uploading to YouTube & Instagram...';
+    } else {
+      const err = await resp.json();
+      showToast(`GitHub API error: ${err.message}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+async function handleReject(dateStr) {
+  const reason = prompt('Reason for rejection (optional):');
+  showToast('❌ Video rejected. Pipeline will not upload.', 'error');
+  document.querySelector('.badge').className = 'badge badge-rejected';
+  document.querySelector('.badge').textContent = '❌ Rejected';
+  document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+  document.getElementById('status-msg').textContent = '❌ Video rejected — pipeline halted.';
+}
+
+// ── Init ──────────────────────────────────────────────────────
+(async () => {
+  try {
+    const meta = await loadMetadata();
+    render(meta);
+  } catch (e) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="loading" style="grid-column:1/-1">
+        <div style="font-size:48px">⚠️</div>
+        <p style="color:var(--amber)">Could not load metadata</p>
+        <p style="font-size:13px;color:var(--muted)">${e.message}</p>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">
+          Make sure the pipeline has run and dashboard/pending/[date]/metadata.json exists.
+        </p>
+      </div>`;
+  }
+})();
+</script>
+</body>
+</html>
