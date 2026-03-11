@@ -1,110 +1,117 @@
 """
-script_generator.py — Uses Claude API to generate Telugu+English
-bilingual narration script from Panchangam data.
+script_generator.py — Uses Claude API to write Telugu+English narration
+Works with the scraper.run() output format.
 """
-
-import json
-import os
-import sys
+import os, json
 import anthropic
-from datetime import date
 
 
-def generate_script(panchang_data: dict) -> dict:
-    """Generate Telugu+English video script from panchang JSON."""
-    
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    
-    d = panchang_data
-    raw = d.get("raw", {})
-    us = d.get("us_timings", {})
-    target_date = d.get("date", date.today().isoformat())
-    weekday = d.get("weekday", "")
+def get_et_range(panchang, field):
+    """Extract Eastern time range string from panchang us_timings."""
+    us = panchang.get("us_timings", {})
+    s_key, e_key = f"{field}_Start", f"{field}_End"
+    if s_key in us and e_key in us:
+        s = us[s_key].get("Eastern", "N/A")
+        e = us[e_key].get("Eastern", "N/A")
+        return f"{s} to {e}"
+    if field in us:
+        return us[field].get("Eastern", "N/A")
+    return panchang.get("raw", {}).get(field.lower(), "N/A")
 
-    # Build timing summary for prompt
-    timing_lines = []
-    
-    def fmt_range(key_start, key_end, label):
-        s = us.get(key_start, {})
-        e = us.get(key_end, {})
-        if s and e:
-            et_s = s.get("Eastern", "N/A")
-            ct_s = s.get("Central", "N/A")
-            pt_s = s.get("Pacific", "N/A")
-            et_e = e.get("Eastern", "N/A")
-            return f"{label}: ET {et_s}–{et_e} | CT {ct_s} | PT {pt_s}"
-        return ""
 
-    timing_lines.append(fmt_range("Sunrise", "Sunrise", "🌅 Sunrise"))
-    timing_lines.append(fmt_range("Sunset", "Sunset", "🌇 Sunset"))
-    timing_lines.append(fmt_range("Rahukalam_Start", "Rahukalam_End", "⚠️ Rahu Kalam (AVOID)"))
-    timing_lines.append(fmt_range("Durmuhurtam_Start", "Durmuhurtam_End", "⚠️ Dur Muhurtam (AVOID)"))
-    timing_lines.append(fmt_range("Yamagandam_Start", "Yamagandam_End", "⚠️ Yamagandam (AVOID)"))
-    timing_lines.append(fmt_range("Gulikai_Start", "Gulikai_End", "⚠️ Gulikai Kalam (AVOID)"))
-    timing_lines.append(fmt_range("Abhijit_Start", "Abhijit_End", "✅ Abhijit Muhurta (AUSPICIOUS)"))
-    timing_lines.append(fmt_range("AmritKalam_Start", "AmritKalam_End", "✅ Amrit Kalam (AUSPICIOUS)"))
-    timing_lines = [t for t in timing_lines if t]
+def format_for_prompt(panchang):
+    raw = panchang.get("raw", {})
+    lines = [
+        f"Date: {panchang.get('weekday','')} {panchang.get('date','')}",
+        f"Tithi: {raw.get('tithi','N/A')}",
+        f"Nakshatra: {raw.get('nakshatra','N/A')}",
+        f"Yoga: {raw.get('yoga','N/A')}",
+        f"Karana: {raw.get('karana','N/A')}",
+        "",
+        "=== US TIMINGS (Eastern Time) ===",
+        f"Rahukaal:    {get_et_range(panchang, 'Rahukalam')}",
+        f"Durmuhurtam: {get_et_range(panchang, 'Durmuhurtam')}",
+        f"Gulika:      {get_et_range(panchang, 'Gulikai')}",
+        f"Yamagandam:  {get_et_range(panchang, 'Yamagandam')}",
+        f"Abhijit:     {get_et_range(panchang, 'Abhijit')}",
+        f"Amrit Kalam: {get_et_range(panchang, 'AmritKalam')}",
+        f"Sunrise:     {get_et_range(panchang, 'Sunrise')}",
+        f"Sunset:      {get_et_range(panchang, 'Sunset')}",
+    ]
+    return "\n".join(lines)
 
-    prompt = f"""You are creating a 60-second bilingual (Telugu + English) daily Panchangam video script for Hindu devotees living in the USA.
 
-DATE: {weekday}, {target_date}
+def generate_video_script(panchang):
+    client = anthropic.Anthropic()
+    summary = format_for_prompt(panchang)
+    raw = panchang.get("raw", {})
 
-PANCHANGAM DATA:
-- Tithi: {raw.get('tithi', 'N/A')}
-- Nakshatra: {raw.get('nakshatra', 'N/A')}
-- Yoga: {raw.get('yoga', 'N/A')}
-- Karana: {raw.get('karana', 'N/A')}
+    prompt = f"""You are creating a 60-second short-form video script for daily Hindu Panchang 
+targeted at Telugu-speaking Hindu Americans. Mix Telugu and English naturally.
 
-TIMINGS (converted to US time zones):
-{chr(10).join(timing_lines)}
+Today's Panchang:
+{summary}
 
-INSTRUCTIONS:
-1. Write a warm, devotional narration script mixing Telugu and English naturally (like a Telugu-American pandit would speak).
-2. Start with a Sanskrit/Telugu greeting shloka (2 lines).
-3. Announce the date and Panchangam details in Telugu first, then English.
-4. Clearly state ALL inauspicious times (Rahu Kalam, Dur Muhurtam, Yamagandam, Gulikai) with a gentle warning.
-5. Clearly state ALL auspicious times (Abhijit, Amrit Kalam) with encouragement.
-6. Give timings for Eastern, Central, and Pacific time zones at minimum.
-7. End with a Telugu blessing.
-8. Total script: 60 seconds when read at natural pace (~130 words/minute = ~130 words max).
-9. Format as JSON with these keys:
-   - "opening_shloka": string (Sanskrit/Telugu greeting)
-   - "main_narration": string (full bilingual script, ~120 words)  
-   - "closing_blessing": string (Telugu/Sanskrit blessing, ~10 words)
-   - "video_title": string (catchy English+Telugu title for YouTube/Instagram, max 60 chars)
-   - "video_description": string (YouTube description, 150 words, with hashtags)
-   - "text_overlays": array of objects with "timestamp_sec" and "text" for on-screen captions
-   - "thumbnail_text": string (3-5 words for thumbnail)
-
-Return ONLY valid JSON, no markdown fences."""
+Return ONLY valid JSON (no markdown, no backticks):
+{{
+  "title": "YouTube/Instagram title with date in English (max 80 chars)",
+  "description": "50-word English description for YouTube",
+  "hashtags": ["DailyPanchangam","HinduCalendar","Telugu","Panchang","Shorts"],
+  "full_narration": "Complete 60-second Telugu+English script (130-150 words). Start with a Telugu blessing, cover Rahukaal to avoid, Abhijit muhurta to use, Tithi and Nakshatra, end with Telugu blessing.",
+  "on_screen_lines": [
+    "Line 1 shown on screen",
+    "Line 2 shown on screen",
+    "Line 3 shown on screen",
+    "Line 4 shown on screen"
+  ]
+}}"""
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=2000,
+        max_tokens=1500,
         messages=[{"role": "user", "content": prompt}]
     )
-    
+
     raw_text = message.content[0].text.strip()
-    # Remove markdown fences if present
-    raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-    
-    script = json.loads(raw_text)
-    script["panchang_date"] = target_date
-    script["weekday"] = weekday
-    return script
+    # Strip markdown fences if present
+    if "```" in raw_text:
+        raw_text = raw_text.split("```")[1]
+        if raw_text.startswith("json"):
+            raw_text = raw_text[4:]
+    raw_text = raw_text.strip()
+
+    try:
+        return json.loads(raw_text)
+    except json.JSONDecodeError:
+        # Fallback script if JSON parse fails
+        return {
+            "title": f"Daily Panchangam {panchang.get('date','')} | {raw.get('tithi','')} Tithi",
+            "description": "Daily Hindu Panchang timings for all US time zones. Telugu & English.",
+            "hashtags": ["DailyPanchangam","HinduCalendar","Telugu","Panchang","Shorts","Reels"],
+            "full_narration": (
+                f"నమస్కారం! Today is {panchang.get('weekday','')}. "
+                f"Tithi: {raw.get('tithi','')}. Nakshatra: {raw.get('nakshatra','')}. "
+                f"Rahukaal Eastern Time: {get_et_range(panchang,'Rahukalam')} — please avoid important work. "
+                f"Abhijit Muhurta: {get_et_range(panchang,'Abhijit')} — very auspicious time. "
+                f"మీకు శుభమగుగాక! Jay Srimannarayana!"
+            ),
+            "on_screen_lines": [
+                f"Tithi: {raw.get('tithi','')}",
+                f"Nakshatra: {raw.get('nakshatra','')}",
+                f"Rahukaal (ET): {get_et_range(panchang,'Rahukalam')}",
+                f"Abhijit (ET): {get_et_range(panchang,'Abhijit')}",
+            ]
+        }
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python script_generator.py <panchang.json>")
-        sys.exit(1)
-    
-    with open(sys.argv[1], "r", encoding="utf-8") as f:
-        panchang = json.load(f)
-    
-    script = generate_script(panchang)
-    out_path = f"script_{panchang['date']}.json"
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(script, f, indent=2, ensure_ascii=False)
-    print(f"[script_gen] Saved to {out_path}")
-    print(json.dumps(script, indent=2, ensure_ascii=False))
+    import sys
+    if len(sys.argv) > 1:
+        with open(sys.argv[1]) as f:
+            panchang = json.load(f)
+    else:
+        from scraper import run
+        from datetime import date
+        panchang = run(date.today())
+    result = generate_video_script(panchang)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
