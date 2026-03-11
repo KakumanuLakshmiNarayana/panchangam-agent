@@ -1,9 +1,8 @@
 """
-video_creator.py — FFmpeg video generator. Works with scraper.run() format.
+video_creator.py — Creates city-specific Panchang video with exact local timings.
 """
-import subprocess, os, textwrap
+import subprocess, os
 from pathlib import Path
-from typing import Optional
 
 VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FPS = 1080, 1920, 30
 VIDEO_DURATION = 62
@@ -24,80 +23,86 @@ def dt(text, x, y, size, color=WHITE, start=0, end=None, box=True):
     a = [f"text='{esc(text)}'", f"x={x}", f"y={y}",
          f"fontsize={size}", f"fontcolor={color}"]
     if box:
-        a.append("box=1:boxcolor=0x00000088:boxborderw=8")
+        a.append("box=1:boxcolor=0x00000099:boxborderw=10")
     if end:
         a.append(f"enable='between(t,{start},{end})'")
     return "drawtext=" + ":".join(a)
 
 
-def get_et(panchang, field):
-    us = panchang.get("us_timings", {})
-    s_key, e_key = f"{field}_Start", f"{field}_End"
-    if s_key in us and e_key in us:
-        s = us[s_key].get("Eastern", "N/A")
-        e = us[e_key].get("Eastern", "N/A")
-        return f"{s} - {e}"
-    if field in us:
-        return us[field].get("Eastern", "N/A")
-    return "N/A"
+def tf(panchang, field):
+    return panchang.get(field, "N/A")
 
 
 def build_filters(panchang, duration):
-    raw = panchang.get("raw", {})
     H   = VIDEO_HEIGHT
     cx  = "(w-text_w)/2"
-    filters = []
+    city     = panchang.get("city", "USA")
+    tz_label = panchang.get("tz_label", "ET")
+    weekday  = panchang.get("weekday", "")
+    filters  = []
 
-    # Card 1: Panchang details (0-15s)
+    # ── Card 1: Header (0–14s) ──────────────────────────────────
     filters += [
-        dt("🕉  Daily Panchangam",           cx, str(H//2-320), 66, GOLD,    0, 15),
-        dt(f"{panchang.get('weekday','')} Panchangam", cx, str(H//2-220), 38, WHITE,   0, 15),
-        dt(f"Tithi: {raw.get('tithi','N/A')}",         cx, str(H//2-140), 36, WHITE,   0, 15),
-        dt(f"Nakshatra: {raw.get('nakshatra','N/A')}",  cx, str(H//2- 70), 36, WHITE,   0, 15),
-        dt(f"Yoga: {raw.get('yoga','N/A')}",            cx, str(H//2),     36, WHITE,   0, 15),
-        dt(f"Karana: {raw.get('karana','N/A')}",        cx, str(H//2+ 70), 36, SAFFRON, 0, 15),
+        dt("🕉  Daily Panchangam",                cx, "180",      70, GOLD,    0, 14),
+        dt(f"📍 {city}",                          cx, "290",      52, SAFFRON, 0, 14),
+        dt(weekday,                               cx, "380",      42, WHITE,   0, 14),
+        dt(f"Tithi: {tf(panchang,'tithi')[:35]}", cx, "470",      38, WHITE,   0, 14),
+        dt(f"Nakshatra: {tf(panchang,'nakshatra')[:30]}", cx, "540", 36, WHITE, 0, 14),
+        dt(f"Yoga: {tf(panchang,'yoga')[:30]}",   cx, "610",      34, SAFFRON, 0, 14),
+        dt(f"Masa: {tf(panchang,'masa')[:25]} | {tf(panchang,'paksha')[:20]}", cx, "680", 30, SAFFRON, 0, 14),
     ]
 
-    # Card 2: Avoid (15-35s)
-    filters.append(dt("⛔  Times to AVOID",              cx, "240", 58, AVOID,   15, 35))
-    for i, (label, field) in enumerate([
-        ("Rahukaal",    "Rahukalam"),
-        ("Durmuhurtam", "Durmuhurtam"),
-        ("Gulika Kalam","Gulikai"),
-        ("Yamagandam",  "Yamagandam"),
-    ]):
-        yb = 420 + i * 155
-        filters.append(dt(f"{label} (ET):", cx, str(yb),    34, SAFFRON, 15, 35))
-        filters.append(dt(get_et(panchang, field), cx, str(yb+48), 34, AVOID, 15, 35))
-
-    # Card 3: Auspicious (35-52s)
-    filters.append(dt("✅  Auspicious Times",            cx, "240", 58, AUSPIC, 35, 52))
-    for i, (label, field) in enumerate([
-        ("Abhijit Muhurta", "Abhijit"),
-        ("Amrit Kalam",     "AmritKalam"),
-    ]):
-        yb = 420 + i * 180
-        filters.append(dt(f"{label} (ET):", cx, str(yb),    34, SAFFRON, 35, 52))
-        filters.append(dt(get_et(panchang, field), cx, str(yb+48), 34, AUSPIC, 35, 52))
-
-    # Card 4: Sun/Moon + closing (52-end)
+    # ── Card 2: Avoid (14–34s) ──────────────────────────────────
     filters += [
-        dt("🌅  Sun & Moon",                            cx, "240",      56, GOLD,    52, duration),
-        dt("Sunrise (ET): " + get_et(panchang,"Sunrise"), cx, "370",    34, WHITE,   52, duration),
-        dt("Sunset  (ET): " + get_et(panchang,"Sunset"),  cx, "430",    34, WHITE,   52, duration),
-        dt("🙏  Jay Srimannarayana!",                   cx, "620",      50, GOLD,    52, duration),
-        dt("Like & Subscribe for Daily Updates",        cx, "700",      28, SAFFRON, 52, duration),
+        dt(f"⛔  Avoid These Times",              cx, "160", 58, AVOID,   14, 34),
+        dt(f"📍 {city} ({tz_label})",             cx, "250", 36, SAFFRON, 14, 34),
+    ]
+    avoid_items = [
+        ("Rahukaal",     "rahukaal"),
+        ("Durmuhurtam",  "durmuhurtam"),
+        ("Gulika Kalam", "gulika"),
+        ("Yamagandam",   "yamagandam"),
+    ]
+    for i, (label, key) in enumerate(avoid_items):
+        yb = 360 + i * 155
+        filters.append(dt(f"{label}:", cx, str(yb),    34, SAFFRON, 14, 34))
+        filters.append(dt(tf(panchang, key), cx, str(yb+48), 34, AVOID, 14, 34))
+
+    # ── Card 3: Auspicious (34–52s) ─────────────────────────────
+    filters += [
+        dt(f"✅  Auspicious Times",               cx, "160", 58, AUSPIC,  34, 52),
+        dt(f"📍 {city} ({tz_label})",             cx, "250", 36, SAFFRON, 34, 52),
+    ]
+    auspic_items = [
+        ("Abhijit Muhurta", "abhijit"),
+        ("Amrit Kalam",     "amrit_kalam"),
+        ("Shubh Muhurat",   "shubh_muhurat"),
+    ]
+    for i, (label, key) in enumerate(auspic_items):
+        yb = 360 + i * 165
+        filters.append(dt(f"{label}:", cx, str(yb),    34, SAFFRON, 34, 52))
+        filters.append(dt(tf(panchang, key), cx, str(yb+48), 36, AUSPIC, 34, 52))
+
+    # ── Card 4: Sun + Closing (52–end) ──────────────────────────
+    filters += [
+        dt(f"🌅 {city} — Sun & Moon",            cx, "200", 48, GOLD,    52, duration),
+        dt(f"Sunrise: {tf(panchang,'sunrise')}",  cx, "310", 36, WHITE,   52, duration),
+        dt(f"Sunset:  {tf(panchang,'sunset')}",   cx, "380", 36, WHITE,   52, duration),
+        dt(f"Moonrise: {tf(panchang,'moonrise')}", cx,"450", 34, SAFFRON, 52, duration),
+        dt("🙏  Jay Srimannarayana!",             cx, "600", 52, GOLD,    52, duration),
+        dt("Like & Subscribe for Daily Updates",  cx, "690", 28, SAFFRON, 52, duration),
+        dt("One video per city, every day!",      cx, "740", 26, WHITE,   52, duration),
     ]
 
-    # Watermark always
+    # ── Watermark always ────────────────────────────────────────
     filters += [
-        dt("@DailyPanchangam",                cx, str(H-110), 32, SAFFRON),
-        dt("All 6 US Timezones • Link in Bio", cx, str(H- 65), 24, WHITE),
+        dt(f"@DailyPanchangam • {city}",         cx, str(H-110), 30, SAFFRON),
+        dt("Subscribe for all 5 US cities",       cx, str(H- 65), 24, WHITE),
     ]
     return filters
 
 
-def create_panchang_video(panchang, script, audio_path, output_path="output/panchang_video.mp4"):
+def create_panchang_video(panchang, script, audio_path, output_path):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     duration = VIDEO_DURATION
     if audio_path and os.path.exists(audio_path):
@@ -114,7 +119,6 @@ def create_panchang_video(panchang, script, audio_path, output_path="output/panc
         cmd += ["-i", audio_path]
 
     cmd += ["-filter_complex", filter_str, "-map", "[vout]"]
-
     if audio_path and os.path.exists(audio_path):
         cmd += ["-map", "1:a", "-c:a", "aac", "-b:a", "192k"]
     else:
@@ -124,31 +128,32 @@ def create_panchang_video(panchang, script, audio_path, output_path="output/panc
             "-t", str(duration), "-pix_fmt","yuv420p",
             "-movflags","+faststart", output_path]
 
-    print(f"🎬 Creating video...")
+    print(f"🎬 Creating video for {panchang.get('city','?')}...")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ FFmpeg:\n{result.stderr[-2000:]}")
+        print(f"❌ FFmpeg error:\n{result.stderr[-1500:]}")
         raise RuntimeError("FFmpeg failed")
     print(f"✅ Video: {output_path}")
     return output_path
 
 
-def create_thumbnail(panchang, output_path="output/thumbnail.jpg"):
+def create_thumbnail(panchang, output_path):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    raw  = panchang.get("raw", {})
-    day  = esc(panchang.get("weekday", "Today"))
-    tithi = esc(raw.get("tithi", ""))
-    naks  = esc(raw.get("nakshatra", ""))
+    city    = esc(panchang.get("city", "USA"))
+    weekday = esc(panchang.get("weekday", "Today"))
+    tithi   = esc(panchang.get("tithi", "")[:30])
+    naks    = esc(panchang.get("nakshatra", "")[:30])
 
     cmd = [
         "ffmpeg", "-y", "-f", "lavfi",
         "-i", "color=c=0x1a0a00:s=1280x720:r=1:d=1",
         "-vf", ",".join([
-            "drawtext=text='🕉 Daily Panchangam':x=(w-text_w)/2:y=80:fontsize=72:fontcolor=0xFFD700:box=1:boxcolor=0x00000088:boxborderw=12",
-            f"drawtext=text='{day} Panchangam':x=(w-text_w)/2:y=220:fontsize=48:fontcolor=white",
-            f"drawtext=text='Tithi\\: {tithi}':x=(w-text_w)/2:y=340:fontsize=42:fontcolor=0xFF6B00",
-            f"drawtext=text='Nakshatra\\: {naks}':x=(w-text_w)/2:y=420:fontsize=42:fontcolor=0xFF6B00",
-            "drawtext=text='All 6 US Time Zones':x=(w-text_w)/2:y=560:fontsize=36:fontcolor=0xFFD700",
+            "drawtext=text='🕉 Daily Panchangam':x=(w-text_w)/2:y=60:fontsize=68:fontcolor=0xFFD700:box=1:boxcolor=0x00000088:boxborderw=12",
+            f"drawtext=text='📍 {city}':x=(w-text_w)/2:y=180:fontsize=54:fontcolor=0xFF6B00:box=1:boxcolor=0x00000088:boxborderw=10",
+            f"drawtext=text='{weekday}':x=(w-text_w)/2:y=280:fontsize=44:fontcolor=white",
+            f"drawtext=text='Tithi\\: {tithi}':x=(w-text_w)/2:y=370:fontsize=38:fontcolor=0xFF6B00",
+            f"drawtext=text='Nakshatra\\: {naks}':x=(w-text_w)/2:y=440:fontsize=38:fontcolor=0xFF6B00",
+            "drawtext=text='Exact Local Timings':x=(w-text_w)/2:y=560:fontsize=34:fontcolor=0xFFD700",
         ]),
         "-frames:v", "1", output_path,
     ]
