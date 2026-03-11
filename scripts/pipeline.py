@@ -1,21 +1,15 @@
 """
 pipeline.py — Master orchestrator for Daily Panchangam Video Agent
-Steps: Scrape → Script → Voice → Video → Email Approval
 """
-
-import os
-import sys
-import json
-import smtplib
-from datetime import datetime
+import os, sys, json, smtplib
+from datetime import datetime, date
 from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Make sure imports find sibling scripts
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from scraper          import get_daily_panchang
+import scraper
 from script_generator import generate_video_script
 from voice_generator  import generate_voiceover
 from video_creator    import create_panchang_video, create_thumbnail
@@ -24,138 +18,137 @@ OUTPUT_DIR = Path("output")
 STATE_FILE = OUTPUT_DIR / "pipeline_state.json"
 
 
-def save_state(state: dict):
+def save_state(state):
     OUTPUT_DIR.mkdir(exist_ok=True)
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-    print(f"💾 State saved: {STATE_FILE}")
+    print(f"💾 State saved")
 
 
-def load_state() -> dict:
+def load_state():
     if STATE_FILE.exists():
         with open(STATE_FILE, encoding="utf-8") as f:
             return json.load(f)
     return {}
 
 
-def send_approval_email(state: dict):
+def get_et(panchang, field):
+    """Get Eastern Time value from panchang us_timings."""
+    us = panchang.get("us_timings", {})
+    start_key = f"{field}_Start"
+    end_key   = f"{field}_End"
+    if start_key in us and end_key in us:
+        s = us[start_key].get("Eastern", "N/A")
+        e = us[end_key].get("Eastern",   "N/A")
+        return f"{s} – {e}"
+    if field in us:
+        return us[field].get("Eastern", "N/A")
+    return panchang.get("raw", {}).get(field.lower(), "N/A")
+
+
+def send_approval_email(state):
     sender    = os.environ.get("APPROVAL_EMAIL_FROM", "")
-    recipient = os.environ.get("APPROVAL_EMAIL_TO", "")
+    recipient = os.environ.get("APPROVAL_EMAIL_TO",   "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER", sender)
-    smtp_pass = os.environ.get("SMTP_PASS", "")
 
     if not all([sender, recipient, smtp_pass]):
-        print("⚠️  Email credentials not set — skipping approval email.")
+        print("⚠️  Email secrets not set — skipping email.")
         return
 
     panchang = state.get("panchang", {})
     script   = state.get("script",   {})
-    date_str = state.get("date", datetime.now().strftime("%Y-%m-%d"))
+    raw      = panchang.get("raw",   {})
+    date_str = state.get("date", "today")
 
-    def get_et(field):
-        val = panchang.get(field, {})
-        if isinstance(val, dict):
-            return val.get("us", {}).get("Eastern", "N/A")
-        return str(val)
-
-    narration_preview = script.get("full_narration", "")[:400]
-    title             = script.get("title", f"Daily Panchangam {date_str}")
-
-    html_body = f"""
+    html = f"""
 <html><body style="font-family:Georgia,serif;background:#fdf6ec;padding:20px;">
 <div style="max-width:600px;margin:auto;background:white;border-radius:12px;overflow:hidden;">
   <div style="background:#8B0000;color:gold;padding:20px;text-align:center;">
-    <h1 style="margin:0;">🕉 Daily Panchangam Video Ready</h1>
-    <p style="color:#FFD700;">{panchang.get('date', date_str)}</p>
+    <h1 style="margin:0;">🕉 Panchangam Video Ready</h1>
+    <p style="color:#FFD700;">{panchang.get('weekday','')} — {date_str}</p>
   </div>
   <div style="padding:24px;">
-    <h2 style="color:#8B0000;">{title[:80]}</h2>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Tithi</td><td>{panchang.get('tithi','N/A')}</td></tr>
-      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Nakshatra</td><td>{panchang.get('nakshatra','N/A')}</td></tr>
-      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Yoga</td><td>{panchang.get('yoga','N/A')}</td></tr>
-      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Rahukaal (ET)</td><td style="color:#c1121f;">{get_et('rahukaal')}</td></tr>
-      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Abhijit (ET)</td><td style="color:#2d6a4f;">{get_et('abhijit')}</td></tr>
-      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Sunrise (ET)</td><td>{get_et('sunrise')}</td></tr>
+    <h2 style="color:#8B0000;">{script.get('title','')[:80]}</h2>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Tithi</td><td>{raw.get('tithi','N/A')}</td></tr>
+      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Nakshatra</td><td>{raw.get('nakshatra','N/A')}</td></tr>
+      <tr><td style="padding:6px;color:#8B0000;font-weight:bold;">Yoga</td><td>{raw.get('yoga','N/A')}</td></tr>
+      <tr style="background:#fef9f0;"><td style="padding:6px;color:#c1121f;font-weight:bold;">Rahukaal (ET)</td><td style="color:#c1121f;">{get_et(panchang,'Rahukalam')}</td></tr>
+      <tr><td style="padding:6px;color:#2d6a4f;font-weight:bold;">Abhijit (ET)</td><td style="color:#2d6a4f;">{get_et(panchang,'Abhijit')}</td></tr>
+      <tr style="background:#fef9f0;"><td style="padding:6px;color:#8B0000;font-weight:bold;">Sunrise (ET)</td><td>{get_et(panchang,'Sunrise')}</td></tr>
     </table>
-    <div style="background:#fef9f0;border-left:4px solid #FFD700;padding:12px;margin-bottom:20px;">
-      <strong style="color:#8B0000;">🎙️ Script Preview:</strong><br>
-      <em style="color:#444;">{narration_preview}...</em>
+    <div style="background:#fef9f0;border-left:4px solid #FFD700;padding:12px;margin-top:16px;">
+      <strong>🎙️ Script:</strong><br>
+      <em>{script.get('full_narration','')[:400]}...</em>
     </div>
-    <div style="background:#e8f5e9;padding:16px;border-radius:8px;text-align:center;">
-      <p style="margin:0 0 8px;font-weight:bold;color:#2d6a4f;">To approve and publish this video:</p>
-      <p style="margin:0;color:#444;font-size:14px;">
-        GitHub repo → <strong>Actions</strong> → <strong>Daily Panchangam Pipeline</strong><br>
-        → <strong>Run workflow</strong> → set <strong>upload_approved = true</strong> → Run
-      </p>
+    <div style="background:#e8f5e9;padding:16px;border-radius:8px;margin-top:16px;text-align:center;">
+      <strong>To publish:</strong> GitHub repo → Actions → Daily Panchangam Pipeline<br>
+      → Run workflow → set <strong>upload_approved = true</strong>
     </div>
   </div>
-</div>
-</body></html>
-"""
+</div></body></html>"""
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"🕉 Panchangam Video Ready — {panchang.get('date', date_str)}"
+    msg["Subject"] = f"🕉 Panchangam Video Ready — {panchang.get('weekday','')} {date_str}"
     msg["From"]    = sender
     msg["To"]      = recipient
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(sender, recipient, msg.as_string())
-        print(f"✅ Approval email sent to: {recipient}")
+        with smtplib.SMTP(smtp_host, smtp_port) as s:
+            s.starttls()
+            s.login(sender, smtp_pass)
+            s.sendmail(sender, recipient, msg.as_string())
+        print(f"✅ Approval email sent to {recipient}")
     except Exception as e:
-        print(f"❌ Email failed: {e}")
+        print(f"❌ Email error: {e}")
 
 
-def run_pipeline(skip_approval: bool = False):
+def run_pipeline(skip_approval=False):
     OUTPUT_DIR.mkdir(exist_ok=True)
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    today     = date.today()
+    date_str  = today.isoformat()
 
-    print("\n" + "="*55)
-    print("  🕉  DAILY PANCHANGAM VIDEO PIPELINE")
-    print("="*55)
+    print("\n" + "="*50)
+    print("  🕉  DAILY PANCHANGAM PIPELINE")
+    print("="*50)
 
-    # Step 1: Scrape
+    # 1 — Scrape
     print("\n[1/5] 📅 Scraping Drikpanchang...")
-    panchang = get_daily_panchang()
-    print(f"      Tithi: {panchang.get('tithi')} | Nakshatra: {panchang.get('nakshatra')}")
+    panchang = scraper.run(today)
+    raw = panchang.get("raw", {})
+    print(f"      Tithi: {raw.get('tithi')} | Nakshatra: {raw.get('nakshatra')}")
 
-    # Step 2: Script
-    print("\n[2/5] ✍️  Generating Telugu+English script...")
+    # 2 — Script
+    print("\n[2/5] ✍️  Generating script via Claude AI...")
     script = generate_video_script(panchang)
     print(f"      Title: {script.get('title','')[:60]}")
 
-    # Step 3: Voice
+    # 3 — Voice
     print("\n[3/5] 🎙️  Generating voiceover...")
     audio_path = str(OUTPUT_DIR / f"voiceover_{date_str}.mp3")
     try:
         generate_voiceover(script, audio_path)
     except Exception as e:
-        print(f"      ⚠️  Voice failed: {e} — using silent video")
+        print(f"      ⚠️  Voice failed ({e}) — silent video")
         audio_path = ""
 
-    # Step 4: Video
+    # 4 — Video
     print("\n[4/5] 🎬 Creating video...")
     video_path     = str(OUTPUT_DIR / f"panchang_{date_str}.mp4")
     thumbnail_path = str(OUTPUT_DIR / f"thumbnail_{date_str}.jpg")
     create_panchang_video(panchang, script, audio_path, video_path)
     create_thumbnail(panchang, thumbnail_path)
 
-    # Step 5: Save + notify
+    # 5 — Notify
     state = {
-        "date":            date_str,
-        "panchang":        panchang,
-        "script":          script,
-        "video_path":      video_path,
-        "thumbnail_path":  thumbnail_path,
-        "audio_path":      audio_path,
+        "date": date_str, "panchang": panchang, "script": script,
+        "video_path": video_path, "thumbnail_path": thumbnail_path,
+        "audio_path": audio_path,
         "approval_status": "approved" if skip_approval else "pending",
-        "upload_results":  {},
+        "upload_results": {},
     }
     save_state(state)
 
@@ -173,14 +166,14 @@ def run_pipeline(skip_approval: bool = False):
 def upload_approved():
     state = load_state()
     if not state:
-        print("❌ No state found. Run full pipeline first.")
+        print("❌ No state found.")
         return
     state["approval_status"] = "approved"
     save_state(state)
     _upload(state)
 
 
-def _upload(state: dict):
+def _upload(state):
     try:
         from uploader import upload_approved_video
         results = upload_approved_video(
@@ -192,8 +185,8 @@ def _upload(state: dict):
         state["upload_results"] = results
         save_state(state)
         print("\n🚀 Upload complete!")
-        for platform, result in results.items():
-            print(f"   {platform.upper()}: {result.get('status')} — {result.get('url','N/A')}")
+        for p, r in results.items():
+            print(f"   {p.upper()}: {r.get('status')} — {r.get('url','N/A')}")
     except Exception as e:
         print(f"❌ Upload failed: {e}")
 
