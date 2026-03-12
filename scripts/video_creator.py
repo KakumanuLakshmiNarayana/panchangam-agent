@@ -31,28 +31,36 @@ CHAR_SCALE    = 0.52
 
 
 def get_font(size, bold=False):
-    candidates = []
-    # NotoSansTelugu if installed via apt
-    for pat in ["/usr/share/fonts/**/*Telugu*Bold*", "/usr/share/fonts/**/*Telugu*"]:
-        candidates += sorted(glob.glob(pat, recursive=True))
-    # FreeSans — proven Telugu rendering, installed via fonts-freefont-ttf
+    # PRIORITY 1: Bundled fonts in scripts/fonts/ (always present in repo)
+    bundled = os.path.join(SCRIPTS_DIR, "fonts")
     if bold:
-        candidates += [
-            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-            "/usr/share/fonts/truetype/freefont/FreeSerifBold.ttf",
+        candidates = [
+            os.path.join(bundled, "FreeSansBold.ttf"),
         ]
     else:
-        candidates += [
-            "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-            "/usr/share/fonts/truetype/freefont/FreeSerif.ttf",
+        candidates = [
+            os.path.join(bundled, "FreeSans.ttf"),
         ]
+    # PRIORITY 2: System NotoSansTelugu (downloaded via workflow wget)
     candidates += [
+        "/usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
+        else "/usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf",
+    ]
+    # PRIORITY 3: Any system Telugu font
+    for pat in ["/usr/share/fonts/**/*Telugu*"]:
+        candidates += sorted(glob.glob(pat, recursive=True))
+    # PRIORITY 4: System FreeSans
+    candidates += [
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if bold
+        else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold
         else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ]
     for p in candidates:
         if p and os.path.exists(p):
-            try: return ImageFont.truetype(p, size)
+            try:
+                font = ImageFont.truetype(p, size)
+                return font
             except: continue
     return ImageFont.load_default()
 
