@@ -1,5 +1,5 @@
 """
-scraper.py — Uses Selenium with Chromium to fully render Drikpanchang pages.
+scraper.py — Selenium-based scraper with proper wait for full JS render.
 """
 
 import json, re, sys, time, os
@@ -9,7 +9,7 @@ CITIES = {
     "New_York":   {"display": "New York, NY",    "timezone": "America/New_York",    "tz_label": "ET", "geoname_id": "5128581"},
     "Chicago":    {"display": "Chicago, IL",     "timezone": "America/Chicago",     "tz_label": "CT", "geoname_id": "4887398"},
     "Dallas":     {"display": "Dallas, TX",      "timezone": "America/Chicago",     "tz_label": "CT", "geoname_id": "4684888"},
-    "California": {"display": "Los Angeles, CA", "timezone": "America/Los_Angeles", "tz_label": "PT", "geoname_id": "4350049"},
+    "California": {"display": "Los Angeles, CA", "timezone": "America/Los_Angeles", "tz_label": "PT", "geoname_id": "5368361"},  # Los Angeles city
     "Michigan":   {"display": "Detroit, MI",     "timezone": "America/Detroit",     "tz_label": "ET", "geoname_id": "4990729"},
 }
 
@@ -20,39 +20,30 @@ def get_driver():
     from selenium.webdriver.chrome.service import Service
 
     opts = Options()
-    opts.add_argument("--headless")
+    opts.add_argument("--headless=new")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1920,1080")
     opts.add_argument("--disable-blink-features=AutomationControlled")
+    opts.add_argument("--enable-javascript")
     opts.add_argument(
-        "user-agent=Mozilla/5.0 (X11; Linux x86_64) "
+        "--user-agent=Mozilla/5.0 (X11; Linux x86_64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0.0.0 Safari/537.36"
     )
-
-    # Try system chromedriver first (installed by apt)
-    for chromedriver_path in [
-        "/usr/bin/chromedriver",
-        "/usr/lib/chromium-browser/chromedriver",
-        "/usr/lib/chromium/chromedriver",
-        "chromedriver",
-    ]:
-        if os.path.exists(chromedriver_path) or chromedriver_path == "chromedriver":
+    # Try system chromedriver paths
+    for path in ["/usr/bin/chromedriver", "/usr/lib/chromium-browser/chromedriver",
+                 "/usr/lib/chromium/chromedriver", "chromedriver"]:
+        if os.path.exists(path) or path == "chromedriver":
             try:
-                service = Service(chromedriver_path)
-                driver = webdriver.Chrome(service=service, options=opts)
-                print(f"[scraper] Using chromedriver: {chromedriver_path}")
+                driver = webdriver.Chrome(service=Service(path), options=opts)
+                print(f"[scraper] Using chromedriver: {path}")
                 return driver
-            except Exception as e:
-                print(f"[scraper] Failed {chromedriver_path}: {e}")
+            except:
                 continue
-
-    # Final fallback: webdriver-manager
     from webdriver_manager.chrome import ChromeDriverManager
-    service = Service(ChromeDriverManager().install())
-    return webdriver.Chrome(service=service, options=opts)
+    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opts)
 
 
 def fetch_rendered_html(url, driver, city_display):
@@ -63,24 +54,52 @@ def fetch_rendered_html(url, driver, city_display):
     print(f"[scraper] Loading: {url}")
     driver.get(url)
 
-    # Wait for Rahu Kalam text to appear (confirms JS has rendered)
+    # Wait for actual panchang table data — look for a time pattern like "06:23 AM"
+    # This confirms the JS has fully rendered the data tables
     try:
-        WebDriverWait(driver, 20).until(
+        WebDriverWait(driver, 25).until(
             EC.presence_of_element_located(
-                (By.XPATH, "//*[contains(text(),'Rahu') or contains(text(),'Sunrise')]")
+                (By.XPATH, "//*[contains(@class,'dpTableValue') or contains(@class,'panchang')]")
             )
         )
-        print(f"[scraper] Page rendered for {city_display}")
-    except Exception as e:
-        print(f"[scraper] Wait timeout ({e}), using current state")
-        time.sleep(5)
+        print(f"[scraper] dpTableValue found for {city_display}")
+    except:
+        pass
 
-    time.sleep(2)  # small extra wait for all content
+    # Scroll down to trigger any lazy-loaded sections
+    driver.execute_script("window.scrollTo(0, 500);")
+    time.sleep(1)
+    driver.execute_script("window.scrollTo(0, 1200);")
+    time.sleep(1)
+    driver.execute_script("window.scrollTo(0, 2000);")
+    time.sleep(2)
+
+    # Wait for a time value to appear anywhere on page (strong signal data is loaded)
+    try:
+        WebDriverWait(driver, 15).until(
+            lambda d: re.search(r'\d{1,2}:\d{2}\s*(?:AM|PM)', d.page_source)
+        )
+        print(f"[scraper] Time values detected on page for {city_display}")
+    except:
+        print(f"[scraper] No time values detected after waiting — proceeding anyway")
+
+    time.sleep(2)
     html = driver.page_source
 
-    # Debug: save first 3000 chars of HTML so we can inspect
-    preview = html[:3000]
-    print(f"[scraper] HTML preview (first 3000 chars):\n{preview}\n--- END PREVIEW ---")
+    # Debug: find and print lines containing "Rahu" or "Sunrise" or "Tithi"
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+    print(f"[scraper] Total tags in page: {len(soup.find_all())}")
+    print(f"[scraper] Total <tr> rows: {len(soup.find_all('tr'))}")
+    print(f"[scraper] Total <td> cells: {len(soup.find_all('td'))}")
+
+    # Print any text containing key panchang terms
+    for term in ["Rahu", "Tithi", "Sunrise", "Nakshatra", "Abhijit"]:
+        matches = soup.find_all(string=re.compile(term, re.I))
+        if matches:
+            print(f"[scraper] Found '{term}' in {len(matches)} elements: {[m.strip()[:40] for m in matches[:3]]}")
+        else:
+            print(f"[scraper] '{term}' NOT FOUND in page")
 
     return html
 
@@ -122,6 +141,21 @@ def parse_all_rows(soup, tz_label):
                 result[key] = fmt(times, tz_label)
             elif value and len(value) < 150:
                 result[key] = value.strip()
+
+    # Also scan ALL elements with class containing "dpTable" or "panchang"
+    from bs4 import BeautifulSoup
+    for elem in soup.find_all(class_=re.compile(r'dpTable|panchang|muhurta|kalam', re.I)):
+        text = elem.get_text(separator="|", strip=True)
+        parts = [p.strip() for p in text.split("|") if p.strip()]
+        for i in range(0, len(parts) - 1, 2):
+            label = parts[i]
+            value = parts[i+1] if i+1 < len(parts) else ""
+            if label and len(label) < 80:
+                key = re.sub(r'[^\w\s]', '', label.lower()).strip()
+                times = extract_times(value)
+                if times and key not in result:
+                    result[key] = fmt(times, tz_label)
+
     return result
 
 
@@ -147,6 +181,11 @@ def find_text_field(soup, *labels):
                     val = nxt.get_text(separator=" ", strip=True)
                     if val and len(val) < 200:
                         return val
+        # Also try divs/spans with matching class
+        for elem in soup.find_all(class_=re.compile(label.replace(" ",""), re.I)):
+            val = elem.get_text(strip=True)
+            if val and len(val) < 200:
+                return val
     return "N/A"
 
 
