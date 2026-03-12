@@ -54,7 +54,8 @@ jobs:
             anthropic \
             gtts \
             selenium \
-            webdriver-manager
+            webdriver-manager \
+            pillow
 
       - name: Run Pipeline
         env:
@@ -65,8 +66,9 @@ jobs:
           SMTP_HOST:           smtp.gmail.com
           SMTP_PORT:           587
           SMTP_PASS:           ${{ secrets.SMTP_PASS }}
+          OUTPUT_DIR:          ${{ github.workspace }}/output
         run: |
-          mkdir -p output
+          mkdir -p ${{ github.workspace }}/output
           cd scripts
           if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
             python pipeline.py --skip-approval
@@ -74,8 +76,18 @@ jobs:
             python pipeline.py
           fi
 
+      - name: Debug - list output files
+        if: always()
+        run: |
+          echo "=== Output directory contents ==="
+          ls -lah ${{ github.workspace }}/output/ || echo "output/ is empty or missing"
+          echo "=== scripts/output (if exists) ==="
+          ls -lah ${{ github.workspace }}/scripts/output/ || echo "scripts/output/ does not exist"
+          echo "=== Find all mp4 files ==="
+          find ${{ github.workspace }} -name "*.mp4" 2>/dev/null || echo "No mp4 files found"
+
       - name: Copy state to dashboard
-        run: cp output/pipeline_state.json dashboard/pipeline_state.json || true
+        run: cp ${{ github.workspace }}/output/pipeline_state.json dashboard/pipeline_state.json || true
 
       - name: Upload video artifact
         uses: actions/upload-artifact@v4
@@ -86,6 +98,7 @@ jobs:
             output/*.jpg
             output/*.mp3
             output/pipeline_state.json
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Deploy dashboard to GitHub Pages
@@ -98,6 +111,9 @@ jobs:
         run: |
           echo "## 🕉 Panchangam Pipeline Done" >> $GITHUB_STEP_SUMMARY
           echo "📧 Check your email to approve." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Output Files" >> $GITHUB_STEP_SUMMARY
+          ls output/ | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY || echo "No files found" >> $GITHUB_STEP_SUMMARY
 
   upload-approved:
     name: Upload Approved Video
