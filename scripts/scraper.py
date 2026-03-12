@@ -1,7 +1,12 @@
 """
-scraper.py — Uses dpTableKey/dpTableValue (102 pairs). 
-Groups empty-key continuation rows with their parent section.
-Fixes: Tithi 2nd value, Nakshatra 2nd value, Durmuhurtam 2nd slot.
+scraper.py — Content-aware parsing.
+The website interleaves continuation rows. We use content knowledge:
+- Tithi 2nd value = a Tithi name (not a time range)
+- Nakshatra 2nd value = a Nakshatra name  
+- Durmuhurtam 2nd value = a time range belonging to Durmuhurtam
+
+Known Tithi names and Nakshatra names for classification.
+For timings: empty-key time rows → go to the PREVIOUS timing section.
 """
 
 import json, re, sys, time, os
@@ -14,6 +19,36 @@ CITIES = {
     "California": {"display": "Los Angeles, CA", "timezone": "America/Los_Angeles", "tz_label": "PT", "geoname_id": "5368361"},
     "Michigan":   {"display": "Detroit, MI",     "timezone": "America/Detroit",     "tz_label": "ET", "geoname_id": "4990729"},
 }
+
+TITHI_NAMES = {
+    "prathama","dwitiya","tritiya","chaturthi","panchami","shashthi","saptami",
+    "ashtami","navami","dashami","ekadashi","dwadashi","trayodashi","chaturdashi",
+    "purnima","amavasya","pratipada","dvitiya","tritiya",
+}
+
+NAKSHATRA_NAMES = {
+    "ashwini","bharani","krittika","rohini","mrigashira","ardra","punarvasu",
+    "pushya","ashlesha","magha","purva phalguni","uttara phalguni","hasta","chitra",
+    "swati","vishakha","anuradha","jyeshtha","mula","purva ashadha","uttara ashadha",
+    "shravana","dhanishtha","shatabhisha","purva bhadrapada","uttara bhadrapada","revati",
+}
+
+KARANA_NAMES = {
+    "bava","balava","kaulava","taitila","garaja","vanija","vishti","bhadra",
+    "shakuni","chatushpada","naga","kimstughna","kimsthughna","variyana",
+}
+
+YOGA_NAMES = {
+    "vishkambha","priti","ayushman","saubhagya","shobhana","atiganda","sukarman",
+    "dhriti","shula","ganda","vriddhi","dhruva","vyaghata","harshana","vajra",
+    "siddhi","vyatipata","variyana","parigha","shiva","siddha","sadhya","shubha",
+    "shukla","brahma","indra","vaidhriti",
+}
+
+
+def is_name_only(text):
+    """True if text is just a celestial name with no time range."""
+    return bool(extract_times(text) == [] and text.strip())
 
 
 def get_driver():
@@ -79,51 +114,114 @@ def fmt_all_slots(times, tz_label):
     return (" | ".join(slots) + f" {tz_label}") if slots else "N/A"
 
 
+def classify_empty_val(val, raw_pairs, idx):
+    """
+    For an empty-key row, figure out which section it truly belongs to.
+    Look backward to find the nearest named key.
+    Look at content: if it's a time range, it belongs to the nearest TIMING section before it.
+    If it's a name-only value, it belongs to the nearest NAME section (Tithi/Nakshatra/etc).
+    """
+    val_low = val.strip().lower()
+    has_time = bool(extract_times(val))
+
+    # Walk backward to find named keys
+    named_keys_before = []
+    for j in range(idx - 1, -1, -1):
+        if raw_pairs[j][0]:  # non-empty key
+            named_keys_before.append((j, raw_pairs[j][0]))
+            if len(named_keys_before) >= 5:
+                break
+
+    # If val has time → belongs to most recent TIMING key
+    timing_keys = {"rahu kalam", "dur muhurtam", "gulikai kalam", "gulika kalam",
+                   "yamaganda", "varjyam", "amrit kalam", "abhijit", "brahma muhurta",
+                   "vijaya muhurta", "godhuli muhurta", "pratah sandhya", "sayahna sandhya",
+                   "nishita muhurta", "ganda moola", "aadal yoga", "baana"}
+
+    panchang_name_keys = {"tithi", "nakshatra", "yoga", "karana", "weekday"}
+
+    if has_time:
+        for j, k in named_keys_before:
+            if k.lower() in timing_keys:
+                return k
+        # fallback: most recent named key
+        return named_keys_before[0][1] if named_keys_before else None
+    else:
+        # Name-only: check if it matches a known Tithi/Nakshatra name
+        for j, k in named_keys_before:
+            if k.lower() in panchang_name_keys:
+                # Check if val matches the type expected for this key
+                if k.lower() == "tithi" and any(t in val_low for t in TITHI_NAMES):
+                    return k
+                if k.lower() == "nakshatra" and any(n in val_low for n in NAKSHATRA_NAMES):
+                    return k
+                if k.lower() == "yoga" and any(y in val_low for y in YOGA_NAMES):
+                    return k
+                if k.lower() == "karana" and any(c in val_low for c in KARANA_NAMES):
+                    return k
+                if k.lower() == "weekday":
+                    return k
+        # fallback: immediate previous named key
+        return named_keys_before[0][1] if named_keys_before else None
+
+
 def parse_panchang(html, ref_date, city_key):
     from bs4 import BeautifulSoup
     soup     = BeautifulSoup(html, "html.parser")
     city     = CITIES[city_key]
     tz_label = city["tz_label"]
 
-    # ── The working selector: dpTableKey / dpTableValue ──────────
-    keys_els   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
-    values_els = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
-    raw = [(re.sub(r'\s*ⓘ\s*','',k.get_text(strip=True)),
-            re.sub(r'\s*ⓘ\s*','',v.get_text(separator=" ", strip=True)))
-           for k, v in zip(keys_els, values_els)]
+    def clean(el):
+        return re.sub(r'\s*ⓘ\s*', '', el.get_text(separator=" ", strip=True)).strip()
+
+    keys_els   = soup.find_all(class_=re.compile(r'\bdpTableKey\b',   re.I))
+    values_els = soup.find_all(class_=re.compile(r'\bdpTableValue\b', re.I))
+    raw = [(clean(k), clean(v)) for k, v in zip(keys_els, values_els)]
 
     print(f"[scraper] {city['display']}: {len(raw)} pairs found")
 
-    # ── Group empty-key rows under their parent section ──────────
-    # sections = list of {"label": str, "vals": [str, ...]}
-    sections = []
-    cur = None
-    for kt, vt in raw:
-        if kt:                          # named key → new section
-            cur = {"label": kt, "vals": [vt] if vt else []}
-            sections.append(cur)
-        else:                           # empty key → continuation of cur
-            if cur is not None and vt:
-                cur["vals"].append(vt)
+    # ── Smart grouping ────────────────────────────────────────────
+    sections = {}
+    order    = []
+
+    for idx, (kt, vt) in enumerate(raw):
+        if kt:
+            # Named key → new section
+            if kt not in sections:
+                sections[kt] = [vt] if vt else []
+                order.append(kt)
+            else:
+                if vt:
+                    sections[kt].append(vt)
+        else:
+            # Empty key → classify by content
+            if not vt:
+                continue
+            owner = classify_empty_val(vt, raw, idx)
+            if owner and owner in sections:
+                sections[owner].append(vt)
+            elif owner:
+                sections[owner] = [vt]
+                order.append(owner)
 
     print(f"[scraper] {len(sections)} sections parsed:")
-    for sec in sections:
-        print(f"  [{sec['label']}] => {sec['vals']}")
+    for k in order[:35]:
+        print(f"  [{k}] => {sections[k]}")
 
-    # ── Lookup helpers ───────────────────────────────────────────
+    # ── Helpers ───────────────────────────────────────────────────
     def find_sec(*labels):
         for label in labels:
             ll = label.lower()
-            for sec in sections:
-                if ll in sec["label"].lower():
-                    return sec
+            for k in order:
+                if ll in k.lower():
+                    return sections[k]
         return None
 
-    def all_times(sec):
-        if not sec:
+    def all_times(vals):
+        if not vals:
             return []
         t = []
-        for v in sec["vals"]:
+        for v in vals:
             t.extend(extract_times(v))
         return t
 
@@ -131,12 +229,11 @@ def parse_panchang(html, ref_date, city_key):
         return fmt_all_slots(all_times(find_sec(*labels)), tz_label)
 
     def fmt_transition(*labels):
-        """Tithi/Nakshatra: 'Name1 upto HH:MM TZ → Name2'"""
-        sec = find_sec(*labels)
-        if not sec or not sec["vals"]:
+        vals = find_sec(*labels)
+        if not vals:
             return "N/A"
         parts = []
-        for v in sec["vals"]:
+        for v in vals:
             times = extract_times(v)
             if times:
                 name = re.split(r'\bupto\b', v, flags=re.I)[0].strip()
@@ -146,10 +243,10 @@ def parse_panchang(html, ref_date, city_key):
         return " → ".join(parts) if parts else "N/A"
 
     def fmt_simple(*labels):
-        sec = find_sec(*labels)
-        return sec["vals"][0] if sec and sec["vals"] else "N/A"
+        vals = find_sec(*labels)
+        return vals[0] if vals else "N/A"
 
-    # ── Build data dict ──────────────────────────────────────────
+    # ── Build output ──────────────────────────────────────────────
     data = {
         "date":     ref_date.isoformat(),
         "weekday":  ref_date.strftime("%A"),
