@@ -1,12 +1,7 @@
 """
-scraper.py — Card-based parsing matching the actual Drikpanchang DOM structure.
-
-Each panchang item is a dpCardRow containing:
-  - dpElementInfoPopupWrapper  → contains the timing text (e.g. "Navami upto 08:58 PM")
-  - dpKey span(s)              → contains next value (e.g. "Dashami", "Purva Ashadha")
-  - dpFlexWrap                 → contains secondary time slots (e.g. 2nd Durmuhurtam slot)
-
-Section headings come from dpSectionTitle or dpCardTitle divs.
+scraper.py — Uses dpTableKey/dpTableValue (102 pairs). 
+Groups empty-key continuation rows with their parent section.
+Fixes: Tithi 2nd value, Nakshatra 2nd value, Durmuhurtam 2nd slot.
 """
 
 import json, re, sys, time, os
@@ -38,12 +33,13 @@ def get_driver():
                 driver = webdriver.Chrome(service=Service(path), options=opts)
                 print(f"[scraper] chromedriver: {path}")
                 return driver
-            except: continue
+            except:
+                continue
     from webdriver_manager.chrome import ChromeDriverManager
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=opts)
 
 
-def fetch_html(url, driver):
+def fetch_html(url, driver, city_display):
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
@@ -74,8 +70,7 @@ def clean_time(t):
         return t.strip()
 
 
-def fmt_slots(times, tz_label):
-    """Pairs of times → 'HH:MM AM – HH:MM PM | HH:MM PM – HH:MM PM TZ'"""
+def fmt_all_slots(times, tz_label):
     slots = []
     for i in range(0, len(times) - 1, 2):
         slots.append(f"{clean_time(times[i])} – {clean_time(times[i+1])}")
@@ -84,114 +79,77 @@ def fmt_slots(times, tz_label):
     return (" | ".join(slots) + f" {tz_label}") if slots else "N/A"
 
 
-def t(el):
-    return el.get_text(" ", strip=True)
-
-
 def parse_panchang(html, ref_date, city_key):
     from bs4 import BeautifulSoup
     soup     = BeautifulSoup(html, "html.parser")
     city     = CITIES[city_key]
     tz_label = city["tz_label"]
 
-    # ── Strategy: find each dpCardRow, extract label + all values ──
-    # Each dpCardRow typically has:
-    #   dpTableKey  = label  (e.g. "Tithi", "Rahu Kalam")
-    #   dpTableValue = primary value (e.g. "Navami upto 08:58 PM")
-    #   dpKey span  = next value / overflow (e.g. "Dashami", "Purva Ashadha")
-    #   dpFlexWrap  = second time rows for multi-slot items
+    # ── The working selector: dpTableKey / dpTableValue ──────────
+    keys_els   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
+    values_els = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
+    raw = [(re.sub(r'\s*ⓘ\s*','',k.get_text(strip=True)),
+            re.sub(r'\s*ⓘ\s*','',v.get_text(separator=" ", strip=True)))
+           for k, v in zip(keys_els, values_els)]
 
-    card_rows = soup.find_all(class_=re.compile(r'\bdpCardRow\b'))
-    print(f"[scraper] {city['display']}: {len(card_rows)} dpCardRow elements")
+    print(f"[scraper] {city['display']}: {len(raw)} pairs found")
 
-    sections = {}  # label_lower -> {"label": str, "primary": str, "extra_names": [str], "extra_times": [str]}
+    # ── Group empty-key rows under their parent section ──────────
+    # sections = list of {"label": str, "vals": [str, ...]}
+    sections = []
+    cur = None
+    for kt, vt in raw:
+        if kt:                          # named key → new section
+            cur = {"label": kt, "vals": [vt] if vt else []}
+            sections.append(cur)
+        else:                           # empty key → continuation of cur
+            if cur is not None and vt:
+                cur["vals"].append(vt)
 
-    for row in card_rows:
-        # Key
-        key_el = row.find(class_=re.compile(r'\bdpTableKey\b'))
-        val_el = row.find(class_=re.compile(r'\bdpTableValue\b'))
-        if not key_el or not val_el:
-            continue
-
-        label     = key_el.get_text(strip=True).strip()
-        label_key = label.lower()
-        if not label_key:
-            continue
-
-        primary   = val_el.get_text(" ", strip=True)
-
-        # Extra names from dpKey spans (e.g. "Dashami", "Purva Ashadha")
-        extra_names = []
-        for dpkey in row.find_all(class_=re.compile(r'\bdpKey\b')):
-            txt = dpkey.get_text(" ", strip=True)
-            if txt:
-                extra_names.append(txt)
-
-        # Extra time rows from dpFlexWrap (2nd/3rd time slots for Durmuhurtam, Varjyam etc.)
-        extra_times_raw = []
-        for fw in row.find_all(class_=re.compile(r'\bdpFlexWrap\b')):
-            txt = fw.get_text(" ", strip=True)
-            if txt:
-                extra_times_raw.append(txt)
-
-        sections[label_key] = {
-            "label":       label,
-            "primary":     primary,
-            "extra_names": extra_names,
-            "extra_times": extra_times_raw,
-        }
-
-    # Print all sections for debug
     print(f"[scraper] {len(sections)} sections parsed:")
-    for k, v in sections.items():
-        print(f"  [{v['label']}] primary='{v['primary']}' | names={v['extra_names']} | extra_times={v['extra_times']}")
+    for sec in sections:
+        print(f"  [{sec['label']}] => {sec['vals']}")
 
-    # ── Lookup helpers ──────────────────────────────────────────
-    def find(*labels):
-        for lbl in labels:
-            for k, v in sections.items():
-                if lbl.lower() in k:
-                    return v
+    # ── Lookup helpers ───────────────────────────────────────────
+    def find_sec(*labels):
+        for label in labels:
+            ll = label.lower()
+            for sec in sections:
+                if ll in sec["label"].lower():
+                    return sec
         return None
 
-    def fmt_transition(*labels):
-        """Name upto TIME TZ → NextName"""
-        sec = find(*labels)
+    def all_times(sec):
         if not sec:
-            return "N/A"
-        parts = []
-        primary = sec["primary"]
-        times = extract_times(primary)
-        if times:
-            name = re.split(r'\bupto\b', primary, flags=re.I)[0].strip()
-            parts.append(f"{name} upto {clean_time(times[0])} {tz_label}")
-        elif primary.strip():
-            parts.append(primary.strip())
-        for name in sec["extra_names"]:
-            if name.strip():
-                parts.append(name.strip())
-        return " → ".join(parts) if parts else "N/A"
+            return []
+        t = []
+        for v in sec["vals"]:
+            t.extend(extract_times(v))
+        return t
 
     def fmt_timing(*labels):
-        """Collect ALL times from primary + extra_times rows → slot format"""
-        sec = find(*labels)
-        if not sec:
+        return fmt_all_slots(all_times(find_sec(*labels)), tz_label)
+
+    def fmt_transition(*labels):
+        """Tithi/Nakshatra: 'Name1 upto HH:MM TZ → Name2'"""
+        sec = find_sec(*labels)
+        if not sec or not sec["vals"]:
             return "N/A"
-        all_times = []
-        # Primary row times
-        all_times.extend(extract_times(sec["primary"]))
-        # Extra time rows (2nd slot, 3rd slot, etc.)
-        for row_txt in sec["extra_times"]:
-            all_times.extend(extract_times(row_txt))
-        return fmt_slots(all_times, tz_label) if all_times else "N/A"
+        parts = []
+        for v in sec["vals"]:
+            times = extract_times(v)
+            if times:
+                name = re.split(r'\bupto\b', v, flags=re.I)[0].strip()
+                parts.append(f"{name} upto {clean_time(times[0])} {tz_label}")
+            elif v.strip():
+                parts.append(v.strip())
+        return " → ".join(parts) if parts else "N/A"
 
     def fmt_simple(*labels):
-        sec = find(*labels)
-        if not sec:
-            return "N/A"
-        return sec["primary"].strip() or "N/A"
+        sec = find_sec(*labels)
+        return sec["vals"][0] if sec and sec["vals"] else "N/A"
 
-    # ── Build output ────────────────────────────────────────────
+    # ── Build data dict ──────────────────────────────────────────
     data = {
         "date":     ref_date.isoformat(),
         "weekday":  ref_date.strftime("%A"),
@@ -201,36 +159,34 @@ def parse_panchang(html, ref_date, city_key):
         "tz_label": tz_label,
     }
 
-    data["tithi"]           = fmt_transition("tithi")
-    data["nakshatra"]       = fmt_transition("nakshatra")
-    data["yoga"]            = fmt_transition("yoga")
-    data["karana"]          = fmt_transition("karana")
-    data["paksha"]          = fmt_simple("paksha")
+    data["tithi"]           = fmt_transition("Tithi")
+    data["nakshatra"]       = fmt_transition("Nakshatra")
+    data["yoga"]            = fmt_transition("Yoga")
+    data["karana"]          = fmt_transition("Karana")
+    data["paksha"]          = fmt_simple("Paksha")
 
-    data["rahukaal"]        = fmt_timing("rahu kalam", "rahukaal")
-    data["gulika"]          = fmt_timing("gulikai", "gulika")
-    data["yamagandam"]      = fmt_timing("yamaganda")
-    data["durmuhurtam"]     = fmt_timing("dur muhurtam", "durmuhurtam")
-    data["varjyam"]         = fmt_timing("varjyam")
+    data["rahukaal"]        = fmt_timing("Rahu Kalam")
+    data["gulika"]          = fmt_timing("Gulikai Kalam", "Gulika Kalam")
+    data["yamagandam"]      = fmt_timing("Yamaganda")
+    data["durmuhurtam"]     = fmt_timing("Dur Muhurtam")
+    data["varjyam"]         = fmt_timing("Varjyam")
 
-    data["abhijit"]         = fmt_timing("abhijit")
-    data["amrit_kalam"]     = fmt_timing("amrit kalam")
-    data["brahma_muhurta"]  = fmt_timing("brahma muhurta")
-    data["vijaya_muhurta"]  = fmt_timing("vijaya muhurta")
-    data["godhuli_muhurta"] = fmt_timing("godhuli")
-    data["pratah_sandhya"]  = fmt_timing("pratah sandhya")
-    data["sayahna_sandhya"] = fmt_timing("sayahna sandhya")
-    data["nishita_muhurta"] = fmt_timing("nishita muhurta")
+    data["abhijit"]         = fmt_timing("Abhijit")
+    data["amrit_kalam"]     = fmt_timing("Amrit Kalam")
+    data["brahma_muhurta"]  = fmt_timing("Brahma Muhurta")
+    data["vijaya_muhurta"]  = fmt_timing("Vijaya Muhurta")
+    data["godhuli_muhurta"] = fmt_timing("Godhuli Muhurta")
+    data["pratah_sandhya"]  = fmt_timing("Pratah Sandhya")
+    data["sayahna_sandhya"] = fmt_timing("Sayahna Sandhya")
+    data["nishita_muhurta"] = fmt_timing("Nishita Muhurta")
 
-    data["sunrise"]         = fmt_timing("sunrise")
-    data["sunset"]          = fmt_timing("sunset")
-    data["moonrise"]        = fmt_timing("moonrise")
-    data["moonset"]         = fmt_timing("moonset")
+    data["sunrise"]         = fmt_timing("Sunrise")
+    data["sunset"]          = fmt_timing("Sunset")
+    data["moonrise"]        = fmt_timing("Moonrise")
+    data["moonset"]         = fmt_timing("Moonset")
 
     print(f"     Tithi:       {data['tithi']}")
     print(f"     Nakshatra:   {data['nakshatra']}")
-    print(f"     Yoga:        {data['yoga']}")
-    print(f"     Karana:      {data['karana']}")
     print(f"     Rahukaal:    {data['rahukaal']}")
     print(f"     Durmuhurtam: {data['durmuhurtam']}")
     print(f"     Amrit Kalam: {data['amrit_kalam']}")
@@ -250,7 +206,7 @@ def run(target_date=None, city_key="New_York", driver=None):
     if own_driver:
         driver = get_driver()
     try:
-        html = fetch_html(url, driver)
+        html = fetch_html(url, driver, city["display"])
         return parse_panchang(html, target_date, city_key)
     finally:
         if own_driver:
