@@ -1,6 +1,5 @@
 """
-scraper.py — Fixed parsing: Tithi gets both values, Nakshatra gets both values,
-Durmuhurtam gets both time slots. Empty-key rows belong to the PREVIOUS named key.
+scraper.py — Index-based parsing. Groups consecutive empty-key rows with their parent.
 """
 
 import json, re, sys, time, os
@@ -61,119 +60,33 @@ def extract_times(text):
 
 
 def clean_time(t):
-    t = t.strip().upper().replace(" ", "")
+    t = t.strip().upper().replace(" ","")
     try:
         return datetime.strptime(t, "%I:%M%p").strftime("%I:%M %p")
     except:
-        return t.strip()
+        return t
 
 
-def fmt_range(times, tz_label):
-    """Format one time range: start – end TZ"""
-    if len(times) >= 2:
-        return f"{clean_time(times[0])} – {clean_time(times[1])} {tz_label}"
-    elif len(times) == 1:
-        return f"{clean_time(times[0])} {tz_label}"
-    return "N/A"
-
-
-def fmt_all_slots(all_times, tz_label):
-    """Format multiple time ranges (pairs of times) joined by ' | '"""
+def fmt_all_slots(times, tz_label):
     slots = []
-    for i in range(0, len(all_times) - 1, 2):
-        s = clean_time(all_times[i])
-        e = clean_time(all_times[i + 1])
-        slots.append(f"{s} – {e}")
-    if not slots:
-        return "N/A"
-    return " | ".join(slots) + f" {tz_label}"
+    for i in range(0, len(times)-1, 2):
+        slots.append(f"{clean_time(times[i])} – {clean_time(times[i+1])}")
+    if len(times) % 2 == 1:
+        slots.append(clean_time(times[-1]))
+    return (" | ".join(slots) + f" {tz_label}") if slots else "N/A"
 
 
-def clean_val(v):
-    """Remove ⓘ and trailing junk."""
+def strip_info(v):
     return re.sub(r'\s*ⓘ\s*', '', v).strip()
 
 
-def build_sections(pairs):
-    """
-    Convert flat (key, value) pairs into sections.
-    Each section = {label: str, rows: [str]}
-    Empty-key rows belong to the most recent non-empty key.
-
-    Example raw pairs for Tithi:
-      ('Tithi', 'Navami upto 08:58 PM')
-      ('',      'Dashami')             ← continuation of Tithi
-      ('Nakshatra', 'Mula upto 03:13 PM')
-      ('',      'Purva Ashadha')       ← continuation of Nakshatra
-    """
-    sections = []
-    current  = None
-    for key, val in pairs:
-        key_c = clean_val(key)
-        val_c = clean_val(val)
-        if key_c:
-            # New named section
-            current = {"label": key_c, "rows": [val_c] if val_c else []}
-            sections.append(current)
-        else:
-            # Empty key = continuation of previous section
-            if current is not None and val_c:
-                current["rows"].append(val_c)
-    return sections
-
-
-def find_section(sections, *labels):
-    """Find the first section whose label matches any of the given labels."""
-    for label in labels:
-        ll = label.lower()
-        for sec in sections:
-            if ll in sec["label"].lower():
-                return sec
-    return None
-
-
-def fmt_tithi_like(sec, tz_label):
-    """
-    Format Tithi or Nakshatra which have rows like:
-      row 0: "Navami upto 08:58 PM"
-      row 1: "Dashami"            ← next tithi, no time
-    Output: "Navami upto 08:58 PM ET → Dashami"
-    """
-    if not sec or not sec["rows"]:
-        return "N/A"
-    parts = []
-    for row in sec["rows"]:
-        times = extract_times(row)
-        if times:
-            name = re.split(r'upto', row, flags=re.I)[0].strip()
-            t    = clean_time(times[0])
-            parts.append(f"{name} upto {t} {tz_label}")
-        elif row.strip():
-            parts.append(row.strip())
-    return " → ".join(parts) if parts else "N/A"
-
-
-def fmt_timing(sec, tz_label):
-    """
-    Format a timing section — collect ALL times across ALL rows.
-    E.g. Durmuhurtam:
-      row 0: "11:08 AM to 11:55 AM"
-      row 1: "03:51 PM to 04:38 PM"   ← second slot
-    Output: "11:08 AM – 11:55 AM | 03:51 PM – 04:38 PM ET"
-    """
-    if not sec:
-        return "N/A"
-    all_times = []
-    for row in sec["rows"]:
-        all_times.extend(extract_times(row))
-    return fmt_all_slots(all_times, tz_label) if all_times else "N/A"
-
-
-def fmt_simple(sec):
-    """Return first non-empty row as plain text."""
-    if not sec or not sec["rows"]:
-        return "N/A"
-    return sec["rows"][0].strip() or "N/A"
+def add_spaces(v):
+    """Fix jammed text like 'Navamiupto08:58PM' → 'Navami upto 08:58 PM'"""
+    v = re.sub(r'([a-zA-Z])(\d)', r'\1 \2', v)
+    v = re.sub(r'(\d)(AM|PM)', r'\1 \2', v, flags=re.I)
+    v = re.sub(r'(upto)([A-Z])', r'\1 \2', v, flags=re.I)
+    v = re.sub(r'([a-z])(upto)', r'\1 \2', v, flags=re.I)
+    return v.strip()
 
 
 def parse_panchang(html, ref_date, city_key):
@@ -182,20 +95,83 @@ def parse_panchang(html, ref_date, city_key):
     city     = CITIES[city_key]
     tz_label = city["tz_label"]
 
-    # Build raw pairs list
     keys_els   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
     values_els = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
-    pairs = [(k.get_text(strip=True), v.get_text(separator=" ", strip=True))
-             for k, v in zip(keys_els, values_els)]
 
-    # Build structured sections
-    sections = build_sections(pairs)
-    print(f"[scraper] {city['display']}: {len(pairs)} pairs, {len(sections)} sections")
+    # Raw pairs with cleaned values
+    raw = []
+    for k, v in zip(keys_els, values_els):
+        kt = strip_info(k.get_text(strip=True))
+        vt = add_spaces(strip_info(v.get_text(separator=" ", strip=True)))
+        raw.append((kt, vt))
 
-    # Debug first 30 sections
-    for sec in sections[:30]:
-        print(f"  SEC '{sec['label']}' => {sec['rows'][:3]}")
+    print(f"[scraper] {city['display']}: {len(raw)} raw pairs")
 
+    # ── Build grouped sections ───────────────────────────────────
+    # Walk through raw pairs. When we see a non-empty key, start a new section.
+    # When we see an empty key, append its value to the CURRENT section's extras.
+    # Result: list of {"label": str, "vals": [str, str, ...]}
+    sections = []
+    cur = None
+    for kt, vt in raw:
+        if kt:  # named key → new section
+            cur = {"label": kt, "vals": [vt] if vt else []}
+            sections.append(cur)
+        else:   # empty key → continuation
+            if cur is not None and vt:
+                cur["vals"].append(vt)
+
+    # Print ALL sections for debug
+    print(f"[scraper] {len(sections)} sections:")
+    for sec in sections:
+        print(f"  [{sec['label']}] => {sec['vals']}")
+
+    # ── Lookup helpers ───────────────────────────────────────────
+    def find_sec(*labels):
+        for label in labels:
+            ll = label.lower()
+            for sec in sections:
+                if ll in sec["label"].lower():
+                    return sec
+        return None
+
+    def all_times_in_sec(sec):
+        if not sec:
+            return []
+        times = []
+        for v in sec["vals"]:
+            times.extend(extract_times(v))
+        return times
+
+    def fmt_timing(*labels):
+        sec = find_sec(*labels)
+        times = all_times_in_sec(sec)
+        return fmt_all_slots(times, tz_label) if times else "N/A"
+
+    def fmt_transition(*labels):
+        """For Tithi/Nakshatra: 'Name1 upto HH:MM TZ → Name2'"""
+        sec = find_sec(*labels)
+        if not sec or not sec["vals"]:
+            return "N/A"
+        parts = []
+        for v in sec["vals"]:
+            times = extract_times(v)
+            if times:
+                # Extract name before 'upto'
+                name = re.split(r'\bupto\b', v, flags=re.I)[0].strip()
+                t    = clean_time(times[0])
+                parts.append(f"{name} upto {t} {tz_label}")
+            elif v.strip():
+                parts.append(v.strip())
+        return " → ".join(parts) if parts else "N/A"
+
+    def fmt_simple(*labels):
+        sec = find_sec(*labels)
+        if not sec or not sec["vals"]:
+            return "N/A"
+        return sec["vals"][0]
+
+    # ── Build output ─────────────────────────────────────────────
     data = {
         "date":     ref_date.isoformat(),
         "weekday":  ref_date.strftime("%A"),
@@ -205,43 +181,39 @@ def parse_panchang(html, ref_date, city_key):
         "tz_label": tz_label,
     }
 
-    # ── Panchang basics ──────────────────────────────────────────
-    data["tithi"]     = fmt_tithi_like(find_section(sections, "Tithi"),     tz_label)
-    data["nakshatra"] = fmt_tithi_like(find_section(sections, "Nakshatra"), tz_label)
-    data["yoga"]      = fmt_tithi_like(find_section(sections, "Yoga"),      tz_label)
-    data["karana"]    = fmt_tithi_like(find_section(sections, "Karana"),    tz_label)
-    data["paksha"]    = fmt_simple(find_section(sections, "Paksha"))
+    data["tithi"]           = fmt_transition("Tithi")
+    data["nakshatra"]       = fmt_transition("Nakshatra")
+    data["yoga"]            = fmt_transition("Yoga")
+    data["karana"]          = fmt_transition("Karana")
+    data["paksha"]          = fmt_simple("Paksha")
 
-    # ── Inauspicious timings ─────────────────────────────────────
-    data["rahukaal"]    = fmt_timing(find_section(sections, "Rahu Kalam"),    tz_label)
-    data["gulika"]      = fmt_timing(find_section(sections, "Gulikai Kalam"), tz_label)
-    data["yamagandam"]  = fmt_timing(find_section(sections, "Yamaganda"),     tz_label)
-    data["durmuhurtam"] = fmt_timing(find_section(sections, "Dur Muhurtam"),  tz_label)  # 2 slots
-    data["varjyam"]     = fmt_timing(find_section(sections, "Varjyam"),       tz_label)  # 2 slots
+    data["rahukaal"]        = fmt_timing("Rahu Kalam")
+    data["gulika"]          = fmt_timing("Gulikai Kalam", "Gulika Kalam")
+    data["yamagandam"]      = fmt_timing("Yamaganda")
+    data["durmuhurtam"]     = fmt_timing("Dur Muhurtam")
+    data["varjyam"]         = fmt_timing("Varjyam")
 
-    # ── Auspicious timings ───────────────────────────────────────
-    data["abhijit"]         = fmt_timing(find_section(sections, "Abhijit"),         tz_label)
-    data["amrit_kalam"]     = fmt_timing(find_section(sections, "Amrit Kalam"),     tz_label)
-    data["brahma_muhurta"]  = fmt_timing(find_section(sections, "Brahma Muhurta"),  tz_label)
-    data["vijaya_muhurta"]  = fmt_timing(find_section(sections, "Vijaya Muhurta"),  tz_label)
-    data["godhuli_muhurta"] = fmt_timing(find_section(sections, "Godhuli Muhurta"), tz_label)
-    data["pratah_sandhya"]  = fmt_timing(find_section(sections, "Pratah Sandhya"),  tz_label)
-    data["sayahna_sandhya"] = fmt_timing(find_section(sections, "Sayahna Sandhya"), tz_label)
-    data["nishita_muhurta"] = fmt_timing(find_section(sections, "Nishita Muhurta"), tz_label)
+    data["abhijit"]         = fmt_timing("Abhijit")
+    data["amrit_kalam"]     = fmt_timing("Amrit Kalam")
+    data["brahma_muhurta"]  = fmt_timing("Brahma Muhurta")
+    data["vijaya_muhurta"]  = fmt_timing("Vijaya Muhurta")
+    data["godhuli_muhurta"] = fmt_timing("Godhuli Muhurta")
+    data["pratah_sandhya"]  = fmt_timing("Pratah Sandhya")
+    data["sayahna_sandhya"] = fmt_timing("Sayahna Sandhya")
+    data["nishita_muhurta"] = fmt_timing("Nishita Muhurta")
 
-    # ── Sun / Moon ───────────────────────────────────────────────
-    data["sunrise"]  = fmt_timing(find_section(sections, "Sunrise"),  tz_label)
-    data["sunset"]   = fmt_timing(find_section(sections, "Sunset"),   tz_label)
-    data["moonrise"] = fmt_timing(find_section(sections, "Moonrise"), tz_label)
-    data["moonset"]  = fmt_timing(find_section(sections, "Moonset"),  tz_label)
+    data["sunrise"]         = fmt_timing("Sunrise")
+    data["sunset"]          = fmt_timing("Sunset")
+    data["moonrise"]        = fmt_timing("Moonrise")
+    data["moonset"]         = fmt_timing("Moonset")
 
-    print(f"     Tithi:       {data['tithi']}")
-    print(f"     Nakshatra:   {data['nakshatra']}")
-    print(f"     Rahukaal:    {data['rahukaal']}")
-    print(f"     Durmuhurtam: {data['durmuhurtam']}")
-    print(f"     Amrit Kalam: {data['amrit_kalam']}")
-    print(f"     Abhijit:     {data['abhijit']}")
-    print(f"     Sunrise:     {data['sunrise']}")
+    print(f"  Tithi:       {data['tithi']}")
+    print(f"  Nakshatra:   {data['nakshatra']}")
+    print(f"  Rahukaal:    {data['rahukaal']}")
+    print(f"  Durmuhurtam: {data['durmuhurtam']}")
+    print(f"  Amrit Kalam: {data['amrit_kalam']}")
+    print(f"  Abhijit:     {data['abhijit']}")
+    print(f"  Sunrise:     {data['sunrise']}")
 
     return data
 
