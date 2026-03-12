@@ -137,11 +137,16 @@ def generate_with_gtts(text: str, output_path: str) -> bool:
         return False
 
 
-def generate_voice(script: str, output_path: str) -> str:
+def generate_voice(script, output_path: str) -> str:
     """
     Generate voice audio. Returns path to audio file or None.
+    Accepts script as string OR dict (uses full_narration key).
     Priority: ElevenLabs → gTTS Telugu
     """
+    # Handle dict input from script_generator
+    if isinstance(script, dict):
+        script = script.get("full_narration", script.get("title", str(script)))
+    script = str(script).strip()
     print(f"  🎙️  Generating voice ({len(script)} chars)...")
 
     # Try ElevenLabs first
