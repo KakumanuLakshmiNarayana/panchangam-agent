@@ -1,22 +1,15 @@
 """
-scraper.py — Fixed: Durmuhurtam 2nd slot correctly assigned.
-Key insight from debug logs:
-  Raw pairs order around Durmuhurtam:
-    KEY='Dur Muhurtam'   VAL='11:08 AM to 11:55 AM'
-    KEY='Gulikai Kalam'  VAL='10:09 AM to 11:38 AM'
-    KEY=''               VAL='03:51 PM to 04:38 PM'  ← actually Durmuhurtam slot 2
+scraper.py — Correct block parsing.
+Empty rows after a named block map to the LAST N named rows of that block.
 
-The website puts continuation rows AFTER the NEXT named key.
-Fix: track a "pending continuation" queue per section index.
-Each empty-key row belongs to the section that is (index - 1) positions back,
-not the immediately previous named key.
+Verified pattern from logs:
+  [Sunrise, Sunset, Moonrise, Moonset, Tithi, Nakshatra] then [empty='Dashami', empty='Purva Ashadha']
+  → empty[0]='Dashami'      → Tithi      (last-2 of named block)
+  → empty[1]='Purva Ashadha'→ Nakshatra  (last-1 of named block)
 
-Actual pattern (verified from logs):
-  Tithi row, Nakshatra row, [Tithi cont], [Nakshatra cont]
-  DurMuhurtam row, GulikaiKalam row, [DurMuhurtam cont], [GulikaiKalam cont]
-
-So empty rows at position N belong to the named section that was N positions ago
-in the sequence of named keys, counted from the last named key.
+  [DurMuhurtam, GulikaiKalam] then [empty='03:51 PM...', empty='Gulika2nd']
+  → empty[0] → DurMuhurtam  (last-2)
+  → empty[1] → GulikaiKalam (last-1)
 """
 
 import json, re, sys, time, os
@@ -109,92 +102,54 @@ def parse_panchang(html, ref_date, city_key):
 
     print(f"[scraper] {city['display']}: {len(raw)} pairs found")
 
-    # ── Two-pass parsing ──────────────────────────────────────────
-    # Pass 1: identify named rows and empty rows, record their positions
-    named_rows = []   # list of (position, key, val)
-    empty_rows = []   # list of (position, val)
-
-    for i, (kt, vt) in enumerate(raw):
-        if kt:
-            named_rows.append((i, kt, vt))
-        else:
-            if vt:
-                empty_rows.append((i, vt))
-
-    # Pass 2: for each empty row, find its true owner.
-    # Pattern: empty rows appear AFTER the block they extend.
-    # Specifically, each empty row at position P belongs to the named row
-    # whose position is IMMEDIATELY before P, going backwards through ALL rows
-    # (named + empty), but skipping other empty rows that came between.
-    # 
-    # BUT the tricky case: in the sequence
-    #   pos=4  Tithi      val='Navami...'
-    #   pos=5  Nakshatra  val='Mula...'
-    #   pos=6  (empty)    val='Dashami'       ← belongs to Tithi (pos 4)
-    #   pos=7  (empty)    val='Purva Ashadha' ← belongs to Nakshatra (pos 5)
-    #
-    # And similarly:
-    #   pos=N   DurMuhurtam   val='11:08...'
-    #   pos=N+1 GulikaiKalam  val='10:09...'
-    #   pos=N+2 (empty)       val='03:51...'  ← belongs to DurMuhurtam (pos N)
-    #   pos=N+3 (empty)       val='Gulika2nd' ← belongs to GulikaiKalam (pos N+1)
-    #
-    # The pattern: consecutive empty rows after a block of named rows
-    # map 1-to-1 backwards to the named rows in REVERSE order.
-    # i.e., the LAST empty row maps to the LAST named row before the block,
-    # and the FIRST empty row maps to the FIRST named row before the block... 
-    # Wait, let me re-examine:
-    #   pos=4  Tithi      ← named[0] in block
-    #   pos=5  Nakshatra  ← named[1] in block  
-    #   pos=6  empty='Dashami'       ← should go to Tithi (named[0])
-    #   pos=7  empty='Purva Ashadha' ← should go to Nakshatra (named[1])
-    # So empty[0] → named[0], empty[1] → named[1]: SAME ORDER
-    #
-    # For the timing block:
-    #   pos=N   DurMuhurtam  ← named[0]
-    #   pos=N+1 Gulikai      ← named[1]
-    #   pos=N+2 empty='03:51' ← DurMuhurtam (named[0])
-    #   pos=N+3 empty='Gulika2' ← Gulikai (named[1])
-    # Same order pattern: empty rows follow the same order as the named rows.
-    #
-    # Algorithm: scan through raw pairs. When we see a block of named rows
-    # followed by empty rows, assign empty[i] → named[i % len(named_block)]
+    # ── Block-based parsing ───────────────────────────────────────
+    # Scan through raw pairs collecting alternating blocks of named/empty rows.
+    # When a block of M empty rows follows a block of N named rows:
+    #   empty[0] → named[N-M+0]  (i.e. map to the LAST M named rows)
+    #   empty[1] → named[N-M+1]
+    #   ...
+    #   empty[M-1] → named[N-1]
 
     sections = {}
     order    = []
 
-    def add_to(key, val):
+    def add(key, val):
+        if not val:
+            return
         if key not in sections:
-            sections[key] = [val] if val else []
+            sections[key] = [val]
             order.append(key)
-        elif val:
+        else:
             sections[key].append(val)
 
     i = 0
     while i < len(raw):
-        kt, vt = raw[i]
-        if kt:
-            # Start of a named block — collect consecutive named rows
-            named_block = []
-            while i < len(raw) and raw[i][0]:
-                named_block.append((raw[i][0], raw[i][1]))
-                add_to(raw[i][0], raw[i][1])
-                i += 1
-            # Now collect consecutive empty rows following this named block
-            empty_block = []
-            while i < len(raw) and not raw[i][0]:
-                if raw[i][1]:
-                    empty_block.append(raw[i][1])
-                i += 1
-            # Assign empty rows to named rows by index
-            for j, ev in enumerate(empty_block):
-                if named_block:
-                    owner = named_block[j % len(named_block)][0]
-                    if owner in sections:
-                        sections[owner].append(ev)
-        else:
-            # Stray empty row (shouldn't happen after above logic, but handle gracefully)
+        # Collect a block of consecutive named rows
+        named_block = []
+        while i < len(raw) and raw[i][0]:
+            named_block.append((raw[i][0], raw[i][1]))
+            add(raw[i][0], raw[i][1])
             i += 1
+
+        # Collect a block of consecutive empty rows
+        empty_block = []
+        while i < len(raw) and not raw[i][0]:
+            if raw[i][1]:
+                empty_block.append(raw[i][1])
+            i += 1
+
+        # Map empty rows to the LAST len(empty_block) named rows
+        if empty_block and named_block:
+            n = len(named_block)
+            m = len(empty_block)
+            offset = n - m  # index of first named row that gets a continuation
+            if offset < 0:
+                offset = 0
+            for j, ev in enumerate(empty_block):
+                idx = offset + j
+                if idx < len(named_block):
+                    owner = named_block[idx][0]
+                    add(owner, ev)
 
     print(f"[scraper] {len(sections)} sections parsed:")
     for k in order[:35]:
