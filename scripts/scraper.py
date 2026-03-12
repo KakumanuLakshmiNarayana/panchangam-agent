@@ -1,5 +1,15 @@
 """
-scraper.py — Same block logic, but print ALL sections so we can see Durmuhurtam.
+scraper.py — Verified fix based on raw pairs dump.
+
+Actual pattern from website:
+  named[0]=Dur Muhurtam, named[1]=Gulikai Kalam
+  empty[0]='03:51 PM...'  → belongs to Dur Muhurtam (index 0, NOT last)
+
+  named[0]=Tithi, named[1]=Nakshatra  
+  empty[0]='Dashami'       → belongs to Tithi (index 0)
+  empty[1]='Purva Ashadha' → belongs to Nakshatra (index 1)
+
+Rule: empty[j] → named[j]  (always from index 0, NOT offset from end)
 """
 
 import json, re, sys, time, os
@@ -92,17 +102,7 @@ def parse_panchang(html, ref_date, city_key):
 
     print(f"[scraper] {city['display']}: {len(raw)} pairs found")
 
-    # Print raw pairs near Durmuhurtam for debugging (only for New York)
-    if city_key == "New_York":
-        print("[scraper] RAW PAIRS DUMP (around timing sections):")
-        for idx, (kt, vt) in enumerate(raw):
-            if any(x in kt.lower() for x in ['dur', 'rahu', 'gulika', 'varjy', 'amrit', 'abhijit', 'brahma']):
-                # Print 1 before and 2 after for context
-                for j in range(max(0,idx-1), min(len(raw), idx+3)):
-                    print(f"  raw[{j}]: key='{raw[j][0]}' val='{raw[j][1]}'")
-                print("  ---")
-
-    # Block-based parsing: empty rows → last N named rows of preceding block
+    # ── Block parsing: empty[j] → named[j] (from index 0) ────────
     sections = {}
     order    = []
 
@@ -117,31 +117,27 @@ def parse_panchang(html, ref_date, city_key):
 
     i = 0
     while i < len(raw):
+        # Collect named block
         named_block = []
         while i < len(raw) and raw[i][0]:
             named_block.append((raw[i][0], raw[i][1]))
             add(raw[i][0], raw[i][1])
             i += 1
 
+        # Collect empty block
         empty_block = []
         while i < len(raw) and not raw[i][0]:
             if raw[i][1]:
                 empty_block.append(raw[i][1])
             i += 1
 
+        # Assign empty[j] → named[j]  (from start of named block)
         if empty_block and named_block:
-            n = len(named_block)
-            m = len(empty_block)
-            offset = n - m
-            if offset < 0:
-                offset = 0
             for j, ev in enumerate(empty_block):
-                idx = offset + j
-                if idx < n:
-                    owner = named_block[idx][0]
+                if j < len(named_block):
+                    owner = named_block[j][0]
                     add(owner, ev)
 
-    # Print ALL sections (not just first 35)
     print(f"[scraper] {len(sections)} sections parsed:")
     for k in order:
         print(f"  [{k}] => {sections[k]}")
