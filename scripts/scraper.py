@@ -1,6 +1,5 @@
 """
-scraper.py — Drikpanchang uses div-based layout, not tables.
-Parse dpTableKey/dpTableValue div pairs.
+scraper.py — Fixed to capture both Tithi/Nakshatra values + all timing fields.
 """
 
 import json, re, sys, time, os
@@ -41,49 +40,19 @@ def fetch_html(url, driver, city_display):
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-
     print(f"[scraper] Loading: {url}")
     driver.get(url)
-
-    # Wait for dpTableValue class to appear — this is Drikpanchang's data div class
     try:
         WebDriverWait(driver, 25).until(
             EC.presence_of_element_located((By.CLASS_NAME, "dpTableValue"))
         )
-        print(f"[scraper] dpTableValue divs found!")
-    except Exception as e:
-        print(f"[scraper] dpTableValue wait failed: {e}")
+    except:
         time.sleep(8)
-
-    # Scroll to load all lazy sections
-    for scroll_y in [500, 1200, 2000, 2800]:
-        driver.execute_script(f"window.scrollTo(0, {scroll_y});")
+    for y in [500, 1200, 2000, 2800]:
+        driver.execute_script(f"window.scrollTo(0, {y});")
         time.sleep(0.8)
-
     time.sleep(2)
-    html = driver.page_source
-
-    # Debug — print structure of dpTableKey/dpTableValue elements
-    from bs4 import BeautifulSoup
-    soup = BeautifulSoup(html, "html.parser")
-
-    keys   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
-    values = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
-    print(f"[scraper] dpTableKey divs: {len(keys)}  dpTableValue divs: {len(values)}")
-
-    # Print first 20 key-value pairs
-    for k, v in zip(keys[:20], values[:20]):
-        print(f"  KEY='{k.get_text(strip=True)[:40]}' => VALUE='{v.get_text(strip=True)[:60]}'")
-
-    # Also print ALL class names present to understand the structure
-    all_classes = set()
-    for tag in soup.find_all(class_=True):
-        for c in tag.get("class", []):
-            if any(w in c.lower() for w in ['dp','panchang','muhurt','kalam','tithi','timing']):
-                all_classes.add(c)
-    print(f"[scraper] Relevant CSS classes: {sorted(all_classes)[:30]}")
-
-    return html
+    return driver.page_source
 
 
 def extract_times(text):
@@ -106,78 +75,16 @@ def fmt(times, tz_label):
     return "N/A"
 
 
-def parse_dp_divs(soup, tz_label):
-    """Parse Drikpanchang's dpTableKey + dpTableValue div pairs."""
-    result = {}
-
-    # Strategy 1: paired dpTableKey / dpTableValue siblings
-    keys   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
-    values = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
-    for k, v in zip(keys, values):
-        label = re.sub(r'[^\w\s]', '', k.get_text(strip=True).lower()).strip()
-        value = v.get_text(separator=" ", strip=True)
-        if label and len(label) < 80:
-            times = extract_times(value)
-            result[label] = fmt(times, tz_label) if times else value[:120]
-
-    # Strategy 2: any element whose class contains timing-related words
-    for cls_pattern in [r'rahu', r'kalam', r'muhurt', r'abhijit', r'amrit',
-                        r'gulika', r'yama', r'sunrise', r'sunset', r'tithi',
-                        r'nakshatra', r'yoga', r'varjyam']:
-        for elem in soup.find_all(class_=re.compile(cls_pattern, re.I)):
-            text = elem.get_text(separator=" ", strip=True)
-            label = re.sub(r'[^\w\s]', '', cls_pattern).strip()
-            times = extract_times(text)
-            if times and label not in result:
-                result[label] = fmt(times, tz_label)
-
-    # Strategy 3: scan ALL divs/spans for label+time pairs in same container
-    for container in soup.find_all(['div', 'li', 'section']):
-        text = container.get_text(separator="|", strip=True)
-        parts = [p.strip() for p in text.split("|") if p.strip()]
-        if len(parts) >= 2:
-            for i in range(len(parts) - 1):
-                label_candidate = parts[i].lower()
-                value_candidate = parts[i+1]
-                times = extract_times(value_candidate)
-                if times and any(w in label_candidate for w in
-                    ['rahu', 'abhijit', 'gulika', 'yama', 'muhurt', 'amrit',
-                     'varj', 'sunrise', 'sunset', 'tithi', 'nakshatra', 'yoga']):
-                    key = re.sub(r'[^\w\s]', '', label_candidate).strip()[:60]
-                    if key not in result:
-                        result[key] = fmt(times, tz_label)
-
-    return result
-
-
-def lookup(table, *keys):
-    for key in keys:
-        k = re.sub(r'[^\w\s]', '', key.lower()).strip()
-        if k in table:
-            return table[k]
-        for tk, tv in table.items():
-            if k in tk:
-                return tv
-    return "N/A"
-
-
-def find_text_field(soup, *labels):
-    """Find text value from dpTableKey/dpTableValue pairs."""
-    keys   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
-    values = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
-    for k, v in zip(keys, values):
-        kt = k.get_text(strip=True)
-        for label in labels:
-            if label.lower() in kt.lower():
-                return v.get_text(separator=" ", strip=True)
-    return "N/A"
-
-
-def first_part(val):
-    if not val or val == "N/A":
-        return "N/A"
-    val = re.split(r'\s+upto\s+|\s+till\s+', val, flags=re.I)[0]
-    return val.split(",")[0].strip()[:50]
+def fmt_multi(times, tz_label):
+    """Format multiple time ranges (e.g. Durmuhurtam has 2 slots)."""
+    slots = []
+    for i in range(0, len(times) - 1, 2):
+        s = clean_time(times[i])
+        e = clean_time(times[i+1])
+        slots.append(f"{s} – {e}")
+    if len(times) % 2 == 1:
+        slots.append(clean_time(times[-1]))
+    return (" | ".join(slots) + f" {tz_label}") if slots else "N/A"
 
 
 def parse_panchang(html, ref_date, city_key):
@@ -186,39 +93,154 @@ def parse_panchang(html, ref_date, city_key):
     city     = CITIES[city_key]
     tz_label = city["tz_label"]
 
-    table = parse_dp_divs(soup, tz_label)
-    print(f"     Found {len(table)} entries")
-    for k, v in list(table.items())[:30]:
-        print(f"     '{k}' => '{v[:60]}'")
+    # Get ALL dpTableKey/dpTableValue pairs
+    keys   = soup.find_all(class_=re.compile(r'dpTableKey',   re.I))
+    values = soup.find_all(class_=re.compile(r'dpTableValue', re.I))
 
+    # Build list of (key_text, value_text) pairs preserving order
+    pairs = []
+    for k, v in zip(keys, values):
+        kt = k.get_text(strip=True)
+        vt = v.get_text(separator=" ", strip=True)
+        # Clean ⓘ and extra whitespace
+        vt = re.sub(r'\s*ⓘ\s*', '', vt).strip()
+        pairs.append((kt, vt))
+
+    print(f"[scraper] {city['display']}: {len(pairs)} pairs found")
+
+    # ── Helper: find ALL values for a given key label ────────────
+    def find_all_vals(label):
+        """Return list of all values matching this label (including empty-key continuations)."""
+        results = []
+        capturing = False
+        for kt, vt in pairs:
+            if kt.lower().strip() == label.lower().strip():
+                capturing = True
+                if vt:
+                    results.append(vt)
+            elif capturing and kt == "":
+                # Empty key = continuation of previous section
+                if vt:
+                    results.append(vt)
+            elif capturing and kt != "":
+                break  # New section started
+        return results
+
+    def find_val(label):
+        for kt, vt in pairs:
+            if label.lower() in kt.lower() and kt.strip():
+                return vt
+        return "N/A"
+
+    def find_timing(label):
+        """Find timing value — search by label in key."""
+        for kt, vt in pairs:
+            if label.lower() in kt.lower():
+                times = extract_times(vt)
+                if times:
+                    return fmt(times, tz_label)
+        return "N/A"
+
+    def find_timing_multi(label):
+        """Find timing that may span multiple slots (like Durmuhurtam)."""
+        all_times = []
+        capturing = False
+        for kt, vt in pairs:
+            if label.lower() in kt.lower() and kt.strip():
+                capturing = True
+                all_times.extend(extract_times(vt))
+            elif capturing and kt == "":
+                # Continuation — additional time slot
+                t = extract_times(vt)
+                if t:
+                    all_times.extend(t)
+                elif vt and not extract_times(vt):
+                    break  # non-time continuation = different field
+            elif capturing and kt.strip():
+                break
+        if all_times:
+            return fmt_multi(all_times, tz_label)
+        return "N/A"
+
+    # ── Tithi: "Navami upto 08:58 PM → Dashami" ─────────────────
+    def build_tithi():
+        vals = find_all_vals("Tithi")
+        if not vals:
+            return "N/A"
+        parts = []
+        for v in vals:
+            times = extract_times(v)
+            clean_v = re.sub(r'upto\s*', 'upto ', v).strip()
+            if times:
+                name = re.split(r'upto', v, flags=re.I)[0].strip()
+                t    = clean_time(times[0])
+                parts.append(f"{name} upto {t} {tz_label}")
+            else:
+                parts.append(v.strip())
+        return " → ".join(parts)
+
+    def build_nakshatra():
+        vals = find_all_vals("Nakshatra")
+        if not vals:
+            return "N/A"
+        parts = []
+        for v in vals:
+            times = extract_times(v)
+            if times:
+                name = re.split(r'upto', v, flags=re.I)[0].strip()
+                t    = clean_time(times[0])
+                parts.append(f"{name} upto {t} {tz_label}")
+            else:
+                parts.append(v.strip())
+        return " → ".join(parts)
+
+    # ── Build data dict ──────────────────────────────────────────
     data = {
-        "date": ref_date.isoformat(), "weekday": ref_date.strftime("%A"),
-        "city_key": city_key, "city": city["display"],
-        "timezone": city["timezone"], "tz_label": tz_label,
+        "date":     ref_date.isoformat(),
+        "weekday":  ref_date.strftime("%A"),
+        "city_key": city_key,
+        "city":     city["display"],
+        "timezone": city["timezone"],
+        "tz_label": tz_label,
     }
 
-    data["tithi"]           = first_part(find_text_field(soup, "Tithi"))
-    data["nakshatra"]       = first_part(find_text_field(soup, "Nakshatra"))
-    data["yoga"]            = first_part(find_text_field(soup, "Yoga"))
-    data["karana"]          = first_part(find_text_field(soup, "Karana"))
-    data["masa"]            = first_part(find_text_field(soup, "Masa", "Maasa"))
-    data["paksha"]          = first_part(find_text_field(soup, "Paksha"))
-    data["rahukaal"]        = lookup(table, "rahu kalam", "rahukalam", "rahu kaal", "rahu")
-    data["durmuhurtam"]     = lookup(table, "dur muhurtam", "durmuhurtam")
-    data["gulika"]          = lookup(table, "gulikai kalam", "gulika kalam", "gulika")
-    data["yamagandam"]      = lookup(table, "yamaganda", "yamagandam")
-    data["varjyam"]         = lookup(table, "varjyam", "varjam")
-    data["brahma_muhurta"]  = lookup(table, "brahma muhurta")
-    data["abhijit"]         = lookup(table, "abhijit muhurta", "abhijit")
-    data["vijaya_muhurta"]  = lookup(table, "vijaya muhurta")
-    data["godhuli_muhurta"] = lookup(table, "godhuli muhurta")
-    data["amrit_kalam"]     = lookup(table, "amrit kalam", "amritkalam")
-    data["sunrise"]         = lookup(table, "sunrise")
-    data["sunset"]          = lookup(table, "sunset")
-    data["moonrise"]        = lookup(table, "moonrise")
-    data["moonset"]         = lookup(table, "moonset")
+    data["tithi"]     = build_tithi()
+    data["nakshatra"] = build_nakshatra()
+    data["yoga"]      = find_val("Yoga")
+    data["karana"]    = find_val("Karana")
+    data["paksha"]    = find_val("Paksha")
 
-    print(f"     Tithi: {data['tithi']} | Rahukaal: {data['rahukaal']} | Abhijit: {data['abhijit']}")
+    # Inauspicious
+    data["rahukaal"]    = find_timing("Rahu Kalam")
+    data["gulika"]      = find_timing("Gulikai Kalam")
+    data["yamagandam"]  = find_timing("Yamaganda")
+    data["durmuhurtam"] = find_timing_multi("Dur Muhurtam")  # has 2 slots
+    data["varjyam"]     = find_timing_multi("Varjyam")       # may have 2 slots
+
+    # Auspicious
+    data["abhijit"]         = find_timing("Abhijit")
+    data["amrit_kalam"]     = find_timing("Amrit Kalam")
+    data["brahma_muhurta"]  = find_timing("Brahma Muhurta")
+    data["vijaya_muhurta"]  = find_timing("Vijaya Muhurta")
+    data["godhuli_muhurta"] = find_timing("Godhuli Muhurta")
+    data["pratah_sandhya"]  = find_timing("Pratah Sandhya")
+    data["sayahna_sandhya"] = find_timing("Sayahna Sandhya")
+    data["nishita_muhurta"] = find_timing("Nishita Muhurta")
+
+    # Sun/Moon
+    data["sunrise"]  = find_timing("Sunrise")
+    data["sunset"]   = find_timing("Sunset")
+    data["moonrise"] = find_timing("Moonrise")
+    data["moonset"]  = find_timing("Moonset")
+
+    print(f"     Tithi:       {data['tithi']}")
+    print(f"     Nakshatra:   {data['nakshatra']}")
+    print(f"     Rahukaal:    {data['rahukaal']}")
+    print(f"     Durmuhurtam: {data['durmuhurtam']}")
+    print(f"     Amrit Kalam: {data['amrit_kalam']}")
+    print(f"     Abhijit:     {data['abhijit']}")
+    print(f"     Sunrise:     {data['sunrise']}")
+
     return data
 
 
