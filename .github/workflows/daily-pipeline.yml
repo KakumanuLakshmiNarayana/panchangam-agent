@@ -40,6 +40,7 @@ jobs:
             ffmpeg \
             fonts-noto fonts-freefont-ttf fontconfig \
             chromium-browser chromium-chromedriver
+          fc-cache -fv
           echo "FFmpeg: $(ffmpeg -version | head -1)"
           echo "Chrome: $(chromium-browser --version)"
           echo "Chromedriver: $(chromedriver --version)"
@@ -55,7 +56,8 @@ jobs:
             gtts \
             selenium \
             webdriver-manager \
-            pillow
+            pillow \
+            scipy
 
       - name: Run Pipeline
         env:
