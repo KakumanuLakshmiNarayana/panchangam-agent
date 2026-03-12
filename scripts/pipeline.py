@@ -14,16 +14,18 @@ from script_generator import generate_video_script
 from voice_generator  import generate_voiceover
 from video_creator    import create_panchang_video, create_thumbnail
 
-OUTPUT_DIR = Path("output")
+# ── Output dir: use env var if set (GitHub Actions), else go up one level from scripts/
+_default_output = Path(__file__).parent.parent / "output"
+OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", str(_default_output)))
 STATE_FILE = OUTPUT_DIR / "pipeline_state.json"
 CITY_KEYS  = ["New_York", "Chicago", "Dallas", "California", "Michigan"]
 
 
 def save_state(state):
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
-    print(f"💾 State saved")
+    print(f"💾 State saved → {STATE_FILE}")
 
 
 def load_state():
@@ -73,7 +75,7 @@ def send_approval_email(all_cities, date_str):
     rows = ""
     for city_key, result in all_cities.items():
         if "error" in result:
-            rows += f"<tr><td style='padding:10px;font-weight:bold;color:#8B0000;'>{result.get('city',city_key)}</td><td colspan='5' style='color:red;padding:10px;'>Error: {result['error'][:60]}</td></tr>"
+            rows += f"<tr><td style='padding:10px;font-weight:bold;color:#8B0000;'>{result.get('city',city_key)}</td><td colspan='6' style='color:red;padding:10px;'>Error: {result['error'][:60]}</td></tr>"
             continue
         p = result.get("panchang", {})
         rows += f"""
@@ -134,15 +136,15 @@ def send_approval_email(all_cities, date_str):
 
 
 def run_pipeline(skip_approval=False):
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     today    = date.today()
     date_str = today.isoformat()
 
     print("\n" + "="*55)
     print("  🕉  DAILY PANCHANGAM PIPELINE — 5 CITIES")
+    print(f"  📁  Output → {OUTPUT_DIR.resolve()}")
     print("="*55)
 
-    # Share ONE browser for all 5 cities (faster, less memory)
     driver     = scraper.get_driver()
     all_cities = {}
     try:
