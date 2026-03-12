@@ -156,3 +156,6 @@ def generate_voice(script: str, output_path: str) -> str:
 
     print("  ❌ All voice generation failed")
     return None
+
+# Alias for pipeline.py compatibility
+generate_voiceover = generate_voice
