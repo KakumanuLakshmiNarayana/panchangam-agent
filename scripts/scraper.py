@@ -1,12 +1,22 @@
 """
-scraper.py — Content-aware parsing.
-The website interleaves continuation rows. We use content knowledge:
-- Tithi 2nd value = a Tithi name (not a time range)
-- Nakshatra 2nd value = a Nakshatra name  
-- Durmuhurtam 2nd value = a time range belonging to Durmuhurtam
+scraper.py — Fixed: Durmuhurtam 2nd slot correctly assigned.
+Key insight from debug logs:
+  Raw pairs order around Durmuhurtam:
+    KEY='Dur Muhurtam'   VAL='11:08 AM to 11:55 AM'
+    KEY='Gulikai Kalam'  VAL='10:09 AM to 11:38 AM'
+    KEY=''               VAL='03:51 PM to 04:38 PM'  ← actually Durmuhurtam slot 2
 
-Known Tithi names and Nakshatra names for classification.
-For timings: empty-key time rows → go to the PREVIOUS timing section.
+The website puts continuation rows AFTER the NEXT named key.
+Fix: track a "pending continuation" queue per section index.
+Each empty-key row belongs to the section that is (index - 1) positions back,
+not the immediately previous named key.
+
+Actual pattern (verified from logs):
+  Tithi row, Nakshatra row, [Tithi cont], [Nakshatra cont]
+  DurMuhurtam row, GulikaiKalam row, [DurMuhurtam cont], [GulikaiKalam cont]
+
+So empty rows at position N belong to the named section that was N positions ago
+in the sequence of named keys, counted from the last named key.
 """
 
 import json, re, sys, time, os
@@ -19,36 +29,6 @@ CITIES = {
     "California": {"display": "Los Angeles, CA", "timezone": "America/Los_Angeles", "tz_label": "PT", "geoname_id": "5368361"},
     "Michigan":   {"display": "Detroit, MI",     "timezone": "America/Detroit",     "tz_label": "ET", "geoname_id": "4990729"},
 }
-
-TITHI_NAMES = {
-    "prathama","dwitiya","tritiya","chaturthi","panchami","shashthi","saptami",
-    "ashtami","navami","dashami","ekadashi","dwadashi","trayodashi","chaturdashi",
-    "purnima","amavasya","pratipada","dvitiya","tritiya",
-}
-
-NAKSHATRA_NAMES = {
-    "ashwini","bharani","krittika","rohini","mrigashira","ardra","punarvasu",
-    "pushya","ashlesha","magha","purva phalguni","uttara phalguni","hasta","chitra",
-    "swati","vishakha","anuradha","jyeshtha","mula","purva ashadha","uttara ashadha",
-    "shravana","dhanishtha","shatabhisha","purva bhadrapada","uttara bhadrapada","revati",
-}
-
-KARANA_NAMES = {
-    "bava","balava","kaulava","taitila","garaja","vanija","vishti","bhadra",
-    "shakuni","chatushpada","naga","kimstughna","kimsthughna","variyana",
-}
-
-YOGA_NAMES = {
-    "vishkambha","priti","ayushman","saubhagya","shobhana","atiganda","sukarman",
-    "dhriti","shula","ganda","vriddhi","dhruva","vyaghata","harshana","vajra",
-    "siddhi","vyatipata","variyana","parigha","shiva","siddha","sadhya","shubha",
-    "shukla","brahma","indra","vaidhriti",
-}
-
-
-def is_name_only(text):
-    """True if text is just a celestial name with no time range."""
-    return bool(extract_times(text) == [] and text.strip())
 
 
 def get_driver():
@@ -114,57 +94,6 @@ def fmt_all_slots(times, tz_label):
     return (" | ".join(slots) + f" {tz_label}") if slots else "N/A"
 
 
-def classify_empty_val(val, raw_pairs, idx):
-    """
-    For an empty-key row, figure out which section it truly belongs to.
-    Look backward to find the nearest named key.
-    Look at content: if it's a time range, it belongs to the nearest TIMING section before it.
-    If it's a name-only value, it belongs to the nearest NAME section (Tithi/Nakshatra/etc).
-    """
-    val_low = val.strip().lower()
-    has_time = bool(extract_times(val))
-
-    # Walk backward to find named keys
-    named_keys_before = []
-    for j in range(idx - 1, -1, -1):
-        if raw_pairs[j][0]:  # non-empty key
-            named_keys_before.append((j, raw_pairs[j][0]))
-            if len(named_keys_before) >= 5:
-                break
-
-    # If val has time → belongs to most recent TIMING key
-    timing_keys = {"rahu kalam", "dur muhurtam", "gulikai kalam", "gulika kalam",
-                   "yamaganda", "varjyam", "amrit kalam", "abhijit", "brahma muhurta",
-                   "vijaya muhurta", "godhuli muhurta", "pratah sandhya", "sayahna sandhya",
-                   "nishita muhurta", "ganda moola", "aadal yoga", "baana"}
-
-    panchang_name_keys = {"tithi", "nakshatra", "yoga", "karana", "weekday"}
-
-    if has_time:
-        for j, k in named_keys_before:
-            if k.lower() in timing_keys:
-                return k
-        # fallback: most recent named key
-        return named_keys_before[0][1] if named_keys_before else None
-    else:
-        # Name-only: check if it matches a known Tithi/Nakshatra name
-        for j, k in named_keys_before:
-            if k.lower() in panchang_name_keys:
-                # Check if val matches the type expected for this key
-                if k.lower() == "tithi" and any(t in val_low for t in TITHI_NAMES):
-                    return k
-                if k.lower() == "nakshatra" and any(n in val_low for n in NAKSHATRA_NAMES):
-                    return k
-                if k.lower() == "yoga" and any(y in val_low for y in YOGA_NAMES):
-                    return k
-                if k.lower() == "karana" and any(c in val_low for c in KARANA_NAMES):
-                    return k
-                if k.lower() == "weekday":
-                    return k
-        # fallback: immediate previous named key
-        return named_keys_before[0][1] if named_keys_before else None
-
-
 def parse_panchang(html, ref_date, city_key):
     from bs4 import BeautifulSoup
     soup     = BeautifulSoup(html, "html.parser")
@@ -180,29 +109,92 @@ def parse_panchang(html, ref_date, city_key):
 
     print(f"[scraper] {city['display']}: {len(raw)} pairs found")
 
-    # ── Smart grouping ────────────────────────────────────────────
+    # ── Two-pass parsing ──────────────────────────────────────────
+    # Pass 1: identify named rows and empty rows, record their positions
+    named_rows = []   # list of (position, key, val)
+    empty_rows = []   # list of (position, val)
+
+    for i, (kt, vt) in enumerate(raw):
+        if kt:
+            named_rows.append((i, kt, vt))
+        else:
+            if vt:
+                empty_rows.append((i, vt))
+
+    # Pass 2: for each empty row, find its true owner.
+    # Pattern: empty rows appear AFTER the block they extend.
+    # Specifically, each empty row at position P belongs to the named row
+    # whose position is IMMEDIATELY before P, going backwards through ALL rows
+    # (named + empty), but skipping other empty rows that came between.
+    # 
+    # BUT the tricky case: in the sequence
+    #   pos=4  Tithi      val='Navami...'
+    #   pos=5  Nakshatra  val='Mula...'
+    #   pos=6  (empty)    val='Dashami'       ← belongs to Tithi (pos 4)
+    #   pos=7  (empty)    val='Purva Ashadha' ← belongs to Nakshatra (pos 5)
+    #
+    # And similarly:
+    #   pos=N   DurMuhurtam   val='11:08...'
+    #   pos=N+1 GulikaiKalam  val='10:09...'
+    #   pos=N+2 (empty)       val='03:51...'  ← belongs to DurMuhurtam (pos N)
+    #   pos=N+3 (empty)       val='Gulika2nd' ← belongs to GulikaiKalam (pos N+1)
+    #
+    # The pattern: consecutive empty rows after a block of named rows
+    # map 1-to-1 backwards to the named rows in REVERSE order.
+    # i.e., the LAST empty row maps to the LAST named row before the block,
+    # and the FIRST empty row maps to the FIRST named row before the block... 
+    # Wait, let me re-examine:
+    #   pos=4  Tithi      ← named[0] in block
+    #   pos=5  Nakshatra  ← named[1] in block  
+    #   pos=6  empty='Dashami'       ← should go to Tithi (named[0])
+    #   pos=7  empty='Purva Ashadha' ← should go to Nakshatra (named[1])
+    # So empty[0] → named[0], empty[1] → named[1]: SAME ORDER
+    #
+    # For the timing block:
+    #   pos=N   DurMuhurtam  ← named[0]
+    #   pos=N+1 Gulikai      ← named[1]
+    #   pos=N+2 empty='03:51' ← DurMuhurtam (named[0])
+    #   pos=N+3 empty='Gulika2' ← Gulikai (named[1])
+    # Same order pattern: empty rows follow the same order as the named rows.
+    #
+    # Algorithm: scan through raw pairs. When we see a block of named rows
+    # followed by empty rows, assign empty[i] → named[i % len(named_block)]
+
     sections = {}
     order    = []
 
-    for idx, (kt, vt) in enumerate(raw):
+    def add_to(key, val):
+        if key not in sections:
+            sections[key] = [val] if val else []
+            order.append(key)
+        elif val:
+            sections[key].append(val)
+
+    i = 0
+    while i < len(raw):
+        kt, vt = raw[i]
         if kt:
-            # Named key → new section
-            if kt not in sections:
-                sections[kt] = [vt] if vt else []
-                order.append(kt)
-            else:
-                if vt:
-                    sections[kt].append(vt)
+            # Start of a named block — collect consecutive named rows
+            named_block = []
+            while i < len(raw) and raw[i][0]:
+                named_block.append((raw[i][0], raw[i][1]))
+                add_to(raw[i][0], raw[i][1])
+                i += 1
+            # Now collect consecutive empty rows following this named block
+            empty_block = []
+            while i < len(raw) and not raw[i][0]:
+                if raw[i][1]:
+                    empty_block.append(raw[i][1])
+                i += 1
+            # Assign empty rows to named rows by index
+            for j, ev in enumerate(empty_block):
+                if named_block:
+                    owner = named_block[j % len(named_block)][0]
+                    if owner in sections:
+                        sections[owner].append(ev)
         else:
-            # Empty key → classify by content
-            if not vt:
-                continue
-            owner = classify_empty_val(vt, raw, idx)
-            if owner and owner in sections:
-                sections[owner].append(vt)
-            elif owner:
-                sections[owner] = [vt]
-                order.append(owner)
+            # Stray empty row (shouldn't happen after above logic, but handle gracefully)
+            i += 1
 
     print(f"[scraper] {len(sections)} sections parsed:")
     for k in order[:35]:
