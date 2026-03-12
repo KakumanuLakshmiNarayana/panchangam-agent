@@ -1,18 +1,16 @@
 """
-scraper.py — Card-based parsing using dpCard/dpCardRow/dpTitle/dpKey structure.
+scraper.py — dpTableKey/dpTableValue parsing. FINAL CORRECT VERSION.
 
-From the HTML screenshot, Dur Muhurtam card looks like:
-  <div class="dpCard dpFullCard dpFlexEqual">
-    <div class="dpCardRow"><span class="dpTitle">Dur Muhurtam</span></div>
-    <div class="dpCardRow"><span class="dpKey">11:08 AM to 11:55 AM</span></div>
-    <div class="dpCardRow"><span class="dpKey">03:51 PM to 04:38 PM</span></div>
-  </div>
-
-So each card has:
-  - One dpTitle = the section name
-  - One or more dpKey = the values
-
-This is the correct structure to parse!
+Continuation assignment:
+  NAME continuations (Tithi→Dashami, Nakshatra→Purva Ashadha):
+    FIFO queue of pending name keys. First in = first served.
+    
+  TIMING continuations (Dur Muhurtam 2nd slot = 03:51 PM):
+    From the HTML screenshot: Dur Muhurtam card has 2 rows.
+    In raw pairs: Dur Muhurtam, Gulikai appear consecutively, then empty='03:51 PM'
+    The extra slot belongs to the FIRST timing key in the run (Dur Muhurtam).
+    
+  Multi-slot (Varjyam): same first timing key gets all timing empties in a run.
 """
 
 import json, re, sys, time, os
@@ -25,6 +23,16 @@ CITIES = {
     "California": {"display": "Los Angeles, CA", "timezone": "America/Los_Angeles", "tz_label": "PT", "geoname_id": "5368361"},
     "Michigan":   {"display": "Detroit, MI",     "timezone": "America/Detroit",     "tz_label": "ET", "geoname_id": "4990729"},
 }
+
+TIMING_KEYS = {
+    "rahu kalam", "dur muhurtam", "gulikai kalam", "gulika kalam",
+    "yamaganda", "varjyam", "amrit kalam", "abhijit", "brahma muhurta",
+    "vijaya muhurta", "godhuli muhurta", "pratah sandhya", "sayahna sandhya",
+    "nishita muhurta", "ganda moola", "aadal yoga", "bhadra",
+    "sunrise", "sunset", "moonrise", "moonset",
+}
+NAME_KEYS = {"tithi", "nakshatra", "yoga", "karana", "weekday", "paksha",
+             "raja", "surya nakshatra", "surya pada", "nakshatra pada"}
 
 
 def get_driver():
@@ -58,7 +66,7 @@ def fetch_html(url, driver, city_display):
     driver.get(url)
     try:
         WebDriverWait(driver, 25).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "dpCardRow"))
+            EC.presence_of_element_located((By.CLASS_NAME, "dpTableValue"))
         )
     except:
         time.sleep(8)
@@ -84,54 +92,81 @@ def clean_time(t):
 def fmt_all_slots(times, tz_label):
     slots = []
     for i in range(0, len(times) - 1, 2):
-        slots.append(f"{clean_time(times[i])} – {clean_time(times[i+1])}")
+        slots.append(f"{clean_time(times[i])} \u2013 {clean_time(times[i+1])}")
     if len(times) % 2 == 1:
         slots.append(clean_time(times[-1]))
     return (" | ".join(slots) + f" {tz_label}") if slots else "N/A"
 
 
-def clean_text(el):
-    return re.sub(r'\s*ⓘ\s*', '', el.get_text(separator=" ", strip=True)).strip()
-
-
 def parse_panchang(html, ref_date, city_key):
     from bs4 import BeautifulSoup
-    soup  = BeautifulSoup(html, "html.parser")
-    city  = CITIES[city_key]
-    tz    = city["tz_label"]
+    soup = BeautifulSoup(html, "html.parser")
+    city = CITIES[city_key]
+    tz   = city["tz_label"]
 
-    # ── Parse by dpCard ───────────────────────────────────────────
-    # Each card has a dpTitle (section name) and one+ dpKey (values)
+    def clean(el):
+        return re.sub(r'\s*\u24d8\s*', '', el.get_text(separator=" ", strip=True)).strip()
+
+    keys_els   = soup.find_all(class_=re.compile(r'\bdpTableKey\b',   re.I))
+    values_els = soup.find_all(class_=re.compile(r'\bdpTableValue\b', re.I))
+    raw = [(clean(k), clean(v)) for k, v in zip(keys_els, values_els)]
+
+    print(f"[scraper] {city['display']}: {len(raw)} pairs found")
+
     sections = {}
     order    = []
 
-    cards = soup.find_all(class_=re.compile(r'\bdpCard\b'))
-    print(f"[scraper] {city['display']}: {len(cards)} cards found")
-
-    for card in cards:
-        title_el = card.find(class_=re.compile(r'\bdpTitle\b'))
-        if not title_el:
-            continue
-        title = clean_text(title_el)
-        if not title:
-            continue
-
-        # Get all dpKey elements within this card
-        key_els = card.find_all(class_=re.compile(r'\bdpKey\b'))
-        vals = [clean_text(k) for k in key_els if clean_text(k)]
-
-        if title not in sections:
-            sections[title] = vals
-            order.append(title)
+    def add(key, val):
+        if not val:
+            return
+        if key not in sections:
+            sections[key] = [val]
+            order.append(key)
         else:
-            sections[title].extend(vals)
+            sections[key].append(val)
 
-    print(f"[scraper] {len(sections)} sections from cards:")
+    # State for continuation assignment
+    pending_name_keys = []   # FIFO: first pending name key gets next name continuation
+    first_timing_key  = None # first timing key in current named run gets timing continuations
+    in_named_run      = False
+
+    for key, val in raw:
+        if key:
+            # Named row
+            add(key, val)
+            kl = key.lower()
+            if not in_named_run:
+                # Starting a fresh named run — reset first_timing_key tracker
+                first_timing_key = None
+                in_named_run = True
+            if kl in NAME_KEYS:
+                pending_name_keys.append(key)
+            if kl in TIMING_KEYS:
+                if first_timing_key is None:
+                    first_timing_key = key
+        else:
+            # Empty (continuation) row
+            in_named_run = False
+            if not val:
+                continue
+            has_time = bool(extract_times(val))
+            if has_time:
+                # Timing continuation → first timing key in the run
+                if first_timing_key:
+                    add(first_timing_key, val)
+            else:
+                # Name continuation → oldest pending name key (FIFO)
+                if pending_name_keys:
+                    owner = pending_name_keys.pop(0)
+                    add(owner, val)
+
+    print(f"[scraper] {len(sections)} sections parsed:")
+    DEBUG = {'tithi','nakshatra','rahu kalam','dur muhurtam','gulikai kalam',
+             'amrit kalam','abhijit','varjyam','sunrise','sunset','brahma muhurta'}
     for k in order:
-        if any(x in k.lower() for x in ['tithi','nakshatra','rahu','dur ','gulika','amrit','abhijit','varjy','sunrise','sunset','brahma','yoga','karana']):
+        if k.lower() in DEBUG:
             print(f"  [{k}] => {sections[k]}")
 
-    # ── Helpers ───────────────────────────────────────────────────
     def find_sec(*labels):
         for label in labels:
             ll = label.lower()
@@ -160,13 +195,12 @@ def parse_panchang(html, ref_date, city_key):
                 parts.append(f"{name} upto {clean_time(times[0])} {tz}")
             elif v.strip():
                 parts.append(v.strip())
-        return " → ".join(parts) if parts else "N/A"
+        return " \u2192 ".join(parts) if parts else "N/A"
 
     def fmt_simple(*labels):
         vals = find_sec(*labels)
         return vals[0] if vals else "N/A"
 
-    # ── Build output ──────────────────────────────────────────────
     data = {
         "date":     ref_date.isoformat(),
         "weekday":  ref_date.strftime("%A"),
@@ -237,9 +271,9 @@ def run_all_cities(target_date=None):
         for city_key in CITIES:
             try:
                 results[city_key] = run(target_date, city_key, driver=driver)
-                print(f"  ✅ {results[city_key]['city']} done")
+                print(f"  \u2705 {results[city_key]['city']} done")
             except Exception as e:
-                print(f"  ❌ {CITIES[city_key]['display']}: {e}")
+                print(f"  \u274c {CITIES[city_key]['display']}: {e}")
                 import traceback; traceback.print_exc()
                 results[city_key] = {"city": CITIES[city_key]["display"], "city_key": city_key, "error": str(e)}
     finally:
