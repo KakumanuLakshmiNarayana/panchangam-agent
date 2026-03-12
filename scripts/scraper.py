@@ -1,15 +1,5 @@
 """
-scraper.py — Correct block parsing.
-Empty rows after a named block map to the LAST N named rows of that block.
-
-Verified pattern from logs:
-  [Sunrise, Sunset, Moonrise, Moonset, Tithi, Nakshatra] then [empty='Dashami', empty='Purva Ashadha']
-  → empty[0]='Dashami'      → Tithi      (last-2 of named block)
-  → empty[1]='Purva Ashadha'→ Nakshatra  (last-1 of named block)
-
-  [DurMuhurtam, GulikaiKalam] then [empty='03:51 PM...', empty='Gulika2nd']
-  → empty[0] → DurMuhurtam  (last-2)
-  → empty[1] → GulikaiKalam (last-1)
+scraper.py — Same block logic, but print ALL sections so we can see Durmuhurtam.
 """
 
 import json, re, sys, time, os
@@ -102,14 +92,17 @@ def parse_panchang(html, ref_date, city_key):
 
     print(f"[scraper] {city['display']}: {len(raw)} pairs found")
 
-    # ── Block-based parsing ───────────────────────────────────────
-    # Scan through raw pairs collecting alternating blocks of named/empty rows.
-    # When a block of M empty rows follows a block of N named rows:
-    #   empty[0] → named[N-M+0]  (i.e. map to the LAST M named rows)
-    #   empty[1] → named[N-M+1]
-    #   ...
-    #   empty[M-1] → named[N-1]
+    # Print raw pairs near Durmuhurtam for debugging (only for New York)
+    if city_key == "New_York":
+        print("[scraper] RAW PAIRS DUMP (around timing sections):")
+        for idx, (kt, vt) in enumerate(raw):
+            if any(x in kt.lower() for x in ['dur', 'rahu', 'gulika', 'varjy', 'amrit', 'abhijit', 'brahma']):
+                # Print 1 before and 2 after for context
+                for j in range(max(0,idx-1), min(len(raw), idx+3)):
+                    print(f"  raw[{j}]: key='{raw[j][0]}' val='{raw[j][1]}'")
+                print("  ---")
 
+    # Block-based parsing: empty rows → last N named rows of preceding block
     sections = {}
     order    = []
 
@@ -124,38 +117,35 @@ def parse_panchang(html, ref_date, city_key):
 
     i = 0
     while i < len(raw):
-        # Collect a block of consecutive named rows
         named_block = []
         while i < len(raw) and raw[i][0]:
             named_block.append((raw[i][0], raw[i][1]))
             add(raw[i][0], raw[i][1])
             i += 1
 
-        # Collect a block of consecutive empty rows
         empty_block = []
         while i < len(raw) and not raw[i][0]:
             if raw[i][1]:
                 empty_block.append(raw[i][1])
             i += 1
 
-        # Map empty rows to the LAST len(empty_block) named rows
         if empty_block and named_block:
             n = len(named_block)
             m = len(empty_block)
-            offset = n - m  # index of first named row that gets a continuation
+            offset = n - m
             if offset < 0:
                 offset = 0
             for j, ev in enumerate(empty_block):
                 idx = offset + j
-                if idx < len(named_block):
+                if idx < n:
                     owner = named_block[idx][0]
                     add(owner, ev)
 
+    # Print ALL sections (not just first 35)
     print(f"[scraper] {len(sections)} sections parsed:")
-    for k in order[:35]:
+    for k in order:
         print(f"  [{k}] => {sections[k]}")
 
-    # ── Helpers ───────────────────────────────────────────────────
     def find_sec(*labels):
         for label in labels:
             ll = label.lower()
@@ -193,7 +183,6 @@ def parse_panchang(html, ref_date, city_key):
         vals = find_sec(*labels)
         return vals[0] if vals else "N/A"
 
-    # ── Build output ──────────────────────────────────────────────
     data = {
         "date":     ref_date.isoformat(),
         "weekday":  ref_date.strftime("%A"),
@@ -208,13 +197,11 @@ def parse_panchang(html, ref_date, city_key):
     data["yoga"]            = fmt_transition("Yoga")
     data["karana"]          = fmt_transition("Karana")
     data["paksha"]          = fmt_simple("Paksha")
-
     data["rahukaal"]        = fmt_timing("Rahu Kalam")
     data["gulika"]          = fmt_timing("Gulikai Kalam", "Gulika Kalam")
     data["yamagandam"]      = fmt_timing("Yamaganda")
     data["durmuhurtam"]     = fmt_timing("Dur Muhurtam")
     data["varjyam"]         = fmt_timing("Varjyam")
-
     data["abhijit"]         = fmt_timing("Abhijit")
     data["amrit_kalam"]     = fmt_timing("Amrit Kalam")
     data["brahma_muhurta"]  = fmt_timing("Brahma Muhurta")
@@ -223,7 +210,6 @@ def parse_panchang(html, ref_date, city_key):
     data["pratah_sandhya"]  = fmt_timing("Pratah Sandhya")
     data["sayahna_sandhya"] = fmt_timing("Sayahna Sandhya")
     data["nishita_muhurta"] = fmt_timing("Nishita Muhurta")
-
     data["sunrise"]         = fmt_timing("Sunrise")
     data["sunset"]          = fmt_timing("Sunset")
     data["moonrise"]        = fmt_timing("Moonrise")
@@ -233,6 +219,7 @@ def parse_panchang(html, ref_date, city_key):
     print(f"     Nakshatra:   {data['nakshatra']}")
     print(f"     Rahukaal:    {data['rahukaal']}")
     print(f"     Durmuhurtam: {data['durmuhurtam']}")
+    print(f"     Gulika:      {data['gulika']}")
     print(f"     Amrit Kalam: {data['amrit_kalam']}")
     print(f"     Abhijit:     {data['abhijit']}")
     print(f"     Sunrise:     {data['sunrise']}")
