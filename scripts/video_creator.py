@@ -35,11 +35,13 @@ def get_font(size, bold=False):
     bundled = os.path.join(SCRIPTS_DIR, "fonts")
     if bold:
         candidates = [
-            os.path.join(bundled, "FreeSansBold.ttf"),
+            os.path.join(bundled, "FreeSansBold.ttf"),     # scripts/fonts/
+            os.path.join(SCRIPTS_DIR, "FreeSansBold.ttf"), # scripts/ directly
         ]
     else:
         candidates = [
-            os.path.join(bundled, "FreeSans.ttf"),
+            os.path.join(bundled, "FreeSans.ttf"),         # scripts/fonts/
+            os.path.join(SCRIPTS_DIR, "FreeSans.ttf"),     # scripts/ directly
         ]
     # PRIORITY 2: System NotoSansTelugu (downloaded via workflow wget)
     candidates += [
