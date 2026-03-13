@@ -60,7 +60,7 @@ def get_font(size, bold=False):
     print(f"  [FONT] Looking for {'bold' if bold else 'regular'} font, size={size}")
     for p in candidates:
         exists = p and os.path.exists(p)
-        print(f"  [FONT]   {'✅' if exists else '❌'} {p}")
+        print(f"  [FONT]   {'✓' if exists else '❌'} {p}")
         if exists:
             try:
                 font = ImageFont.truetype(p, size)
@@ -93,7 +93,7 @@ def _load_char():
         result = arr.copy()
         result[bg_mask, 3] = 0
         _char_cache = Image.fromarray(result, 'RGBA')
-        print(f"  ✅ Character loaded {_char_cache.size}, bg removed")
+        print(f"  ✓ Character loaded {_char_cache.size}, bg removed")
     return _char_cache
 
 
@@ -124,7 +124,7 @@ def draw_border(draw):
 def draw_om_bg(img, alpha=14):
     ov=Image.new("RGBA",(W,H),(0,0,0,0))
     d=ImageDraw.Draw(ov)
-    d.text((W//2,H//2-200),"ॐ",font=get_font(380,bold=True),fill=(255,200,0,alpha),anchor="mm")
+    d.text((W//2,H//2-200),"ఓం",font=get_font(380,bold=True),fill=(255,200,0,alpha),anchor="mm")
     return Image.alpha_composite(img,ov)
 
 
@@ -174,10 +174,10 @@ def build_static_card(card_num, panchang):
     city=panchang.get("city","USA"); tz=panchang.get("tz_label","ET")
 
     if card_num==1:
-        draw.text((W//2,65),"ॐ",font=get_font(58,bold=True),fill=GOLD,anchor="mm")
+        draw.text((W//2,65),"ఓం",font=get_font(58,bold=True),fill=GOLD,anchor="mm")
         draw.text((W//2,132),"నేటి పంచాంగం",font=get_font(56,bold=True),fill=GOLD,anchor="mm")
         draw_divider(draw,172,SAFFRON)
-        draw.text((W//2,205),f"📍 {city}",font=get_font(38),fill=SAFFRON,anchor="mm")
+        draw.text((W//2,205),f"{city}",font=get_font(38),fill=SAFFRON,anchor="mm")
         draw.text((W//2,252),f"{panchang.get('weekday','')}  •  {panchang.get('date','')}",
                   font=get_font(30),fill=CREAM,anchor="mm")
         rows=[("తిథి",tf(panchang,"tithi")),("నక్షత్రం",tf(panchang,"nakshatra")),
@@ -191,11 +191,11 @@ def build_static_card(card_num, panchang):
         draw_progress(draw,1)
 
     elif card_num==2:
-        draw_section_header(draw,"⛔ నివారించవలసిన సమయాలు",50,color=AVOID_RED,size=40)
-        draw.text((W//2,126),f"📍 {city} ({tz})",font=get_font(34),fill=SAFFRON,anchor="mm")
+        draw_section_header(draw,"✗ నివారించవలసిన సమయాలు",50,color=AVOID_RED,size=40)
+        draw.text((W//2,126),f"{city} ({tz})",font=get_font(34),fill=SAFFRON,anchor="mm")
         draw_divider(draw,162,AVOID_RED)
-        items=[("రాహు కాలం","rahukaal","🔴"),("దుర్ముహూర్తం","durmuhurtam","⛔"),
-               ("గులిక కాలం","gulika","🟠"),("యమగండం","yamagandam","⚠️"),("వర్జ్యం","varjyam","🚫")]
+        items=[("రాహు కాలం","rahukaal","•"),("దుర్ముహూర్తం","durmuhurtam","✗"),
+               ("గులిక కాలం","gulika","•"),("యమగండం","yamagandam","!"),("వర్జ్యం","varjyam","✗")]
         y=175
         for label,key,icon in items:
             val=tf(panchang,key)
@@ -207,12 +207,12 @@ def build_static_card(card_num, panchang):
         draw_progress(draw,2)
 
     elif card_num==3:
-        draw_section_header(draw,"✅ శుభ ముహూర్తాలు",50,color=AUSPIC_G,size=40)
-        draw.text((W//2,126),f"📍 {city} ({tz})",font=get_font(34),fill=SAFFRON,anchor="mm")
+        draw_section_header(draw,"✓ శుభ ముహూర్తాలు",50,color=AUSPIC_G,size=40)
+        draw.text((W//2,126),f"{city} ({tz})",font=get_font(34),fill=SAFFRON,anchor="mm")
         draw_divider(draw,162,AUSPIC_G)
-        items=[("బ్రహ్మ ముహూర్తం","brahma_muhurta","🌅"),("అభిజిత్ ముహూర్తం","abhijit","⭐"),
-               ("విజయ ముహూర్తం","vijaya_muhurta","🏆"),("అమృత కాలం","amrit_kalam","🪷"),
-               ("గోధూళి ముహూర్తం","godhuli_muhurta","🌇")]
+        items=[("బ్రహ్మ ముహూర్తం","brahma_muhurta","»"),("అభిజిత్ ముహూర్తం","abhijit","★"),
+               ("విజయ ముహూర్తం","vijaya_muhurta","★"),("అమృత కాలం","amrit_kalam","»"),
+               ("గోధూళి ముహూర్తం","godhuli_muhurta","»")]
         y=175
         for label,key,icon in items:
             val=tf(panchang,key)
@@ -224,11 +224,11 @@ def build_static_card(card_num, panchang):
         draw_progress(draw,3)
 
     elif card_num==4:
-        draw_section_header(draw,"🌅 సూర్య చంద్ర వివరాలు",50,color=GOLD,size=40)
-        draw.text((W//2,126),f"📍 {city}",font=get_font(34),fill=SAFFRON,anchor="mm")
+        draw_section_header(draw,"సూర్య చంద్ర వివరాలు",50,color=GOLD,size=40)
+        draw.text((W//2,126),f"{city}",font=get_font(34),fill=SAFFRON,anchor="mm")
         draw_divider(draw,162,GOLD)
-        items=[("🌅 సూర్యోదయం","sunrise"),("🌇 సూర్యాస్తమయం","sunset"),
-               ("🌕 చంద్రోదయం","moonrise"),("🌑 చంద్రాస్తమయం","moonset")]
+        items=[("సూర్యోదయం","sunrise"),("సూర్యాస్తమయం","sunset"),
+               ("చంద్రోదయం","moonrise"),("చంద్రాస్తమయం","moonset")]
         y=180
         for label,key in items:
             val=tf(panchang,key)
@@ -238,8 +238,8 @@ def build_static_card(card_num, panchang):
             y+=92
         y+=16
         draw_card(draw,40,y,W-40,y+115,fill=(75,35,0),border=GOLD,alpha=230)
-        draw.text((W//2,y+33),"🙏 జయ శ్రీమన్నారాయణ!",font=get_font(36,bold=True),fill=GOLD,anchor="mm")
-        draw.text((W//2,y+80),"Like · Share · Subscribe చేయండి",font=get_font(26),fill=CREAM,anchor="mm")
+        draw.text((W//2,y+33),"జయ శ్రీమన్నారాయణ!",font=get_font(36,bold=True),fill=GOLD,anchor="mm")
+        draw.text((W//2,y+80),"Like | Share | Subscribe చేయండి",font=get_font(26),fill=CREAM,anchor="mm")
         draw_progress(draw,4)
 
     return img
@@ -277,11 +277,11 @@ def create_panchang_video(panchang, script, audio_path, output_path):
     duration=max(get_audio_duration(audio_path) if has_audio else 60.0, 48.0)
     frames_per_card=int((duration/4)*FPS)
     char_available=os.path.exists(CHARACTER_PATH)
-    print(f"  🎬 {panchang.get('city','?')} — {duration:.0f}s char={'✅' if char_available else '❌'}")
+    print(f"   {panchang.get('city','?')} — {duration:.0f}s char={'✓' if char_available else '❌'}")
     with tempfile.TemporaryDirectory() as tmp:
         frame_idx=0
         for card_num in range(1,5):
-            print(f"     📸 Card {card_num}/4 …")
+            print(f"      Card {card_num}/4 …")
             static=build_static_card(card_num,panchang)
             for f in range(frames_per_card):
                 frame=static.copy()
@@ -296,7 +296,7 @@ def create_panchang_video(panchang, script, audio_path, output_path):
         cmd+=["-c:v","libx264","-preset","fast","-crf","22","-pix_fmt","yuv420p","-movflags","+faststart",output_path]
         r=subprocess.run(cmd,capture_output=True,text=True)
         if r.returncode!=0: raise RuntimeError(f"FFmpeg: {r.stderr[-1000:]}")
-    print(f"  ✅ {output_path}"); return output_path
+    print(f"  ✓ {output_path}"); return output_path
 
 
 def create_thumbnail(panchang, output_path):
@@ -306,18 +306,18 @@ def create_thumbnail(panchang, output_path):
     for y in range(TH):
         t=y/TH; draw.line([(0,y),(TW,y)],fill=(int(18+(55-18)*t),int(5+(18-5)*t),0))
     ov=Image.new("RGBA",(TW,TH),(0,0,0,0)); od=ImageDraw.Draw(ov)
-    od.text((TW//2,TH//2),"ॐ",font=get_font(280,bold=True),fill=(255,200,0,18),anchor="mm")
+    od.text((TW//2,TH//2),"ఓం",font=get_font(280,bold=True),fill=(255,200,0,18),anchor="mm")
     img=Image.alpha_composite(img,ov); draw=ImageDraw.Draw(img)
     draw.rectangle([6,6,TW-6,TH-6],outline=GOLD,width=3)
     TX=TW*68//100
-    draw.text((TX//2,65),"🕉  నేటి పంచాంగం",font=get_font(58,bold=True),fill=GOLD,anchor="mm")
-    draw.text((TX//2,142),f"📍 {panchang.get('city','USA')}",font=get_font(44),fill=SAFFRON,anchor="mm")
+    draw.text((TX//2,65),"నేటి పంచాంగం",font=get_font(58,bold=True),fill=GOLD,anchor="mm")
+    draw.text((TX//2,142),f"{panchang.get('city','USA')}",font=get_font(44),fill=SAFFRON,anchor="mm")
     draw.line([(40,178),(TX-10,178)],fill=SAFFRON,width=2)
     draw.text((TX//2,208),panchang.get("weekday",""),font=get_font(34),fill=WHITE,anchor="mm")
     draw.text((TX//2,256),f"తిథి: {tf(panchang,'tithi')[:32]}",font=get_font(30),fill=CREAM,anchor="mm")
     draw.text((TX//2,298),f"నక్షత్రం: {tf(panchang,'nakshatra')[:30]}",font=get_font(30),fill=CREAM,anchor="mm")
     draw_card(draw,40,334,TX-10,400,fill=(90,0,0),border=AVOID_RED,alpha=220)
-    draw.text((TX//2,366),f"⛔ రాహు కాలం: {tf(panchang,'rahukaal')}",
+    draw.text((TX//2,366),f"✗ రాహు కాలం: {tf(panchang,'rahukaal')}",
               font=get_font(28,bold=True),fill=(255,100,100),anchor="mm")
     draw.text((TX//2,453),"అన్ని 5 అమెరికా నగరాలకు పంచాంగం",font=get_font(25),fill=GOLD,anchor="mm")
     draw.text((TX//2,493),"Subscribe • Like • Share చేయండి",font=get_font(23),fill=CREAM,anchor="mm")
@@ -326,4 +326,4 @@ def create_thumbnail(panchang, output_path):
         ch=int(TH*0.97); cw=int(char.size[0]*(ch/char.size[1]))
         img.paste(char.resize((cw,ch),Image.LANCZOS),(TW-cw-4,TH-ch),char.resize((cw,ch),Image.LANCZOS))
     img.convert("RGB").save(output_path,"JPEG",quality=93)
-    print(f"  ✅ Thumbnail: {output_path}"); return output_path
+    print(f"  ✓ Thumbnail: {output_path}"); return output_path
