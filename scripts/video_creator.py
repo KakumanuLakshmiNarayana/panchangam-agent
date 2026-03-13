@@ -39,8 +39,11 @@ CHAR_SCALE    = 0.52
 
 
 def get_font(size, bold=False):
-    # PRIORITY 1: NotoSansTelugu downloaded by workflow wget (guaranteed Telugu glyphs)
+    # PRIORITY 1: Telugu font copied by workflow to writable path (Pillow-verified)
     candidates = [
+        "/home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
+        else "/home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf",
+        # fallback: old path
         "/usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
         else "/usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf",
     ]
