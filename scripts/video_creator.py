@@ -11,6 +11,14 @@ import numpy as np
 
 W, H, FPS = 1080, 1920, 24
 
+# Startup font diagnostics
+import glob as _g
+_td = _g.glob("/usr/local/share/fonts/telugu/*.ttf") + _g.glob("/usr/share/fonts/**/*Telugu*", recursive=True)
+print(f"[VIDEO_CREATOR] SCRIPTS_DIR = {os.path.dirname(os.path.abspath(__file__))}")
+print(f"[VIDEO_CREATOR] Telugu fonts on system: {_td}")
+print(f"[VIDEO_CREATOR] scripts/FreeSans.ttf exists: {os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FreeSans.ttf'))}")
+print(f"[VIDEO_CREATOR] scripts/FreeSansBold.ttf exists: {os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FreeSansBold.ttf'))}")
+
 GOLD      = (255, 215, 0)
 SAFFRON   = (255, 107, 0)
 AVOID_RED = (220, 50,  50)
@@ -62,12 +70,18 @@ def get_font(size, bold=False):
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold
         else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ]
+    print(f"  [FONT] Looking for {'bold' if bold else 'regular'} font, size={size}")
     for p in candidates:
-        if p and os.path.exists(p):
+        exists = p and os.path.exists(p)
+        print(f"  [FONT]   {'✅' if exists else '❌'} {p}")
+        if exists:
             try:
                 font = ImageFont.truetype(p, size)
+                print(f"  [FONT] LOADED: {p}")
                 return font
-            except: continue
+            except Exception as e:
+                print(f"  [FONT]   load error: {e}")
+    print(f"  [FONT] WARNING: falling back to default font (no Telugu support!)")
     return ImageFont.load_default()
 
 
