@@ -56,7 +56,8 @@ jobs:
         run: |
           pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager
 
-          # Find a Pillow-compatible Telugu font and copy to known path
+          # Find a Pillow-compatible Telugu font and copy to writable path
+          mkdir -p /home/runner/fonts/telugu
           python3 -c "
           import glob, os, shutil
           from PIL import ImageFont
@@ -74,7 +75,8 @@ jobs:
                   if good_reg and good_bold: break
               except Exception as e:
                   print(f'  SKIP: {os.path.basename(f)}: {type(e).__name__}')
-          dest = '/usr/local/share/fonts/telugu'
+          dest = '/home/runner/fonts/telugu'
+          os.makedirs(dest, exist_ok=True)
           if good_reg:
               shutil.copy(good_reg, f'{dest}/NotoSansTelugu-Regular.ttf')
           if good_bold:
