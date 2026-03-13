@@ -38,12 +38,22 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y \
             ffmpeg \
-            fonts-noto fonts-freefont-ttf fontconfig \
+            fonts-noto fonts-noto-extra fonts-freefont-ttf fontconfig \
             chromium-browser chromium-chromedriver
-          fc-cache -fv
+
+          # Download NotoSansTelugu directly (guaranteed Telugu support)
+          sudo mkdir -p /usr/local/share/fonts/telugu
+          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf \
+            "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Regular.ttf"
+          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf \
+            "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Bold.ttf"
+          sudo fc-cache -fv
+          echo "Telugu fonts installed:"
+          fc-list | grep -i telugu || echo "  (checking system paths directly)"
+          ls /usr/local/share/fonts/telugu/
+
           echo "FFmpeg: $(ffmpeg -version | head -1)"
           echo "Chrome: $(chromium-browser --version)"
-          echo "Chromedriver: $(chromedriver --version)"
 
       - name: Install Python dependencies
         run: |
@@ -53,11 +63,12 @@ jobs:
             lxml \
             pytz \
             anthropic \
-            gtts \
-            selenium \
-            webdriver-manager \
             pillow \
-            scipy
+            gtts \
+            scipy \
+            fonttools \
+            selenium \
+            webdriver-manager
 
       - name: Run Pipeline
         env:
@@ -68,9 +79,8 @@ jobs:
           SMTP_HOST:           smtp.gmail.com
           SMTP_PORT:           587
           SMTP_PASS:           ${{ secrets.SMTP_PASS }}
-          OUTPUT_DIR:          ${{ github.workspace }}/output
         run: |
-          mkdir -p ${{ github.workspace }}/output
+          mkdir -p output
           cd scripts
           if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
             python pipeline.py --skip-approval
@@ -81,15 +91,22 @@ jobs:
       - name: Debug - list output files
         if: always()
         run: |
-          echo "=== Output directory contents ==="
-          ls -lah ${{ github.workspace }}/output/ || echo "output/ is empty or missing"
-          echo "=== scripts/output (if exists) ==="
-          ls -lah ${{ github.workspace }}/scripts/output/ || echo "scripts/output/ does not exist"
-          echo "=== Find all mp4 files ==="
-          find ${{ github.workspace }} -name "*.mp4" 2>/dev/null || echo "No mp4 files found"
+          echo "=== Output files ==="
+          ls -lh output/ || echo "No output dir"
+          echo "=== Font test ==="
+          python3 -c "
+          from PIL import ImageFont
+          import os, glob
+          paths = glob.glob('/usr/local/share/fonts/telugu/*.ttf') + \
+                  glob.glob('/usr/share/fonts/**/*Telugu*', recursive=True)
+          print('Telugu fonts found:', paths[:5])
+          if paths:
+              f = ImageFont.truetype(paths[0], 40)
+              print('Font loaded OK:', paths[0])
+          "
 
       - name: Copy state to dashboard
-        run: cp ${{ github.workspace }}/output/pipeline_state.json dashboard/pipeline_state.json || true
+        run: cp output/pipeline_state.json dashboard/pipeline_state.json || true
 
       - name: Upload video artifact
         uses: actions/upload-artifact@v4
@@ -100,7 +117,6 @@ jobs:
             output/*.jpg
             output/*.mp3
             output/pipeline_state.json
-          if-no-files-found: warn
           retention-days: 7
 
       - name: Deploy dashboard to GitHub Pages
@@ -112,10 +128,11 @@ jobs:
       - name: Summary
         run: |
           echo "## 🕉 Panchangam Pipeline Done" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "📧 Check your email to approve." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Output Files" >> $GITHUB_STEP_SUMMARY
-          ls output/ | while read f; do echo "- $f"; done >> $GITHUB_STEP_SUMMARY || echo "No files found" >> $GITHUB_STEP_SUMMARY
+          echo "**Output Files**" >> $GITHUB_STEP_SUMMARY
+          ls output/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
 
   upload-approved:
     name: Upload Approved Video
