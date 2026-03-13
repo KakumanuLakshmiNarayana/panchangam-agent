@@ -43,15 +43,19 @@ def get_font(size, bold=False):
             os.path.join(bundled, "FreeSans.ttf"),         # scripts/fonts/
             os.path.join(SCRIPTS_DIR, "FreeSans.ttf"),     # scripts/ directly
         ]
-    # PRIORITY 2: System NotoSansTelugu (downloaded via workflow wget)
+    # PRIORITY 2: NotoSansTelugu downloaded by workflow (guaranteed Telugu)
     candidates += [
         "/usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
         else "/usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf",
     ]
-    # PRIORITY 3: Any system Telugu font
-    for pat in ["/usr/share/fonts/**/*Telugu*"]:
+    # PRIORITY 3: Any system Noto Telugu font (fonts-noto-extra package)
+    for pat in [
+        "/usr/share/fonts/**/*NotoSansTelugu*",
+        "/usr/share/fonts/**/*Telugu*",
+        "/usr/local/share/fonts/**/*Telugu*",
+    ]:
         candidates += sorted(glob.glob(pat, recursive=True))
-    # PRIORITY 4: System FreeSans
+    # PRIORITY 4: System FreeSans (Latin only - last resort, boxes for Telugu)
     candidates += [
         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if bold
         else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
