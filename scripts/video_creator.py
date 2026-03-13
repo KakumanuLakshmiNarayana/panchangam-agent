@@ -39,37 +39,21 @@ CHAR_SCALE    = 0.52
 
 
 def get_font(size, bold=False):
-    # PRIORITY 1: Bundled fonts in scripts/fonts/ (always present in repo)
-    bundled = os.path.join(SCRIPTS_DIR, "fonts")
-    if bold:
-        candidates = [
-            os.path.join(bundled, "FreeSansBold.ttf"),     # scripts/fonts/
-            os.path.join(SCRIPTS_DIR, "FreeSansBold.ttf"), # scripts/ directly
-        ]
-    else:
-        candidates = [
-            os.path.join(bundled, "FreeSans.ttf"),         # scripts/fonts/
-            os.path.join(SCRIPTS_DIR, "FreeSans.ttf"),     # scripts/ directly
-        ]
-    # PRIORITY 2: NotoSansTelugu downloaded by workflow (guaranteed Telugu)
-    candidates += [
+    # PRIORITY 1: NotoSansTelugu downloaded by workflow wget (guaranteed Telugu glyphs)
+    candidates = [
         "/usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
         else "/usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf",
     ]
-    # PRIORITY 3: Any system Noto Telugu font (fonts-noto-extra package)
-    for pat in [
-        "/usr/share/fonts/**/*NotoSansTelugu*",
-        "/usr/share/fonts/**/*Telugu*",
-        "/usr/local/share/fonts/**/*Telugu*",
-    ]:
+    # PRIORITY 2: System NotoSansTelugu from fonts-noto-extra package
+    noto_bold_pats   = ["/usr/share/fonts/**/*NotoSansTelugu-Bold*", "/usr/share/fonts/**/*NotoSansTelugu-[A-Z][a-z]*Bold*"]
+    noto_reg_pats    = ["/usr/share/fonts/**/*NotoSansTelugu-Regular*", "/usr/share/fonts/**/*NotoSansTelugu-[A-Z][a-z]*Regular*"]
+    noto_any_pats    = ["/usr/share/fonts/**/*NotoSansTelugu*", "/usr/share/fonts/**/*NotoSerifTelugu*"]
+    for pat in (noto_bold_pats if bold else noto_reg_pats) + noto_any_pats:
         candidates += sorted(glob.glob(pat, recursive=True))
-    # PRIORITY 4: System FreeSans (Latin only - last resort, boxes for Telugu)
-    candidates += [
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf" if bold
-        else "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold
-        else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    ]
+    # PRIORITY 3: Any Telugu font anywhere on system
+    for pat in ["/usr/share/fonts/**/*Telugu*", "/usr/local/share/fonts/**/*Telugu*"]:
+        candidates += sorted(glob.glob(pat, recursive=True))
+    # NOTE: FreeSans/DejaVu intentionally excluded — they have zero Telugu glyphs
     print(f"  [FONT] Looking for {'bold' if bold else 'regular'} font, size={size}")
     for p in candidates:
         exists = p and os.path.exists(p)
