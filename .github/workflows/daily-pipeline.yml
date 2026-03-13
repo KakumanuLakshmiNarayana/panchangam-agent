@@ -36,39 +36,27 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            ffmpeg \
-            fonts-noto fonts-noto-extra fonts-freefont-ttf fontconfig \
-            chromium-browser chromium-chromedriver
+          sudo apt-get install -y ffmpeg fonts-noto fonts-noto-extra fonts-freefont-ttf fontconfig chromium-chromedriver
 
-          # Download NotoSansTelugu directly (guaranteed Telugu support)
+          # chromium-browser was removed from apt in Ubuntu 22.04 — use snap
+          which chromium-browser || sudo snap install chromium || true
+
+          # Download NotoSansTelugu font directly (guaranteed Telugu glyph support)
           sudo mkdir -p /usr/local/share/fonts/telugu
-          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf \
-            "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Regular.ttf"
-          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf \
-            "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Bold.ttf"
+          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Regular.ttf" || true
+          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Bold.ttf" || true
           sudo fc-cache -fv
-          echo "Telugu fonts installed:"
-          fc-list | grep -i telugu || echo "  (checking system paths directly)"
-          ls /usr/local/share/fonts/telugu/
 
-          echo "FFmpeg: $(ffmpeg -version | head -1)"
-          echo "Chrome: $(chromium-browser --version)"
+          echo "=== Installed ==="
+          ffmpeg -version | head -1
+          chromium-browser --version || chromium --version || echo "chromium: check snap"
+          echo "=== Telugu fonts ==="
+          ls /usr/local/share/fonts/telugu/
+          fc-list | grep -i telugu | head -5
 
       - name: Install Python dependencies
         run: |
-          pip install \
-            requests \
-            beautifulsoup4 \
-            lxml \
-            pytz \
-            anthropic \
-            pillow \
-            gtts \
-            scipy \
-            fonttools \
-            selenium \
-            webdriver-manager
+          pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager
 
       - name: Run Pipeline
         env:
@@ -90,19 +78,22 @@ jobs:
 
       - name: Debug - list output files
         if: always()
+        continue-on-error: true
         run: |
           echo "=== Output files ==="
           ls -lh output/ || echo "No output dir"
           echo "=== Font test ==="
           python3 -c "
+          import glob
+          paths = glob.glob('/usr/local/share/fonts/telugu/*.ttf')
+          paths += glob.glob('/usr/share/fonts/**/*Telugu*', recursive=True)
+          print('Telugu fonts:', paths[:5])
           from PIL import ImageFont
-          import os, glob
-          paths = glob.glob('/usr/local/share/fonts/telugu/*.ttf') + \
-                  glob.glob('/usr/share/fonts/**/*Telugu*', recursive=True)
-          print('Telugu fonts found:', paths[:5])
           if paths:
               f = ImageFont.truetype(paths[0], 40)
               print('Font loaded OK:', paths[0])
+          else:
+              print('No Telugu fonts found!')
           "
 
       - name: Copy state to dashboard
@@ -132,7 +123,7 @@ jobs:
           echo "📧 Check your email to approve." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Output Files**" >> $GITHUB_STEP_SUMMARY
-          ls output/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          ls output/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY || true
 
   upload-approved:
     name: Upload Approved Video
