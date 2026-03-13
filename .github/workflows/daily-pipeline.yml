@@ -41,10 +41,8 @@ jobs:
           # chromium-browser was removed from apt in Ubuntu 22.04 — use snap
           which chromium-browser || sudo snap install chromium || true
 
-          # Download NotoSansTelugu font directly (guaranteed Telugu glyph support)
+          # Prepare font dir (font selection happens after pip install pillow)
           sudo mkdir -p /usr/local/share/fonts/telugu
-          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Regular.ttf" || true
-          sudo wget -q -O /usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf "https://github.com/googlefonts/noto-fonts/raw/main/phased/NotoSansTelugu/NotoSansTelugu-Bold.ttf" || true
           sudo fc-cache -fv
 
           echo "=== Installed ==="
@@ -57,6 +55,34 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager
+
+          # Find a Pillow-compatible Telugu font and copy to known path
+          python3 -c "
+          import glob, os, shutil
+          from PIL import ImageFont
+          candidates = sorted(glob.glob('/usr/share/fonts/**/*Telugu*', recursive=True))
+          print(f'Telugu candidates: {len(candidates)}')
+          good_reg, good_bold = None, None
+          for f in candidates:
+              try:
+                  ImageFont.truetype(f, 40)
+                  name = os.path.basename(f).lower()
+                  if 'bold' in name and good_bold is None:
+                      good_bold = f; print(f'  BOLD OK: {f}')
+                  elif 'bold' not in name and good_reg is None:
+                      good_reg = f; print(f'  REG  OK: {f}')
+                  if good_reg and good_bold: break
+              except Exception as e:
+                  print(f'  SKIP: {os.path.basename(f)}: {type(e).__name__}')
+          dest = '/usr/local/share/fonts/telugu'
+          if good_reg:
+              shutil.copy(good_reg, f'{dest}/NotoSansTelugu-Regular.ttf')
+          if good_bold:
+              shutil.copy(good_bold, f'{dest}/NotoSansTelugu-Bold.ttf')
+          elif good_reg:
+              shutil.copy(good_reg, f'{dest}/NotoSansTelugu-Bold.ttf')
+          print('Copied:', os.listdir(dest))
+          "
 
       - name: Run Pipeline
         env:
