@@ -43,10 +43,10 @@ jobs:
 
       - name: Download NotoSansTelugu fonts (static, Pillow-compatible)
         run: |
-          # Use jsDelivr CDN to serve static TTFs from googlefonts/noto-fonts repo
+          # Download static TTFs directly from notofonts/noto-fonts via raw.githubusercontent.com
           # These are guaranteed to work with Pillow — no system font hunting needed
           mkdir -p /home/runner/fonts/telugu
-          BASE="https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/phaseIII_only/unhinted/ttf/NotoSansTelugu"
+          BASE="https://raw.githubusercontent.com/notofonts/noto-fonts/refs/heads/main/hinted/ttf/NotoSansTelugu"
           curl -fsSL "${BASE}/NotoSansTelugu-Regular.ttf" \
                -o /home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf
           curl -fsSL "${BASE}/NotoSansTelugu-Bold.ttf" \
