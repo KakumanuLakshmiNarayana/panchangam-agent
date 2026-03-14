@@ -1,9 +1,9 @@
 """
-script_generator.py v3
-9-scene sync: intro → tithi → rahu → durmuhurtam → brahma → abhijit → sunrise → sunset → closing
-Start: "నమస్కారం నేను మీ పంచాంగం గురువు"
-End: positive Telugu blessing + like/share/subscribe
-~13-14 seconds total, ~40-50 words
+script_generator.py v4
+8-scene sync: intro → tithi → rahu → durmuhurtam → brahma → abhijit → sun → closing
+Max 30 words for ~13-14s audio at gTTS pace (~2.2 words/sec)
+Start: "నమస్కారం! nenu meepanchangamguyusa."
+End: positive Telugu blessing + Like Share Subscribe
 """
 import os, json
 import anthropic
@@ -21,19 +21,24 @@ def generate_video_script(panchang):
     weekday  = panchang.get("weekday",  "")
     date_str = panchang.get("date",     "")
 
-    tithi    = tf(panchang, "tithi").split("→")[0].strip()
-    rahu     = tf(panchang, "rahukaal").split("|")[0].strip().replace(f" {tz_label}","").strip()
-    dur      = tf(panchang, "durmuhurtam").replace(f" {tz_label}","").strip()
-    brahma   = tf(panchang, "brahma_muhurta").split("|")[0].strip().replace(f" {tz_label}","").strip()
-    abhijit  = tf(panchang, "abhijit").replace(f" {tz_label}","").strip()
-    sunrise  = tf(panchang, "sunrise").replace(f" {tz_label}","").strip()
-    sunset   = tf(panchang, "sunset").replace(f" {tz_label}","").strip()
+    # Pre-clean all values — strip TZ and take first slot only
+    def clean(key):
+        v = tf(panchang, key).split("|")[0].strip()
+        return v.replace(f" {tz_label}","").strip()
 
-    prompt = f"""Write a SHORT voice narration for a 13-second Instagram Reel Panchangam video.
+    tithi   = clean("tithi").split("→")[0].split("->")[0].strip()
+    rahu    = clean("rahukaal")
+    dur     = clean("durmuhurtam")
+    brahma  = clean("brahma_muhurta")
+    abhijit = clean("abhijit")
+    sunrise = clean("sunrise")
+    sunset  = clean("sunset")
 
-City: {city} | Date: {weekday} {date_str} | Timezone: {tz_label}
+    prompt = f"""Write a voice narration for a 14-second Instagram Reel Panchangam video.
 
-DATA TO COVER (in this order):
+City: {city} | {weekday} | Timezone: {tz_label}
+
+DATA (in order):
 1. Tithi: {tithi}
 2. Rahu Kalam: {rahu}
 3. Durmuhurtam: {dur}
@@ -43,33 +48,32 @@ DATA TO COVER (in this order):
 
 STRICT RULES:
 - Start EXACTLY with: "నమస్కారం! nenu meepanchangamguyusa."
-- Say city name: {city}
-- Cover all 6 data points above with exact times
-- End with a positive Telugu blessing like "మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను"
-- Then say "Like, Share, Subscribe చేయండి!"
-- Natural Telugu+English mix (like Telugu-Americans speak)
-- MAXIMUM 55 words total — HARD LIMIT
-- Do NOT say "follow" — say "Subscribe చేయండి"
+- Say city: {city}
+- Mention each of the 6 data points with times
+- End EXACTLY with: "మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! Like, Share, Subscribe చేయండి!"
+- Natural Telugu+English mix
+- MAXIMUM 45 words total — HARD LIMIT (gTTS reads ~3 words/sec)
+- Keep each data point to 4-5 words max
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings in Telugu and English.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "55-word max narration here",
+  "full_narration": "45-word max narration here",
   "on_screen_lines": [
     "Tithi: {tithi}",
     "Rahu Kalam: {rahu} {tz_label}",
     "Durmuhurtam: {dur} {tz_label}",
     "Brahma Muhurtam: {brahma} {tz_label}",
     "Abhijit: {abhijit} {tz_label}",
-    "Sunrise: {sunrise} {tz_label} | Sunset: {sunset} {tz_label}"
+    "Sunrise: {sunrise} | Sunset: {sunset} {tz_label}"
   ]
 }}"""
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=500,
+        max_tokens=400,
         messages=[{"role": "user", "content": prompt}]
     )
 
@@ -82,18 +86,19 @@ Return ONLY valid JSON, no markdown:
     try:
         return json.loads(raw)
     except:
+        # Fallback — hardcoded short narration
         return {
             "title": f"Daily Panchangam {city} | {weekday} {date_str}",
-            "description": f"Complete Hindu Panchang for {city}. All timings in Telugu & English.",
+            "description": f"Complete Hindu Panchang for {city}.",
             "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","Shorts"],
             "full_narration": (
                 f"నమస్కారం! nenu meepanchangamguyusa. "
-                f"{city} lo {weekday} Panchangam. "
+                f"{city} Panchangam. "
                 f"Tithi {tithi}. "
-                f"Rahu Kalam {rahu} {tz_label} avoid cheyandi. "
+                f"Rahu Kalam {rahu} avoid. "
                 f"Durmuhurtam {dur}. "
-                f"Brahma Muhurtam {brahma} prayers ki best. "
-                f"Abhijit {abhijit} important work ki. "
+                f"Brahma Muhurtam {brahma}. "
+                f"Abhijit {abhijit} best time. "
                 f"Sunrise {sunrise}, Sunset {sunset}. "
                 f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! "
                 f"Like, Share, Subscribe చేయండి!"
