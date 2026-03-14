@@ -51,6 +51,12 @@ jobs:
                -o /home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf
           curl -fsSL "${BASE}/NotoSansTelugu-Bold.ttf" \
                -o /home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf
+          # Latin fallback — fixes AM/PM/ET/CT/PT and all English words showing as boxes
+          BASE2="https://raw.githubusercontent.com/notofonts/noto-fonts/refs/heads/main/hinted/ttf/NotoSans"
+          curl -fsSL "${BASE2}/NotoSans-Regular.ttf" \
+               -o /home/runner/fonts/telugu/NotoSans-Regular.ttf
+          curl -fsSL "${BASE2}/NotoSans-Bold.ttf" \
+               -o /home/runner/fonts/telugu/NotoSans-Bold.ttf
           echo "=== Font files ==="
           ls -lh /home/runner/fonts/telugu/
           # Quick Pillow sanity check
