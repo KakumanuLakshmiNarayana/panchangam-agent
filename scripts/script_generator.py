@@ -1,111 +1,93 @@
 """
-script_generator.py — City-specific Telugu+English script covering all timing fields.
+script_generator.py v2
+Generates SHORT 10-12 second narration scripts for Instagram Reels.
+Target: ~25-35 words = ~12 seconds of speech at normal pace.
+Structure matches the 7 video scenes.
 """
-import os, json
+
+import os
 import anthropic
+import json
 
 
-def tf(p, k):
-    v = p.get(k, "N/A")
-    return v if v and v != "" else "N/A"
+def generate_script(panchang: dict) -> dict:
+    """Generate a short Reel-optimized narration + metadata for one city."""
 
+    city     = panchang.get("city", "USA")
+    date     = panchang.get("date", "")
+    tithi    = panchang.get("tithi", "N/A")
+    paksha   = panchang.get("paksha", "")
+    rahu     = panchang.get("rahukaal", "N/A").split("|")[0].strip()
+    dur      = panchang.get("durmuhurtam", "N/A")
+    abhijit  = panchang.get("abhijit", "N/A")
+    sunrise  = panchang.get("sunrise", "N/A")
+    sunset   = panchang.get("sunset", "N/A")
+    tz       = panchang.get("tz_label", "ET")
+    weekday  = panchang.get("weekday", "")
 
-def generate_video_script(panchang):
-    client   = anthropic.Anthropic()
-    city     = panchang.get("city",     "USA")
-    tz_label = panchang.get("tz_label", "ET")
-    weekday  = panchang.get("weekday",  "")
-    date_str = panchang.get("date",     "")
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-    prompt = f"""You are creating a 60-second Instagram Reel / YouTube Shorts script for 
-daily Hindu Panchang for Telugu-speaking Hindus in {city}.
+    prompt = f"""You are writing a SHORT voice narration for a 12-second Instagram Reel about Hindu Panchangam.
 
-Today's complete Panchang for {city} ({tz_label}):
-Date: {weekday}, {date_str}
+City: {city}
+Date: {weekday}, {date}
+Tithi: {tithi} ({paksha})
+Rahu Kalam: {rahu} {tz}
+Durmuhurtam: {dur} {tz}
+Abhijit Muhurtham: {abhijit} {tz}
+Sunrise: {sunrise} {tz} | Sunset: {sunset} {tz}
 
-BASIC INFO:
-- Tithi: {tf(panchang,'tithi')}
-- Nakshatra: {tf(panchang,'nakshatra')}
-- Yoga: {tf(panchang,'yoga')}
-- Karana: {tf(panchang,'karana')}
-- Masa: {tf(panchang,'masa')} | Paksha: {tf(panchang,'paksha')}
+RULES:
+- Maximum 35 words total. This is a HARD limit.
+- Mix Telugu and English naturally (like how Telugu people speak in USA)
+- Must cover: greeting, Rahu warning, best time, sign-off
+- Warm devotional tone, like a friendly pandit
+- End with "Follow cheyandi daily Panchangam kosam!"
 
-INAUSPICIOUS TIMINGS for {city}:
-- Rahu Kalam: {tf(panchang,'rahukaal')}
-- Dur Muhurtam: {tf(panchang,'durmuhurtam')}
-- Gulika Kalam: {tf(panchang,'gulika')}
-- Yamaganda: {tf(panchang,'yamagandam')}
-- Varjyam: {tf(panchang,'varjyam')}
-
-AUSPICIOUS TIMINGS for {city}:
-- Brahma Muhurta: {tf(panchang,'brahma_muhurta')}
-- Abhijit: {tf(panchang,'abhijit')}
-- Vijaya Muhurta: {tf(panchang,'vijaya_muhurta')}
-- Amrit Kalam: {tf(panchang,'amrit_kalam')}
-- Godhuli Muhurta: {tf(panchang,'godhuli_muhurta')}
-
-SUN & MOON:
-- Sunrise: {tf(panchang,'sunrise')}
-- Sunset: {tf(panchang,'sunset')}
-
-STRICT RULES:
-1. Natural Telugu+English mix (how Telugu-Americans actually speak)
-2. Say "{city}" specifically — viewers need to know it's for their city
-3. Give EXACT timings — never say "check your area" or "location based"
-4. Highlight what to AVOID and what is AUSPICIOUS with clear language
-5. 130-150 words total (reads in ~60 seconds)
-6. Start with a Telugu blessing, end with a Telugu blessing
-
-Return ONLY valid JSON with no markdown or backticks:
-{{
-  "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
-  "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings in Telugu and English.",
-  "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "Complete Telugu+English 60-second script here with exact {city} timings",
-  "on_screen_lines": [
-    "📍 {city}",
-    "⛔ Rahu Kalam: exact time",
-    "⛔ Dur Muhurtam: exact time",
-    "✅ Brahma Muhurta: exact time",
-    "✅ Abhijit: exact time"
-  ]
-}}"""
+Write ONLY the narration text, nothing else. No labels, no JSON."""
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=1500,
+        max_tokens=120,
         messages=[{"role": "user", "content": prompt}]
     )
 
-    raw = message.content[0].text.strip()
-    if "```" in raw:
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
+    narration = message.content[0].text.strip()
 
-    try:
-        return json.loads(raw)
-    except:
-        return {
-            "title": f"Daily Panchangam {city} | {weekday} {date_str}",
-            "description": f"Complete Hindu Panchang for {city}. All timings in Telugu & English.",
-            "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","Shorts"],
-            "full_narration": (
-                f"నమస్కారం! {city} లో ఉన్న మన అందరికీ శుభోదయం! "
-                f"Today is {weekday}. Tithi {tf(panchang,'tithi')}, "
-                f"Nakshatra {tf(panchang,'nakshatra')}. "
-                f"Rahu Kalam {city}: {tf(panchang,'rahukaal')} — avoid important work. "
-                f"Dur Muhurtam: {tf(panchang,'durmuhurtam')} — also avoid. "
-                f"Brahma Muhurta: {tf(panchang,'brahma_muhurta')} — excellent for prayers. "
-                f"Abhijit Muhurta: {tf(panchang,'abhijit')} — very auspicious. "
-                f"Sunrise: {tf(panchang,'sunrise')}. "
-                f"మీకు శుభమగుగాక! Jay Srimannarayana!"
-            ),
-            "on_screen_lines": [
-                f"📍 {city}",
-                f"⛔ Rahu Kalam: {tf(panchang,'rahukaal')}",
-                f"✅ Brahma Muhurta: {tf(panchang,'brahma_muhurta')}",
-                f"✅ Abhijit: {tf(panchang,'abhijit')}",
-            ]
-        }
+    # Build on_screen_lines for caption/description use
+    on_screen_lines = [
+        f"Tithi: {tithi}",
+        f"Rahu Kalam: {rahu} {tz}",
+        f"Durmuhurtam: {dur} {tz}",
+        f"Abhijit Muhurtham: {abhijit} {tz}",
+        f"Sunrise: {sunrise} | Sunset: {sunset} {tz}",
+    ]
+
+    hashtags = [
+        "DailyPanchangam", "TeluguPanchang", "HinduCalendar",
+        "RahuKalam", "Panchangam", "Shorts", "Reels",
+        "TeluguAmerica", "HinduAmerica", "PanthuluPanchangam"
+    ]
+
+    title = (f"Daily Panchangam {city} | {weekday} {date} | "
+             f"Rahu Kalam {rahu} {tz}")
+
+    description = (
+        f"Today's Panchangam for {city}\n"
+        f"Date: {weekday}, {date}\n\n"
+        + "\n".join(on_screen_lines)
+        + "\n\n#" + " #".join(hashtags)
+    )
+
+    return {
+        "full_narration": narration,
+        "on_screen_lines": on_screen_lines,
+        "title": title,
+        "description": description,
+        "hashtags": hashtags,
+    }
+
+
+# Alias for backward compatibility
+def generate_script_for_city(panchang: dict) -> dict:
+    return generate_script(panchang)
