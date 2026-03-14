@@ -1,10 +1,11 @@
 """
-video_creator.py v6
+video_creator.py v7
+- Dual-font rendering: NotoSansTelugu for Telugu, NotoSans for Latin/English
+- Fixes AM/PM/PT/CT/ET and all English words showing as boxes
 - Flood fill background removal (preserves face perfectly)
-- FreeSansBold/FreeSans for Telugu rendering
 - Character at bottom, never overlaps content
 """
-import subprocess, os, tempfile, math, glob
+import subprocess, os, tempfile, math, glob, re
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import numpy as np
@@ -16,8 +17,8 @@ import glob as _g
 _td = _g.glob("/usr/local/share/fonts/telugu/*.ttf") + _g.glob("/usr/share/fonts/**/*Telugu*", recursive=True)
 print(f"[VIDEO_CREATOR] SCRIPTS_DIR = {os.path.dirname(os.path.abspath(__file__))}")
 print(f"[VIDEO_CREATOR] Telugu fonts on system: {_td}")
-print(f"[VIDEO_CREATOR] scripts/FreeSans.ttf exists: {os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FreeSans.ttf'))}")
-print(f"[VIDEO_CREATOR] scripts/FreeSansBold.ttf exists: {os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FreeSansBold.ttf'))}")
+print(f"[VIDEO_CREATOR] NotoSansTelugu-Regular exists: {os.path.exists('/home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf')}")
+print(f"[VIDEO_CREATOR] NotoSans-Regular exists: {os.path.exists('/home/runner/fonts/telugu/NotoSans-Regular.ttf')}")
 
 GOLD      = (255, 215, 0)
 SAFFRON   = (255, 107, 0)
@@ -37,15 +38,17 @@ CHAR_Y_BOTTOM = H - 30
 CHAR_X        = W // 2
 CHAR_SCALE    = 0.52
 
+# Telugu Unicode block range
+TELUGU_RE = re.compile(r'[\u0C00-\u0C7F]')
+
 
 def get_font(size, bold=False):
-    # NotoSansTelugu downloaded by workflow step — path is guaranteed on CI.
-    # Also checks SCRIPTS_DIR so you can bundle fonts in the repo as a fallback.
+    """Get Telugu font — used for pure-Telugu text like labels and titles."""
     suffix = "Bold" if bold else "Regular"
     candidates = [
-        f"/home/runner/fonts/telugu/NotoSansTelugu-{suffix}.ttf",   # CI download
-        os.path.join(SCRIPTS_DIR, f"NotoSansTelugu-{suffix}.ttf"),  # repo bundle
-        os.path.join(SCRIPTS_DIR, "NotoSansTelugu-Regular.ttf"),    # last resort
+        f"/home/runner/fonts/telugu/NotoSansTelugu-{suffix}.ttf",
+        os.path.join(SCRIPTS_DIR, f"NotoSansTelugu-{suffix}.ttf"),
+        os.path.join(SCRIPTS_DIR, "NotoSansTelugu-Regular.ttf"),
     ]
     for p in candidates:
         if os.path.exists(p):
@@ -55,6 +58,82 @@ def get_font(size, bold=False):
                 pass
     print("  [FONT] WARNING: Telugu font not found — text will render as boxes!")
     return ImageFont.load_default()
+
+
+def get_latin_font(size, bold=False):
+    """Get Latin font — used for English text (AM/PM/timezones/names)."""
+    suffix = "Bold" if bold else "Regular"
+    candidates = [
+        f"/home/runner/fonts/telugu/NotoSans-{suffix}.ttf",
+        os.path.join(SCRIPTS_DIR, f"NotoSans-{suffix}.ttf"),
+        os.path.join(SCRIPTS_DIR, "NotoSans-Regular.ttf"),
+        # System fallbacks
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                return ImageFont.truetype(p, size)
+            except Exception:
+                pass
+    return get_font(size, bold)  # last resort: Telugu font
+
+
+def draw_mixed_text(draw, pos, text, size, bold=False, fill=WHITE, anchor=None):
+    """
+    Draw text using Telugu font for Telugu chars, Latin font for everything else.
+    Handles anchor='mm' by pre-measuring total width and centering manually.
+    """
+    if not text:
+        return
+
+    tel_font = get_font(size, bold)
+    lat_font = get_latin_font(size, bold)
+
+    # Split text into runs of same font
+    runs = []
+    current_chars = []
+    current_is_telugu = None
+
+    for char in text:
+        is_tel = bool(TELUGU_RE.match(char))
+        if current_is_telugu is None:
+            current_is_telugu = is_tel
+        if is_tel != current_is_telugu:
+            runs.append((current_is_telugu, ''.join(current_chars)))
+            current_chars = []
+            current_is_telugu = is_tel
+        current_chars.append(char)
+    if current_chars:
+        runs.append((current_is_telugu, ''.join(current_chars)))
+
+    # Measure total width and max height for anchor support
+    total_w = 0
+    max_h = 0
+    for is_tel, run_text in runs:
+        font = tel_font if is_tel else lat_font
+        bbox = font.getbbox(run_text)
+        total_w += bbox[2] - bbox[0]
+        max_h = max(max_h, bbox[3] - bbox[1])
+
+    x, y = pos
+
+    # Handle anchor
+    if anchor == "mm":
+        x = x - total_w // 2
+        y = y - max_h // 2
+    elif anchor == "ra":
+        x = x - total_w
+    # default: top-left
+
+    # Draw each run
+    for is_tel, run_text in runs:
+        font = tel_font if is_tel else lat_font
+        draw.text((x, y), run_text, font=font, fill=fill)
+        bbox = font.getbbox(run_text)
+        x += bbox[2] - bbox[0]
+
 
 _char_cache = None
 def _load_char():
@@ -129,7 +208,7 @@ def draw_divider(draw,y,color=GOLD):
 
 def draw_section_header(draw,text,y,color=GOLD,size=44):
     draw_divider(draw,y-2,color)
-    draw.text((W//2,y+size//2),text,font=get_font(size,bold=True),fill=color,anchor="mm")
+    draw_mixed_text(draw,(W//2,y+size//2),text,size,bold=True,fill=color,anchor="mm")
     draw_divider(draw,y+size+4,color)
 
 
@@ -144,7 +223,7 @@ def draw_progress(draw,card_num,total=4):
 def draw_name_badge(draw,x_center,y,name="నారాయణ"):
     bw,bh=280,44; x1=x_center-bw//2
     draw_card(draw,x1,y,x1+bw,y+bh,fill=(80,40,0),border=GOLD,alpha=235)
-    draw.text((x_center,y+bh//2),name,font=get_font(28,bold=True),fill=GOLD,anchor="mm")
+    draw_mixed_text(draw,(x_center,y+bh//2),name,28,bold=True,fill=GOLD,anchor="mm")
 
 
 def tf(p,k):
@@ -158,25 +237,32 @@ def build_static_card(card_num, panchang):
     city=panchang.get("city","USA"); tz=panchang.get("tz_label","ET")
 
     if card_num==1:
+        # Pure Telugu titles — use draw.text directly with get_font
         draw.text((W//2,65),"ఓం",font=get_font(58,bold=True),fill=GOLD,anchor="mm")
         draw.text((W//2,132),"నేటి పంచాంగం",font=get_font(56,bold=True),fill=GOLD,anchor="mm")
         draw_divider(draw,172,SAFFRON)
-        draw.text((W//2,205),f"{city}",font=get_font(38),fill=SAFFRON,anchor="mm")
-        draw.text((W//2,252),f"{panchang.get('weekday','')}  -  {panchang.get('date','')}",
-                  font=get_font(30),fill=CREAM,anchor="mm")
+        # City name is English — use draw_mixed_text
+        draw_mixed_text(draw,(W//2,205),f"{city}",38,fill=SAFFRON,anchor="mm")
+        # Date line has both Telugu (weekday) and English (date) — use draw_mixed_text
+        draw_mixed_text(draw,(W//2,252),
+                        f"{panchang.get('weekday','')}  -  {panchang.get('date','')}",
+                        30,fill=CREAM,anchor="mm")
         rows=[("తిథి",tf(panchang,"tithi")),("నక్షత్రం",tf(panchang,"nakshatra")),
               ("యోగం",tf(panchang,"yoga")),("కరణం",tf(panchang,"karana")),("పక్షం",tf(panchang,"paksha"))]
         y=282
         for label,val in rows:
             draw_card(draw,40,y,W-40,y+86,fill=(45,12,0),border=SAFFRON)
+            # Label is Telugu — direct draw
             draw.text((68,y+10),label,font=get_font(26,bold=True),fill=SAFFRON)
-            draw.text((68,y+44),val[:44],font=get_font(28),fill=WHITE)
+            # Value is mixed (e.g. "Ekadashi upto 08:46 PM PT → Dwadashi") — use draw_mixed_text
+            draw_mixed_text(draw,(68,y+44),val[:44],28,fill=WHITE)
             y+=94
         draw_progress(draw,1)
 
     elif card_num==2:
         draw_section_header(draw,"✗ నివారించవలసిన సమయాలు",50,color=AVOID_RED,size=40)
-        draw.text((W//2,126),f"{city} ({tz})",font=get_font(34),fill=SAFFRON,anchor="mm")
+        # City + timezone is mixed
+        draw_mixed_text(draw,(W//2,126),f"{city} ({tz})",34,fill=SAFFRON,anchor="mm")
         draw_divider(draw,162,AVOID_RED)
         items=[("రాహు కాలం","rahukaal","•"),("దుర్ముహూర్తం","durmuhurtam","✗"),
                ("గులిక కాలం","gulika","•"),("యమగండం","yamagandam","!"),("వర్జ్యం","varjyam","✗")]
@@ -185,14 +271,16 @@ def build_static_card(card_num, panchang):
             val=tf(panchang,key)
             if val=="N/A": continue
             draw_card(draw,40,y,W-40,y+92,fill=(65,0,0),border=AVOID_RED)
+            # Label is Telugu
             draw.text((68,y+10),f"{label}",font=get_font(28,bold=True),fill=CREAM)
-            draw.text((68,y+50),val,font=get_font(30,bold=True),fill=AVOID_RED)
+            # Value is English timings (e.g. "10:04 AM – 11:33 AM PT")
+            draw_mixed_text(draw,(68,y+50),val,30,bold=True,fill=AVOID_RED)
             y+=100
         draw_progress(draw,2)
 
     elif card_num==3:
         draw_section_header(draw,"✓ శుభ ముహూర్తాలు",50,color=AUSPIC_G,size=40)
-        draw.text((W//2,126),f"{city} ({tz})",font=get_font(34),fill=SAFFRON,anchor="mm")
+        draw_mixed_text(draw,(W//2,126),f"{city} ({tz})",34,fill=SAFFRON,anchor="mm")
         draw_divider(draw,162,AUSPIC_G)
         items=[("బ్రహ్మ ముహూర్తం","brahma_muhurta","»"),("అభిజిత్ ముహూర్తం","abhijit","★"),
                ("విజయ ముహూర్తం","vijaya_muhurta","★"),("అమృత కాలం","amrit_kalam","»"),
@@ -203,13 +291,13 @@ def build_static_card(card_num, panchang):
             if val=="N/A": continue
             draw_card(draw,40,y,W-40,y+92,fill=(0,42,15),border=AUSPIC_G)
             draw.text((68,y+10),f"{label}",font=get_font(28,bold=True),fill=CREAM)
-            draw.text((68,y+50),val,font=get_font(30,bold=True),fill=AUSPIC_G)
+            draw_mixed_text(draw,(68,y+50),val,30,bold=True,fill=AUSPIC_G)
             y+=100
         draw_progress(draw,3)
 
     elif card_num==4:
         draw_section_header(draw,"సూర్య చంద్ర వివరాలు",50,color=GOLD,size=40)
-        draw.text((W//2,126),f"{city}",font=get_font(34),fill=SAFFRON,anchor="mm")
+        draw_mixed_text(draw,(W//2,126),f"{city}",34,fill=SAFFRON,anchor="mm")
         draw_divider(draw,162,GOLD)
         items=[("సూర్యోదయం","sunrise"),("సూర్యాస్తమయం","sunset"),
                ("చంద్రోదయం","moonrise"),("చంద్రాస్తమయం","moonset")]
@@ -218,12 +306,14 @@ def build_static_card(card_num, panchang):
             val=tf(panchang,key)
             draw_card(draw,40,y,W-40,y+84,fill=(38,22,0),border=GOLD)
             draw.text((68,y+12),label,font=get_font(30,bold=True),fill=CREAM)
-            draw.text((W-55,y+12),val,font=get_font(32,bold=True),fill=GOLD,anchor="ra")
+            # Right-align time value (English)
+            draw_mixed_text(draw,(W-55,y+12),val,32,bold=True,fill=GOLD,anchor="ra")
             y+=92
         y+=16
         draw_card(draw,40,y,W-40,y+115,fill=(75,35,0),border=GOLD,alpha=230)
         draw.text((W//2,y+33),"జయ శ్రీమన్నారాయణ!",font=get_font(36,bold=True),fill=GOLD,anchor="mm")
-        draw.text((W//2,y+80),"Like | Share | Subscribe చేయండి",font=get_font(26),fill=CREAM,anchor="mm")
+        # Mixed Telugu + English
+        draw_mixed_text(draw,(W//2,y+80),"Like | Share | Subscribe చేయండి",26,fill=CREAM,anchor="mm")
         draw_progress(draw,4)
 
     return img
@@ -295,16 +385,16 @@ def create_thumbnail(panchang, output_path):
     draw.rectangle([6,6,TW-6,TH-6],outline=GOLD,width=3)
     TX=TW*68//100
     draw.text((TX//2,65),"నేటి పంచాంగం",font=get_font(58,bold=True),fill=GOLD,anchor="mm")
-    draw.text((TX//2,142),f"{panchang.get('city','USA')}",font=get_font(44),fill=SAFFRON,anchor="mm")
+    draw_mixed_text(draw,(TX//2,142),f"{panchang.get('city','USA')}",44,fill=SAFFRON,anchor="mm")
     draw.line([(40,178),(TX-10,178)],fill=SAFFRON,width=2)
-    draw.text((TX//2,208),panchang.get("weekday",""),font=get_font(34),fill=WHITE,anchor="mm")
-    draw.text((TX//2,256),f"తిథి: {tf(panchang,'tithi')[:32]}",font=get_font(30),fill=CREAM,anchor="mm")
-    draw.text((TX//2,298),f"నక్షత్రం: {tf(panchang,'nakshatra')[:30]}",font=get_font(30),fill=CREAM,anchor="mm")
+    draw_mixed_text(draw,(TX//2,208),panchang.get("weekday",""),34,fill=WHITE,anchor="mm")
+    draw_mixed_text(draw,(TX//2,256),f"తిథి: {tf(panchang,'tithi')[:32]}",30,fill=CREAM,anchor="mm")
+    draw_mixed_text(draw,(TX//2,298),f"నక్షత్రం: {tf(panchang,'nakshatra')[:30]}",30,fill=CREAM,anchor="mm")
     draw_card(draw,40,334,TX-10,400,fill=(90,0,0),border=AVOID_RED,alpha=220)
-    draw.text((TX//2,366),f"రాహు కాలం: {tf(panchang,'rahukaal')}",
-              font=get_font(28,bold=True),fill=(255,100,100),anchor="mm")
-    draw.text((TX//2,453),"అన్ని 5 అమెరికా నగరాలకు పంచాంగం",font=get_font(25),fill=GOLD,anchor="mm")
-    draw.text((TX//2,493),"Subscribe | Like | Share చేయండి",font=get_font(23),fill=CREAM,anchor="mm")
+    draw_mixed_text(draw,(TX//2,366),f"రాహు కాలం: {tf(panchang,'rahukaal')}",
+                    28,bold=True,fill=(255,100,100),anchor="mm")
+    draw_mixed_text(draw,(TX//2,453),"అన్ని 5 అమెరికా నగరాలకు పంచాంగం",25,fill=GOLD,anchor="mm")
+    draw_mixed_text(draw,(TX//2,493),"Subscribe | Like | Share చేయండి",23,fill=CREAM,anchor="mm")
     char=_load_char()
     if char:
         ch=int(TH*0.97); cw=int(char.size[0]*(ch/char.size[1]))
