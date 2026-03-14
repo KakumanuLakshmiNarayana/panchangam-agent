@@ -36,55 +36,37 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg fonts-noto fonts-noto-extra fonts-freefont-ttf fontconfig chromium-chromedriver
-
-          # chromium-browser was removed from apt in Ubuntu 22.04 — use snap
-          which chromium-browser || sudo snap install chromium || true
-
-          # Prepare font dir (font selection happens after pip install pillow)
-          sudo mkdir -p /usr/local/share/fonts/telugu
-          sudo fc-cache -fv
+          sudo apt-get install -y ffmpeg fontconfig chromium-chromedriver
 
           echo "=== Installed ==="
           ffmpeg -version | head -1
-          chromium-browser --version || chromium --version || echo "chromium: check snap"
-          echo "=== Telugu fonts ==="
-          ls /usr/local/share/fonts/telugu/
-          fc-list | grep -i telugu | head -5
+
+      - name: Download NotoSansTelugu fonts (static, Pillow-compatible)
+        run: |
+          # Download static (non-variable) NotoSansTelugu TTFs directly from Google Fonts GitHub
+          # These are guaranteed to work with Pillow — no system font hunting needed
+          mkdir -p /home/runner/fonts/telugu
+          BASE="https://github.com/google/fonts/raw/main/ofl/notosanstelugu/static"
+          curl -fsSL "${BASE}/NotoSansTelugu-Regular.ttf" \
+               -o /home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf
+          curl -fsSL "${BASE}/NotoSansTelugu-Bold.ttf" \
+               -o /home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf
+          echo "=== Font files ==="
+          ls -lh /home/runner/fonts/telugu/
+          # Quick Pillow sanity check
+          pip install pillow -q
+          python3 -c "
+          from PIL import ImageFont, Image, ImageDraw
+          reg  = ImageFont.truetype('/home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf', 40)
+          bold = ImageFont.truetype('/home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf', 40)
+          img = Image.new('RGB', (400,80), (0,0,0))
+          ImageDraw.Draw(img).text((10,10), 'నేటి పంచాంగం', font=bold, fill=(255,200,0))
+          print('Telugu font test PASSED')
+          "
 
       - name: Install Python dependencies
         run: |
           pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager
-
-          # Find a Pillow-compatible Telugu font and copy to writable path
-          mkdir -p /home/runner/fonts/telugu
-          python3 -c "
-          import glob, os, shutil
-          from PIL import ImageFont
-          candidates = sorted(glob.glob('/usr/share/fonts/**/*Telugu*', recursive=True))
-          print(f'Telugu candidates: {len(candidates)}')
-          good_reg, good_bold = None, None
-          for f in candidates:
-              try:
-                  ImageFont.truetype(f, 40)
-                  name = os.path.basename(f).lower()
-                  if 'bold' in name and good_bold is None:
-                      good_bold = f; print(f'  BOLD OK: {f}')
-                  elif 'bold' not in name and good_reg is None:
-                      good_reg = f; print(f'  REG  OK: {f}')
-                  if good_reg and good_bold: break
-              except Exception as e:
-                  print(f'  SKIP: {os.path.basename(f)}: {type(e).__name__}')
-          dest = '/home/runner/fonts/telugu'
-          os.makedirs(dest, exist_ok=True)
-          if good_reg:
-              shutil.copy(good_reg, f'{dest}/NotoSansTelugu-Regular.ttf')
-          if good_bold:
-              shutil.copy(good_bold, f'{dest}/NotoSansTelugu-Bold.ttf')
-          elif good_reg:
-              shutil.copy(good_reg, f'{dest}/NotoSansTelugu-Bold.ttf')
-          print('Copied:', os.listdir(dest))
-          "
 
       - name: Run Pipeline
         env:
