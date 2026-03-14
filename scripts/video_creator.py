@@ -39,38 +39,22 @@ CHAR_SCALE    = 0.52
 
 
 def get_font(size, bold=False):
-    # PRIORITY 1: Telugu font copied by workflow to writable path (Pillow-verified)
+    # NotoSansTelugu downloaded by workflow step — path is guaranteed on CI.
+    # Also checks SCRIPTS_DIR so you can bundle fonts in the repo as a fallback.
+    suffix = "Bold" if bold else "Regular"
     candidates = [
-        "/home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
-        else "/home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf",
-        # fallback: old path
-        "/usr/local/share/fonts/telugu/NotoSansTelugu-Bold.ttf" if bold
-        else "/usr/local/share/fonts/telugu/NotoSansTelugu-Regular.ttf",
+        f"/home/runner/fonts/telugu/NotoSansTelugu-{suffix}.ttf",   # CI download
+        os.path.join(SCRIPTS_DIR, f"NotoSansTelugu-{suffix}.ttf"),  # repo bundle
+        os.path.join(SCRIPTS_DIR, "NotoSansTelugu-Regular.ttf"),    # last resort
     ]
-    # PRIORITY 2: System NotoSansTelugu from fonts-noto-extra package
-    noto_bold_pats   = ["/usr/share/fonts/**/*NotoSansTelugu-Bold*", "/usr/share/fonts/**/*NotoSansTelugu-[A-Z][a-z]*Bold*"]
-    noto_reg_pats    = ["/usr/share/fonts/**/*NotoSansTelugu-Regular*", "/usr/share/fonts/**/*NotoSansTelugu-[A-Z][a-z]*Regular*"]
-    noto_any_pats    = ["/usr/share/fonts/**/*NotoSansTelugu*", "/usr/share/fonts/**/*NotoSerifTelugu*"]
-    for pat in (noto_bold_pats if bold else noto_reg_pats) + noto_any_pats:
-        candidates += sorted(glob.glob(pat, recursive=True))
-    # PRIORITY 3: Any Telugu font anywhere on system
-    for pat in ["/usr/share/fonts/**/*Telugu*", "/usr/local/share/fonts/**/*Telugu*"]:
-        candidates += sorted(glob.glob(pat, recursive=True))
-    # NOTE: FreeSans/DejaVu intentionally excluded — they have zero Telugu glyphs
-    print(f"  [FONT] Looking for {'bold' if bold else 'regular'} font, size={size}")
     for p in candidates:
-        exists = p and os.path.exists(p)
-        print(f"  [FONT]   {'✓' if exists else '❌'} {p}")
-        if exists:
+        if os.path.exists(p):
             try:
-                font = ImageFont.truetype(p, size)
-                print(f"  [FONT] LOADED: {p}")
-                return font
-            except Exception as e:
-                print(f"  [FONT]   load error: {e}")
-    print(f"  [FONT] WARNING: falling back to default font (no Telugu support!)")
+                return ImageFont.truetype(p, size)
+            except Exception:
+                pass
+    print("  [FONT] WARNING: Telugu font not found — text will render as boxes!")
     return ImageFont.load_default()
-
 
 _char_cache = None
 def _load_char():
@@ -178,7 +162,7 @@ def build_static_card(card_num, panchang):
         draw.text((W//2,132),"నేటి పంచాంగం",font=get_font(56,bold=True),fill=GOLD,anchor="mm")
         draw_divider(draw,172,SAFFRON)
         draw.text((W//2,205),f"{city}",font=get_font(38),fill=SAFFRON,anchor="mm")
-        draw.text((W//2,252),f"{panchang.get('weekday','')}  •  {panchang.get('date','')}",
+        draw.text((W//2,252),f"{panchang.get('weekday','')}  -  {panchang.get('date','')}",
                   font=get_font(30),fill=CREAM,anchor="mm")
         rows=[("తిథి",tf(panchang,"tithi")),("నక్షత్రం",tf(panchang,"nakshatra")),
               ("యోగం",tf(panchang,"yoga")),("కరణం",tf(panchang,"karana")),("పక్షం",tf(panchang,"paksha"))]
@@ -201,7 +185,7 @@ def build_static_card(card_num, panchang):
             val=tf(panchang,key)
             if val=="N/A": continue
             draw_card(draw,40,y,W-40,y+92,fill=(65,0,0),border=AVOID_RED)
-            draw.text((68,y+10),f"{icon} {label}",font=get_font(28,bold=True),fill=CREAM)
+            draw.text((68,y+10),f"{label}",font=get_font(28,bold=True),fill=CREAM)
             draw.text((68,y+50),val,font=get_font(30,bold=True),fill=AVOID_RED)
             y+=100
         draw_progress(draw,2)
@@ -218,7 +202,7 @@ def build_static_card(card_num, panchang):
             val=tf(panchang,key)
             if val=="N/A": continue
             draw_card(draw,40,y,W-40,y+92,fill=(0,42,15),border=AUSPIC_G)
-            draw.text((68,y+10),f"{icon} {label}",font=get_font(28,bold=True),fill=CREAM)
+            draw.text((68,y+10),f"{label}",font=get_font(28,bold=True),fill=CREAM)
             draw.text((68,y+50),val,font=get_font(30,bold=True),fill=AUSPIC_G)
             y+=100
         draw_progress(draw,3)
@@ -317,10 +301,10 @@ def create_thumbnail(panchang, output_path):
     draw.text((TX//2,256),f"తిథి: {tf(panchang,'tithi')[:32]}",font=get_font(30),fill=CREAM,anchor="mm")
     draw.text((TX//2,298),f"నక్షత్రం: {tf(panchang,'nakshatra')[:30]}",font=get_font(30),fill=CREAM,anchor="mm")
     draw_card(draw,40,334,TX-10,400,fill=(90,0,0),border=AVOID_RED,alpha=220)
-    draw.text((TX//2,366),f"✗ రాహు కాలం: {tf(panchang,'rahukaal')}",
+    draw.text((TX//2,366),f"రాహు కాలం: {tf(panchang,'rahukaal')}",
               font=get_font(28,bold=True),fill=(255,100,100),anchor="mm")
     draw.text((TX//2,453),"అన్ని 5 అమెరికా నగరాలకు పంచాంగం",font=get_font(25),fill=GOLD,anchor="mm")
-    draw.text((TX//2,493),"Subscribe • Like • Share చేయండి",font=get_font(23),fill=CREAM,anchor="mm")
+    draw.text((TX//2,493),"Subscribe | Like | Share చేయండి",font=get_font(23),fill=CREAM,anchor="mm")
     char=_load_char()
     if char:
         ch=int(TH*0.97); cw=int(char.size[0]*(ch/char.size[1]))
