@@ -1,16 +1,18 @@
 """
-video_creator.py — v2
-Improvements based on user feedback:
-1. Fixed double timezone bug (CT CT) — tz stripped from embedded values
-2. Fixed box character before ద్వాదశి — replaced → (U+2192) with | separator
-3. Removed stray standalone tz labels — tz now shown inside time cards
-4. Removed "పంతులు" badge above character — was labeled/forced, adds no value
-5. Removed progress dots — made it look like a carousel, not a video
-6. Simplified thumbnail — ONE hook + city + Rahu Kalam time only
-7. Closing scene uses Instagram CTAs (save/share) not YouTube (subscribe)
-8. Intro: "నేటి పంచాంగం మీకోసం" instead of preachy "గురువు" claim
-9. Tithi scene adds Nakshatra display
-10. Video duration = audio duration exactly
+video_creator.py — 4-scene rewrite
+Scenes:
+  0  Intro    — city, date, tithi, nakshatra, rahu preview
+  1  Bad      — Rahu Kalam + Durmuhurtam (red)
+  2  Good     — Brahma Muhurtam + Abhijit (gold)
+  3  Closing  — Sunrise/Sunset + Save/Share CTA
+
+Key fixes:
+- Flash transition removed (was causing cream background glitch)
+- Dark fade-in used instead (subtle, professional)
+- tz shown inline with time — no more lonely "PT" label
+- Minimum 3 seconds per scene for readability
+- Character scaled to 45% height (less screen domination)
+- Narration maps 1:1 to 4 scenes
 """
 
 import subprocess, os, tempfile, math, re
@@ -39,15 +41,15 @@ PAD    = 45
 CX     = W // 2
 CARD_W = W - PAD * 2
 
-CHAR_SCALE    = 0.78
+CHAR_SCALE    = 0.48          # reduced — character takes ~40% of screen height
 CHAR_X        = W // 2
 CHAR_Y_BOTTOM = H - 10
 
-# Word counts per scene — must match script_generator narration segments
-SCENE_WORD_COUNTS = [11, 4, 7, 4, 5, 6, 0, 11]
-N_SCENES = 8
+# Word counts per scene — must match script_generator narration segments exactly
+SCENE_WORD_COUNTS = [12, 9, 8, 10]
+N_SCENES = 4
+MIN_SCENE_SECS = 3            # each scene stays on screen at least 3 seconds
 
-# Telugu lookup tables
 TITHI_MAP = {
     "Ekadashi":   "ఏకాదశి",   "Dwadashi":    "ద్వాదశి",
     "Trayodashi": "త్రయోదశి", "Chaturdashi": "చతుర్దశి",
@@ -62,25 +64,29 @@ PAKSHA_MAP = {
     "Krishna Paksha": "కృష్ణ పక్షం",
     "Shukla Paksha":  "శుక్ల పక్షం",
 }
+NAKSHATRA_MAP = {
+    "Ashwini": "అశ్విని", "Bharani": "భరణి", "Krittika": "కృత్తిక",
+    "Rohini": "రోహిణి", "Mrigashira": "మృగశిర", "Ardra": "ఆర్ద్ర",
+    "Punarvasu": "పునర్వసు", "Pushya": "పుష్యమి", "Ashlesha": "ఆశ్లేష",
+    "Magha": "మఘ", "Purva Phalguni": "పూర్వ ఫల్గుణి", "Uttara Phalguni": "ఉత్తర ఫల్గుణి",
+    "Hasta": "హస్త", "Chitra": "చిత్త", "Swati": "స్వాతి",
+    "Vishakha": "విశాఖ", "Anuradha": "అనూరాధ", "Jyeshtha": "జ్యేష్ఠ",
+    "Moola": "మూల", "Purva Ashadha": "పూర్వాషాఢ", "Uttara Ashadha": "ఉత్తరాషాఢ",
+    "Shravana": "శ్రవణం", "Dhanishtha": "ధనిష్ఠ", "Shatabhisha": "శతభిష",
+    "Purva Bhadrapada": "పూర్వ భాద్రపద", "Uttara Bhadrapada": "ఉత్తర భాద్రపద",
+    "Revati": "రేవతి",
+}
 
+
+# ── SCENE TIMING ──────────────────────────────────────────────────────────────
 
 def compute_scene_frames(audio_duration):
-    """
-    FIX #1: NO minimum frame floor — video matches audio exactly.
-    Each scene gets frames proportional to words spoken.
-    Sun scene gets 2s visual pause.
-    """
+    """Each scene gets frames proportional to word count, min MIN_SCENE_SECS."""
     total_words = sum(SCENE_WORD_COUNTS)
-    sun_pause   = 2.0
-    speech_dur  = max(audio_duration - sun_pause, 1.0)
     frames = []
     for words in SCENE_WORD_COUNTS:
-        if words == 0:
-            dur = sun_pause
-        else:
-            dur = (words / total_words) * speech_dur
-        # Minimum 1 second per scene only — not 3s
-        frames.append(max(int(dur * FPS), FPS))
+        dur = (words / total_words) * audio_duration
+        frames.append(max(int(dur * FPS), MIN_SCENE_SECS * FPS))
     return frames
 
 
@@ -187,17 +193,18 @@ def add_glow(img, cx, cy, radius=220, color=(255,160,0), alpha=28):
 
 def add_warning_pulse(img, intensity):
     ov=Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(ov)
-    a=int(100*intensity)
+    a=int(90*intensity)
     for m in [0,10,22]:
         d.rectangle([m,m,W-m,H-m],outline=(210,30,30,a),width=8)
     return Image.alpha_composite(img,ov)
 
 
-def add_scene_flash(img, f_in_scene):
-    if f_in_scene >= 5: return img
-    alpha=int(220*(1-f_in_scene/5))
-    ov=Image.new("RGBA",(W,H),(255,255,220,alpha))
-    return Image.alpha_composite(img,ov)
+def add_scene_fade(img, f_in_scene, fade_frames=10):
+    """Subtle dark fade-in — replaces the old bright flash that caused cream background."""
+    if f_in_scene >= fade_frames: return img
+    alpha = int(200 * (1 - f_in_scene / fade_frames))
+    ov = Image.new("RGBA", (W, H), (0, 0, 0, alpha))
+    return Image.alpha_composite(img, ov)
 
 
 def draw_card(draw, x1,y1,x2,y2, fill=(40,12,0), border=None, radius=18, alpha=228):
@@ -222,28 +229,18 @@ def fmt_date(date_str):
 
 
 def telugu_tithi_full(tithi_raw, tz=""):
-    """
-    Full Telugu conversion of tithi string.
-    'Ekadashi upto 08:46 PM CT -> Dwadashi'
-    becomes 'ఏకాదశి వరకు 08:46 PM | ద్వాదశి'
-    Strips tz label to prevent double-tz display.
-    """
+    """Convert tithi string to Telugu, strip tz, use | as separator."""
     result = tithi_raw
-    # Strip the timezone label first to avoid "CT CT" duplication
     if tz:
         result = result.replace(f" {tz}", "")
-    # Replace tithi names
     for eng, tel in TITHI_MAP.items():
         result = result.replace(eng, tel)
-    # Replace English words
     result = result.replace("upto", "వరకు").replace("Upto", "వరకు")
-    # Replace arrow with a pipe separator (→ U+2192 often renders as box)
     result = result.replace("\u2192", "|").replace("->", "|")
     return result
 
 
 def telugu_tithi_short(tithi_raw):
-    """Just the first tithi name in Telugu — for thumbnail."""
     for eng, tel in TITHI_MAP.items():
         if eng.lower() in tithi_raw.lower():
             return tel
@@ -252,6 +249,17 @@ def telugu_tithi_short(tithi_raw):
 
 def telugu_paksha(paksha_val):
     return PAKSHA_MAP.get(paksha_val, paksha_val)
+
+
+def telugu_nakshatra(nakshatra_raw):
+    if not nakshatra_raw or nakshatra_raw == "N/A":
+        return "N/A"
+    name = nakshatra_raw.split()[0]
+    # Try multi-word match first
+    for eng, tel in NAKSHATRA_MAP.items():
+        if nakshatra_raw.startswith(eng):
+            return tel
+    return NAKSHATRA_MAP.get(name, name)
 
 
 # ── CHARACTER ─────────────────────────────────────────────────────────────────
@@ -267,7 +275,6 @@ def _load_char():
         r,g,b = arr[:,:,0].astype(int), arr[:,:,1].astype(int), arr[:,:,2].astype(int)
         sat    = np.max([r,g,b], axis=0) - np.min([r,g,b], axis=0)
         bright = (r + g + b) // 3
-        # Handle both black bg (new char) and white/light bg
         is_bg  = ((r<30)&(g<30)&(b<30)) | ((sat<30)&(bright>200))
         labeled, _ = ndimage.label(is_bg)
         bl = set()
@@ -285,13 +292,13 @@ def paste_char(base_img, frame_idx, scene):
     if char is None: return base_img
     t = frame_idx/FPS
     bob   = int(4*math.sin(2*math.pi*2.5*t))
-    scale = CHAR_SCALE + 0.012*math.sin(2*math.pi*1.2*t)
-    shake = int(5*math.sin(2*math.pi*7*t)) if scene in (2,3) else 0
+    scale = CHAR_SCALE + 0.010*math.sin(2*math.pi*1.2*t)
+    shake = int(4*math.sin(2*math.pi*7*t)) if scene == 1 else 0
     nw = int(char.size[0]*scale); nh = int(char.size[1]*scale)
     resized = char.resize((nw,nh), Image.LANCZOS)
 
-    # FIX #5: Stronger red tint on warning scenes — 45% original, 55% red
-    if scene in (2, 3):
+    # Red tint on bad-timings scene
+    if scene == 1:
         arr  = np.array(resized).copy().astype(np.float32)
         amask = arr[:,:,3] > 10
         arr[amask, 0] = np.clip(arr[amask,0]*0.45 + 220*0.55, 0, 255)
@@ -317,236 +324,196 @@ def tf(p, k):
 
 
 def clean_time(val, tz):
+    """Take first slot and strip embedded tz label."""
     val = val.split("|")[0].strip()
     val = val.replace(f" {tz}","").strip()
     return val
 
 
-# ── SCENE RENDERERS ───────────────────────────────────────────────────────────
-# FIX #2: All content spreads from y=110 to y=760 — fills screen
-# Character occupies y=820–1910, badge above at ~y=780
+def time_with_tz(val, tz):
+    """Return clean time string with tz appended once."""
+    return f"{clean_time(val, tz)} {tz}"
+
+
+# ── SCENE 0: INTRO ────────────────────────────────────────────────────────────
 
 def scene_intro(img, f, panchang):
-    city    = panchang.get("city","USA")
-    date    = fmt_date(panchang.get("date",""))
-    weekday = panchang.get("weekday","")
-    tz      = panchang.get("tz_label","ET")
-    rahu    = clean_time(tf(panchang,"rahukaal"), tz)
-    abhijit = clean_time(tf(panchang,"abhijit"), tz)
-    fa      = fade(f, 10)
+    """City + date + tithi + nakshatra + rahu kalam preview."""
+    city     = panchang.get("city","USA")
+    date     = fmt_date(panchang.get("date",""))
+    weekday  = panchang.get("weekday","")
+    tz       = panchang.get("tz_label","ET")
+    tithi_raw = tf(panchang,"tithi")
+    tithi_val = telugu_tithi_full(tithi_raw, tz)
+    parts     = tithi_val.split("|")
+    tithi_name = parts[0].strip()
+    tithi_next = parts[1].strip() if len(parts) > 1 else ""
+    paksha    = telugu_paksha(tf(panchang,"paksha"))
+    nak_name  = telugu_nakshatra(tf(panchang,"nakshatra"))
+    rahu      = time_with_tz(tf(panchang,"rahukaal"), tz)
+    fa        = fade(f, 10)
 
-    img = add_glow(img, CX, 500, radius=460, color=(200,80,0), alpha=18)
-    img = add_scene_flash(img, f)
+    img = add_glow(img, CX, 420, radius=460, color=(200,80,0), alpha=18)
+    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
-    draw.text((CX,88),"ఓం",font=get_font(78,bold=True),fill=GOLD+(fa,),anchor="mm")
+    # City
+    draw_mixed(draw,(CX,100),city,58,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,158),weekday,32,fill=CREAM+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,200),date,26,fill=WHITE+(fa,),anchor="mm")
+    draw.line([(PAD+30,224),(PAD+CARD_W-30,224)],fill=GOLD+(fa,),width=2)
 
-    draw_card(draw,PAD,138,PAD+CARD_W,228,fill=(75,28,0),border=SAFFRON,alpha=min(fa,225))
-    draw_mixed(draw,(CX,183),"నమస్కారం!",54,bold=True,fill=GOLD+(fa,),anchor="mm")
-
-    draw_card(draw,PAD,245,PAD+CARD_W,323,fill=(55,20,0),border=(160,80,0),alpha=min(fa,210))
-    draw_mixed(draw,(CX,284),"నేటి పంచాంగం మీకోసం",34,bold=True,fill=CREAM+(fa,),anchor="mm")
-
-    draw_mixed(draw,(CX,415),city,66,bold=True,fill=SAFFRON+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,498),weekday,40,fill=CREAM+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,548),date,32,fill=WHITE+(fa,),anchor="mm")
-
-    draw.line([(PAD+20,588),(PAD+CARD_W-20,588)],fill=GOLD+(fa,),width=2)
-    draw_mixed(draw,(CX,622),"నేటి పంచాంగం వివరాలు చూద్దాం!",34,fill=CREAM+(fa,),anchor="mm")
-
-    # Rahu preview card
-    draw_card(draw,PAD,656,PAD+CARD_W,734,fill=(100,0,0),border=WARN_RED,radius=16,alpha=min(fa,222))
-    draw_mixed(draw,(CX,672),"రాహు కాలం",26,bold=True,fill=WARN_RED+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,708),f"{rahu}  {tz}",30,bold=True,fill=CREAM+(fa,),anchor="mm")
-
-    # Abhijit preview card
-    draw_card(draw,PAD,750,PAD+CARD_W,828,fill=(50,32,0),border=GOLD,radius=16,alpha=min(fa,215))
-    draw_mixed(draw,(CX,766),"అభిజిత్ ముహూర్తం",26,bold=True,fill=GOLD+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,802),f"{abhijit}  {tz}",30,bold=True,fill=CREAM+(fa,),anchor="mm")
-    return img
-
-
-def scene_tithi(img, f, panchang):
-    tithi_raw  = tf(panchang,"tithi")
-    tz         = panchang.get("tz_label","ET")
-    # Strip tz and convert to Telugu (uses | as separator instead of → box char)
-    tithi_val  = telugu_tithi_full(tithi_raw, tz)
-    paksha     = telugu_paksha(tf(panchang,"paksha"))
-    nakshatra_raw = tf(panchang,"nakshatra")
-    # Extract nakshatra name only (strip tz and time)
-    nakshatra_name = nakshatra_raw.split()[0] if nakshatra_raw != "N/A" else "N/A"
-    fa         = fade(f, 10)
-
-    img = add_glow(img, CX, 500, radius=420, color=(255,150,0), alpha=18)
-    img = add_scene_flash(img, f)
-    draw = ImageDraw.Draw(img); draw_border(draw)
-
-    draw_card(draw,PAD,110,PAD+CARD_W,200,fill=(65,25,0),border=SAFFRON,alpha=min(fa,228))
-    draw_mixed(draw,(CX,155),"తిథి & నక్షత్రం",52,bold=True,fill=SAFFRON+(fa,),anchor="mm")
-
-    # Split on | for display (we replaced → with |)
-    parts = tithi_val.split("|")
-    p1    = parts[0].strip()
-    p2    = parts[1].strip() if len(parts)>1 else ""
-
-    draw_card(draw,PAD,218,PAD+CARD_W,420,fill=(42,14,0),border=GOLD,radius=20,alpha=min(fa,240))
-    tsize = 52; tw,_ = measure_mixed(p1, tsize, bold=True)
-    if tw > CARD_W-60: tsize = 40
-    draw_mixed(draw,(CX,295),p1,tsize,bold=True,fill=GOLD+(fa,),anchor="mm")
-    if p2: draw_mixed(draw,(CX,382),f"తరువాత: {p2}",30,fill=CREAM+(fa,),anchor="mm")
-
-    draw_card(draw,PAD+60,436,PAD+CARD_W-60,510,fill=(55,18,0),border=(175,135,0),radius=16,alpha=min(fa,215))
-    draw_mixed(draw,(CX,473),paksha,34,fill=CREAM+(fa,),anchor="mm")
+    # Tithi card
+    draw_card(draw,PAD,238,PAD+CARD_W,370,fill=(55,18,0),border=GOLD,radius=16,alpha=min(fa,235))
+    draw_mixed(draw,(CX,260),"తిథి",22,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    tsize = 46; tw,_ = measure_mixed(tithi_name, tsize, bold=True)
+    if tw > CARD_W-60: tsize = 36
+    draw_mixed(draw,(CX,322),tithi_name,tsize,bold=True,fill=GOLD+(fa,),anchor="mm")
+    if tithi_next:
+        draw_mixed(draw,(CX,360),f"తరువాత: {tithi_next}",20,fill=DIM+(fa,),anchor="mm")
 
     # Nakshatra card
-    draw_card(draw,PAD,526,PAD+CARD_W,604,fill=(38,16,0),border=(160,120,0),radius=14,alpha=min(fa,210))
-    draw_mixed(draw,(CX,542),"నక్షత్రం",24,bold=True,fill=SAFFRON+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,580),nakshatra_name,34,bold=True,fill=GOLD+(fa,),anchor="mm")
+    draw_card(draw,PAD,384,PAD+CARD_W,490,fill=(48,16,0),border=(175,135,0),radius=16,alpha=min(fa,228))
+    draw_mixed(draw,(CX,406),"నక్షత్రం",22,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,454),nak_name,42,bold=True,fill=GOLD+(fa,),anchor="mm")
 
-    draw_card(draw,PAD,618,PAD+CARD_W,690,fill=(38,12,0),border=(120,95,0),radius=14,alpha=min(fa,188))
-    draw_mixed(draw,(CX,654),"నేటి తిథి ప్రకారం శుభ కార్యాలు చేయండి",26,fill=DIM+(fa,),anchor="mm")
+    # Paksha
+    draw_card(draw,PAD+60,504,PAD+CARD_W-60,564,fill=(42,14,0),border=(150,115,0),radius=12,alpha=min(fa,218))
+    draw_mixed(draw,(CX,534),paksha,30,fill=CREAM+(fa,),anchor="mm")
 
-    draw_card(draw,PAD,704,PAD+CARD_W,762,fill=(32,10,0),border=(100,78,0),radius=12,alpha=min(fa,175))
-    draw_mixed(draw,(CX,733),"పంచాంగం ప్రకారం రోజు ప్లాన్ చేసుకోండి",24,fill=DIM+(fa,),anchor="mm")
+    # Rahu preview — small warning at bottom of content area
+    draw_card(draw,PAD,578,PAD+CARD_W,660,fill=(110,0,0),border=WARN_RED,radius=14,alpha=min(fa,228))
+    draw_mixed(draw,(CX,600),"రాహు కాలం",22,bold=True,fill=WARN_RED+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,638),rahu,30,bold=True,fill=CREAM+(fa,),anchor="mm")
+
     return img
 
 
-def _info_scene(img, f, label, time_val, tz, subtext, accent, bg_dark, pulse=False):
-    """Cards spread y=110 to y=760"""
-    fa = fade(f, 10)
-    if pulse:
-        intensity = abs(math.sin(2*math.pi*2.5*(f/FPS)))
-        img = add_warning_pulse(img, intensity*0.85)
-        img = add_glow(img, CX, 500, radius=400, color=(180,15,15), alpha=18)
-    else:
-        img = add_glow(img, CX, 500, radius=400, color=accent, alpha=20)
-    img = add_scene_flash(img, f)
+# ── SCENE 1: BAD TIMINGS ──────────────────────────────────────────────────────
+
+def scene_bad_timings(img, f, panchang):
+    """Rahu Kalam + Durmuhurtam — red warning scene."""
+    tz   = panchang.get("tz_label","ET")
+    rahu = time_with_tz(tf(panchang,"rahukaal"), tz)
+    dur  = time_with_tz(tf(panchang,"durmuhurtam"), tz)
+    fa   = fade(f, 10)
+
+    intensity = abs(math.sin(2*math.pi*2.0*(f/FPS)))
+    img = add_warning_pulse(img, intensity*0.7)
+    img = add_glow(img, CX, 500, radius=420, color=(180,15,15), alpha=20)
+    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
-    # Label
-    draw_card(draw,PAD,110,PAD+CARD_W,200,fill=bg_dark,border=accent,alpha=min(fa,230))
-    draw_mixed(draw,(CX,155),label,54,bold=True,fill=accent+(fa,),anchor="mm")
+    # Header
+    draw_card(draw,PAD,88,PAD+CARD_W,174,fill=(130,0,0),border=WARN_RED,alpha=min(fa,238))
+    draw_mixed(draw,(CX,131),"జాగ్రత్త! నివారించండి",46,bold=True,fill=WARN_RED+(fa,),anchor="mm")
 
-    # Time card — time + tz together, no standalone tz label
-    clean = clean_time(time_val, tz)
-    tsize = 64; tw,_ = measure_mixed(clean, tsize, bold=True)
-    if tw > CARD_W-80: tsize = 50
-    draw_card(draw,PAD,220,PAD+CARD_W,440,
-              fill=(bg_dark[0]//2,bg_dark[1]//2,bg_dark[2]//2),
-              border=accent, radius=22, alpha=min(fa,245))
-    draw_mixed(draw,(CX,305),clean,tsize,bold=True,fill=accent+(fa,),anchor="mm")
-    # Timezone shown inside the card, small, directly below time — no more lonely tz label
-    draw_mixed(draw,(CX,392),tz,26,bold=False,fill=DIM+(fa,),anchor="mm")
+    # Rahu Kalam — big block
+    draw_card(draw,PAD,190,PAD+CARD_W,410,fill=(100,0,0),border=WARN_RED,radius=20,alpha=min(fa,248))
+    draw_mixed(draw,(CX,222),"రాహు కాలం",32,bold=True,fill=WARN_RED+(fa,),anchor="mm")
+    rsize = 52; tw,_ = measure_mixed(rahu, rsize, bold=True)
+    if tw > CARD_W-60: rsize = 40
+    draw_mixed(draw,(CX,316),rahu,rsize,bold=True,fill=CREAM+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,382),"కొత్త పని మొదలు పెట్టకండి",24,fill=WHITE+(fa,),anchor="mm")
 
-    # Subtext
-    if subtext:
-        draw_card(draw,PAD+20,458,PAD+CARD_W-20,538,
-                  fill=(bg_dark[0]//3,bg_dark[1]//3,bg_dark[2]//3),
-                  border=(accent[0]//2,accent[1]//2,accent[2]//2),
-                  radius=14, alpha=min(fa,215))
-        draw_mixed(draw,(CX,498),subtext,32,bold=True,fill=WHITE+(fa,),anchor="mm")
+    # Durmuhurtam
+    draw_card(draw,PAD,426,PAD+CARD_W,630,fill=(80,0,0),border=(200,60,60),radius=18,alpha=min(fa,242))
+    draw_mixed(draw,(CX,458),"దుర్ముహూర్తం",32,bold=True,fill=(220,80,80)+(fa,),anchor="mm")
+    dsize = 48; tw,_ = measure_mixed(dur, dsize, bold=True)
+    if tw > CARD_W-60: dsize = 38
+    draw_mixed(draw,(CX,546),dur,dsize,bold=True,fill=CREAM+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,606),"శుభ కార్యాలు ఈ వేళ వద్దు",24,fill=WHITE+(fa,),anchor="mm")
 
-    # Extra card — lower
-    draw_card(draw,PAD+40,554,PAD+CARD_W-40,626,
-              fill=(bg_dark[0]//4,bg_dark[1]//4,bg_dark[2]//4),
-              border=(accent[0]//3,accent[1]//3,accent[2]//3),
-              radius=12, alpha=min(fa,185))
-    msg = "జాగ్రత్త! ఈ సమయం నివారించండి" if pulse else "ఈ సమయం శుభకార్యాలకు ఉత్తమం"
-    draw_mixed(draw,(CX,590),msg,26,fill=CREAM+(fa,),anchor="mm")
+    # Warning footer
+    draw_card(draw,PAD+40,646,PAD+CARD_W-40,712,fill=(60,0,0),border=(160,30,30),radius=12,alpha=min(fa,212))
+    draw_mixed(draw,(CX,679),"ఈ సమయాలలో ముఖ్య పనులు వాయిదా వేయండి",22,fill=CREAM+(fa,),anchor="mm")
 
-    # Extra card 2 — even lower
-    draw_card(draw,PAD+60,642,PAD+CARD_W-60,710,
-              fill=(bg_dark[0]//5,bg_dark[1]//5,bg_dark[2]//5),
-              border=(accent[0]//4,accent[1]//4,accent[2]//4),
-              radius=10, alpha=min(fa,165))
-    msg2 = "రాహు కాలం తప్పించుకోండి" if pulse else "మంచి సమయాన్ని సద్వినియోగం చేయండి"
-    draw_mixed(draw,(CX,676),msg2,24,fill=DIM+(fa,),anchor="mm")
     return img
 
 
-def scene_rahu(img,f,p):
-    return _info_scene(img,f,"రాహు కాలం",tf(p,"rahukaal"),p.get("tz_label","ET"),
-                       "ఈ సమయంలో కొత్త పని వద్దు!",WARN_RED,DARK_RED,pulse=True)
+# ── SCENE 2: GOOD TIMINGS ─────────────────────────────────────────────────────
 
-def scene_durmuhurtam(img,f,p):
-    return _info_scene(img,f,"దుర్ముహూర్తం",tf(p,"durmuhurtam"),p.get("tz_label","ET"),
-                       "శుభ కార్యాలు ఈ వేళ వద్దు!",WARN_RED,DARK_RED,pulse=True)
+def scene_good_timings(img, f, panchang):
+    """Brahma Muhurtam + Abhijit — gold auspicious scene."""
+    tz     = panchang.get("tz_label","ET")
+    brahma = time_with_tz(tf(panchang,"brahma_muhurta"), tz)
+    abhijit = time_with_tz(tf(panchang,"abhijit"), tz)
+    fa     = fade(f, 10)
 
-def scene_brahma(img,f,p):
-    return _info_scene(img,f,"బ్రహ్మ ముహూర్తం",tf(p,"brahma_muhurta"),p.get("tz_label","ET"),
-                       "ప్రార్థన & ధ్యానానికి శ్రేష్ఠ సమయం",GOLD,(55,35,0),pulse=False)
-
-def scene_abhijit(img,f,p):
-    return _info_scene(img,f,"అభిజిత్ ముహూర్తం",tf(p,"abhijit"),p.get("tz_label","ET"),
-                       "ముఖ్య పనులకు అత్యంత శుభ సమయం",GOLD,(55,35,0),pulse=False)
-
-
-def scene_sun(img, f, panchang):
-    tz      = panchang.get("tz_label","ET")
-    sunrise = clean_time(tf(panchang,"sunrise"), tz)
-    sunset  = clean_time(tf(panchang,"sunset"),  tz)
-    fa = fade(f, 10)
-
-    img = add_glow(img, CX, 500, radius=400, color=(255,130,0), alpha=20)
-    img = add_scene_flash(img, f)
+    img = add_glow(img, CX, 500, radius=440, color=(255,170,0), alpha=22)
+    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
-    draw_card(draw,PAD,110,PAD+CARD_W,200,fill=(58,22,0),border=SAFFRON,alpha=min(fa,228))
-    draw_mixed(draw,(CX,155),"సూర్యోదయం & సూర్యాస్తమయం",42,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    # Header
+    draw_card(draw,PAD,88,PAD+CARD_W,174,fill=(65,28,0),border=GOLD,alpha=min(fa,238))
+    draw_mixed(draw,(CX,131),"శుభ ముహూర్తాలు",48,bold=True,fill=GOLD+(fa,),anchor="mm")
 
-    # Sunrise card — tz inside, not as standalone label
-    draw_card(draw,PAD,218,PAD+CARD_W,404,fill=(50,18,0),border=GOLD,radius=20,alpha=min(fa,240))
-    draw_mixed(draw,(CX,258),"సూర్యోదయం",38,bold=True,fill=CREAM+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,330),sunrise,60,bold=True,fill=GOLD+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,384),tz,22,fill=DIM+(fa,),anchor="mm")
+    # Brahma Muhurtam
+    draw_card(draw,PAD,190,PAD+CARD_W,390,fill=(55,22,0),border=GOLD,radius=20,alpha=min(fa,248))
+    draw_mixed(draw,(CX,222),"బ్రహ్మ ముహూర్తం",30,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    bsize = 48; tw,_ = measure_mixed(brahma, bsize, bold=True)
+    if tw > CARD_W-60: bsize = 38
+    draw_mixed(draw,(CX,308),brahma,bsize,bold=True,fill=GOLD+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,372),"ప్రార్థన & ధ్యానానికి ఉత్తమ సమయం",24,fill=CREAM+(fa,),anchor="mm")
 
-    # Sunset card — tz inside
-    draw_card(draw,PAD,420,PAD+CARD_W,606,fill=(48,15,0),border=SAFFRON,radius=20,alpha=min(fa,240))
-    draw_mixed(draw,(CX,460),"సూర్యాస్తమయం",38,bold=True,fill=CREAM+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,532),sunset,60,bold=True,fill=SAFFRON+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,586),tz,22,fill=DIM+(fa,),anchor="mm")
+    # Abhijit
+    draw_card(draw,PAD,406,PAD+CARD_W,604,fill=(48,18,0),border=(200,160,0),radius=18,alpha=min(fa,242))
+    draw_mixed(draw,(CX,438),"అభిజిత్ ముహూర్తం",30,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    asize = 48; tw,_ = measure_mixed(abhijit, asize, bold=True)
+    if tw > CARD_W-60: asize = 38
+    draw_mixed(draw,(CX,522),abhijit,asize,bold=True,fill=GOLD+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,582),"ముఖ్య పనులకు అత్యంత శుభ సమయం",24,fill=CREAM+(fa,),anchor="mm")
 
-    draw_card(draw,PAD+40,622,PAD+CARD_W-40,692,fill=(40,16,0),border=(130,100,0),radius=12,alpha=min(fa,180))
-    draw_mixed(draw,(CX,657),"సూర్యుని దీవెనలు మీకు కలగాలి",26,fill=CREAM+(fa,),anchor="mm")
+    # Blessing footer
+    draw_card(draw,PAD+40,620,PAD+CARD_W-40,686,fill=(40,16,0),border=(150,115,0),radius=12,alpha=min(fa,212))
+    draw_mixed(draw,(CX,653),"ఈ సమయాలను సద్వినియోగం చేసుకోండి",22,fill=CREAM+(fa,),anchor="mm")
 
-    draw_card(draw,PAD+60,706,PAD+CARD_W-60,760,fill=(32,12,0),border=(105,82,0),radius=10,alpha=min(fa,162))
-    draw_mixed(draw,(CX,733),"శ్రీ సూర్య నమస్కారం చేయండి",24,fill=DIM+(fa,),anchor="mm")
     return img
 
+
+# ── SCENE 3: CLOSING ──────────────────────────────────────────────────────────
 
 def scene_closing(img, f, panchang):
-    fa = fade(f, 10)
-    img = add_glow(img, CX, 500, radius=420, color=(255,170,0), alpha=22)
-    img = add_scene_flash(img, f)
+    """Sunrise/Sunset + blessing + Save/Share CTA."""
+    tz      = panchang.get("tz_label","ET")
+    sunrise = time_with_tz(tf(panchang,"sunrise"), tz)
+    sunset  = time_with_tz(tf(panchang,"sunset"),  tz)
+    fa      = fade(f, 10)
+
+    img = add_glow(img, CX, 420, radius=420, color=(255,130,0), alpha=22)
+    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
-    draw_card(draw,PAD,110,PAD+CARD_W,295,fill=(65,28,0),border=GOLD,radius=20,alpha=min(fa,232))
-    draw_mixed(draw,(CX,178),"మీకు శుభమైన రోజు కలగాలని",40,bold=True,fill=GOLD+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,254),"ఆశిస్తున్నాను!",52,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    # Sunrise
+    draw_card(draw,PAD,88,PAD+CARD_W,240,fill=(50,18,0),border=GOLD,radius=18,alpha=min(fa,242))
+    draw_mixed(draw,(CX,116),"సూర్యోదయం",30,bold=True,fill=CREAM+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,182),sunrise,52,bold=True,fill=GOLD+(fa,),anchor="mm")
 
-    # Instagram-appropriate CTAs — save/share instead of subscribe
-    draw_card(draw,PAD,315,PAD+CARD_W,430,fill=(50,20,0),border=SAFFRON,radius=20,alpha=min(fa,225))
-    draw_mixed(draw,(CX,360),"Save చేయండి",44,bold=True,fill=SAFFRON+(fa,),anchor="mm")
-    draw_mixed(draw,(CX,410),"Family WhatsApp లో Share చేయండి!",26,fill=CREAM+(fa,),anchor="mm")
+    # Sunset
+    draw_card(draw,PAD,256,PAD+CARD_W,408,fill=(48,15,0),border=SAFFRON,radius=18,alpha=min(fa,242))
+    draw_mixed(draw,(CX,284),"సూర్యాస్తమయం",30,bold=True,fill=CREAM+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,350),sunset,52,bold=True,fill=SAFFRON+(fa,),anchor="mm")
 
-    draw_card(draw,PAD+40,448,PAD+CARD_W-40,520,fill=(38,14,0),border=(150,115,0),radius=14,alpha=min(fa,210))
-    draw_mixed(draw,(CX,484),"@PanthuluPanchangam",30,fill=GOLD+(fa,),anchor="mm")
+    # Blessing
+    draw_card(draw,PAD,424,PAD+CARD_W,536,fill=(65,28,0),border=GOLD,radius=16,alpha=min(fa,235))
+    draw_mixed(draw,(CX,458),"మీకు శుభమైన రోజు కలగాలని",32,bold=True,fill=GOLD+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,514),"ఆశిస్తున్నాను!",36,bold=True,fill=SAFFRON+(fa,),anchor="mm")
 
-    draw_card(draw,PAD,538,PAD+CARD_W,612,fill=(45,20,0),border=GOLD,radius=14,alpha=min(fa,202))
-    draw_mixed(draw,(CX,575),"జయ శ్రీమన్నారాయణ!",42,bold=True,fill=GOLD+(fa,),anchor="mm")
+    # Save/Share CTA — Instagram language
+    draw_card(draw,PAD,552,PAD+CARD_W,646,fill=(50,20,0),border=SAFFRON,radius=16,alpha=min(fa,228))
+    draw_mixed(draw,(CX,582),"Save చేయండి | Share చేయండి",36,bold=True,fill=SAFFRON+(fa,),anchor="mm")
+    draw_mixed(draw,(CX,630),"Family WhatsApp లో పంచుకోండి!",22,fill=CREAM+(fa,),anchor="mm")
 
-    draw_card(draw,PAD+60,630,PAD+CARD_W-60,696,fill=(28,10,0),border=(100,78,0),radius=10,alpha=min(fa,165))
-    draw_mixed(draw,(CX,663),"ప్రతిరోజూ పంచాంగం చూడండి",26,fill=DIM+(fa,),anchor="mm")
+    draw_card(draw,PAD+60,660,PAD+CARD_W-60,718,fill=(40,16,0),border=(150,115,0),radius=12,alpha=min(fa,212))
+    draw_mixed(draw,(CX,689),"@PanthuluPanchangam",26,fill=GOLD+(fa,),anchor="mm")
 
-    draw_card(draw,PAD+80,712,PAD+CARD_W-80,762,fill=(22,8,0),border=(85,65,0),radius=8,alpha=min(fa,148))
-    draw_mixed(draw,(CX,737),"Daily 5 AM ET తో మిమ్మల్ని కలుస్తాను",22,fill=DIM+(fa,),anchor="mm")
+    draw_card(draw,PAD,730,PAD+CARD_W,784,fill=(32,10,0),border=(100,78,0),radius=10,alpha=min(fa,185))
+    draw_mixed(draw,(CX,757),"జయ శ్రీమన్నారాయణ!",30,bold=True,fill=GOLD+(fa,),anchor="mm")
+
     return img
 
 
-SCENE_RENDERERS = [
-    scene_intro, scene_tithi, scene_rahu, scene_durmuhurtam,
-    scene_brahma, scene_abhijit, scene_sun, scene_closing
-]
+SCENE_RENDERERS = [scene_intro, scene_bad_timings, scene_good_timings, scene_closing]
 assert len(SCENE_RENDERERS) == N_SCENES
 
 
@@ -557,7 +524,8 @@ def build_frame(frame_idx, panchang, scene_frames):
     for i,nf in enumerate(scene_frames):
         if frame_idx < acc+nf: scene=i; f_in=frame_idx-acc; break
         acc+=nf
-    img = make_bg(); img = draw_om_watermark(img, alpha=7)
+    img = make_bg()
+    img = draw_om_watermark(img, alpha=7)
     img = SCENE_RENDERERS[scene](img, f_in, panchang)
     img = paste_char(img, frame_idx, scene)
     return img
@@ -578,11 +546,10 @@ def create_panchang_video(panchang, script, audio_path, output_path):
     city      = panchang.get("city","?")
     has_audio = audio_path and os.path.exists(audio_path)
     audio_dur = get_audio_duration(audio_path) if has_audio else 20.0
-    # FIX #1: frames computed from audio — NO 72-frame minimum floor
     scene_frames  = compute_scene_frames(audio_dur)
     total_frames  = sum(scene_frames)
     video_dur     = total_frames / FPS
-    print(f"   {city} — audio={audio_dur:.2f}s  video={video_dur:.2f}s  diff={abs(video_dur-audio_dur):.3f}s")
+    print(f"   {city} — audio={audio_dur:.2f}s  video={video_dur:.2f}s")
     print(f"   scene_frames={scene_frames}")
     with tempfile.TemporaryDirectory() as tmp:
         for fi in range(total_frames):
@@ -596,7 +563,7 @@ def create_panchang_video(panchang, script, audio_path, output_path):
                 print(f"      frame {fi}/{total_frames} scene {sc+1}/{N_SCENES} ...")
         cmd = ["ffmpeg","-y","-framerate",str(FPS),"-i",str(Path(tmp)/"frame_%05d.jpg")]
         if has_audio:
-            cmd += ["-i",audio_path,"-c:a","aac","-b:a","128k"]
+            cmd += ["-i",audio_path,"-c:a","aac","-b:a","128k","-shortest"]
         cmd += ["-c:v","libx264","-preset","fast","-crf","20",
                 "-pix_fmt","yuv420p","-movflags","+faststart",output_path]
         r = subprocess.run(cmd, capture_output=True, text=True)
@@ -607,10 +574,7 @@ def create_panchang_video(panchang, script, audio_path, output_path):
 # ── THUMBNAIL ─────────────────────────────────────────────────────────────────
 
 def create_thumbnail(panchang, output_path):
-    """
-    Simplified thumbnail: ONE bold hook + city name + Rahu Kalam time.
-    No clutter — just the one thing that makes people stop scrolling.
-    """
+    """ONE bold hook + city + Rahu Kalam time."""
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     img  = make_bg()
     img  = add_glow(img, CX, 680, radius=520, color=(200,40,0), alpha=30)
@@ -620,32 +584,24 @@ def create_thumbnail(panchang, output_path):
     city = panchang.get("city","USA")
     date = fmt_date(panchang.get("date",""))
     tz   = panchang.get("tz_label","ET")
-    rahu = clean_time(tf(panchang,"rahukaal"), tz)
+    rahu = time_with_tz(tf(panchang,"rahukaal"), tz)
 
-    # City name — prominent, top area
     draw_mixed(draw,(CX,130),city,58,bold=True,fill=SAFFRON,anchor="mm")
     draw_mixed(draw,(CX,192),date,30,fill=WHITE,anchor="mm")
-
-    # Divider
     draw.line([(PAD+30,220),(PAD+CARD_W-30,220)],fill=GOLD,width=2)
 
-    # Hook — single bold line
     draw_mixed(draw,(CX,300),"ఈ సమయం",88,bold=True,fill=GOLD,anchor="mm")
     draw_mixed(draw,(CX,410),"తప్పించండి!",92,bold=True,fill=WARN_RED,anchor="mm")
 
-    # Rahu Kalam — ONE big time block, the only info shown
     draw_card(draw,PAD,470,PAD+CARD_W,650,fill=(120,0,0),border=WARN_RED,radius=24,alpha=250)
     draw_mixed(draw,(CX,508),"రాహు కాలం",40,bold=True,fill=WARN_RED,anchor="mm")
-    draw_mixed(draw,(CX,584),rahu,62,bold=True,fill=CREAM,anchor="mm")
-    draw_mixed(draw,(CX,628),tz,26,fill=DIM,anchor="mm")
+    draw_mixed(draw,(CX,584),rahu,56,bold=True,fill=CREAM,anchor="mm")
 
-    # Character — bottom half of screen
     char = _load_char()
     if char:
         ch  = int(H*0.46); cw = int(char.size[0]*(ch/char.size[1]))
         resized = char.resize((cw,ch), Image.LANCZOS)
         img.paste(resized, (CX-cw//2, H-ch-20), resized)
-        draw = ImageDraw.Draw(img)
 
     img.convert("RGB").save(output_path,"JPEG",quality=95)
     print(f"  OK Thumbnail: {output_path}"); return output_path
