@@ -1,8 +1,7 @@
 """
-voice_generator.py — FINAL
-- Deep male voice: asetrate=44100*0.82 (-3.5 semitones from gTTS default)
-- Confidence/presence: bass boost + light compression
-- 44100Hz / 128kbps quality
+voice_generator.py
+- Primary: ElevenLabs TTS (voice tK3s6QVNCS9FKJl6hetZ, eleven_multilingual_v2)
+- Fallback: gTTS Telugu with deep-male FFmpeg processing
 - City names replaced with Telugu before TTS
 - All digits and Latin stripped — pure Telugu audio
 """
@@ -10,10 +9,23 @@ import os, re, tempfile, subprocess, shutil
 from pathlib import Path
 
 try:
+    from elevenlabs.client import ElevenLabs
+    ELEVENLABS_AVAILABLE = True
+except ImportError:
+    try:
+        from elevenlabs import ElevenLabs
+        ELEVENLABS_AVAILABLE = True
+    except ImportError:
+        ELEVENLABS_AVAILABLE = False
+
+try:
     from gtts import gTTS
     GTTS_AVAILABLE = True
 except ImportError:
     GTTS_AVAILABLE = False
+
+ELEVENLABS_VOICE_ID = "tK3s6QVNCS9FKJl6hetZ"
+ELEVENLABS_MODEL    = "eleven_multilingual_v2"
 
 CITY_TELUGU = {
     "Los Angeles, CA": "లాస్ ఏంజెలెస్",
@@ -44,11 +56,106 @@ def clean_for_tts(text):
     return text
 
 
+def _generate_elevenlabs(text, output_path):
+    """Generate audio using ElevenLabs API. Returns True on success."""
+    api_key = os.environ.get("ELEVENLABS_API_KEY", "")
+    if not api_key:
+        print("  [VOICE] ELEVENLABS_API_KEY not set — skipping ElevenLabs")
+        return False
+
+    try:
+        client = ElevenLabs(api_key=api_key)
+
+        audio_generator = client.text_to_speech.convert(
+            voice_id=ELEVENLABS_VOICE_ID,
+            text=text,
+            model_id=ELEVENLABS_MODEL,
+            output_format="mp3_44100_128",
+        )
+
+        # audio_generator may be a generator or bytes — handle both
+        with open(output_path, "wb") as f:
+            if hasattr(audio_generator, "__iter__") and not isinstance(audio_generator, (bytes, bytearray)):
+                for chunk in audio_generator:
+                    if chunk:
+                        f.write(chunk)
+            else:
+                f.write(audio_generator)
+
+        size = os.path.getsize(output_path)
+        if size < 1000:
+            print(f"  [VOICE] ElevenLabs returned suspiciously small file ({size} bytes)")
+            return False
+
+        dur = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", output_path],
+            capture_output=True, text=True)
+        print(f"  [VOICE] ElevenLabs OK — duration={dur.stdout.strip()}s  size={size} bytes")
+        return True
+
+    except Exception as e:
+        print(f"  [VOICE] ElevenLabs error: {e}")
+        return False
+
+
+def _generate_gtts_fallback(text, output_path):
+    """Generate audio using gTTS with deep-male FFmpeg processing."""
+    if not GTTS_AVAILABLE:
+        print("  [VOICE] gTTS not available"); return False
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_mp3   = os.path.join(tmp, "raw.mp3")
+            final_mp3 = os.path.join(tmp, "final.mp3")
+
+            tts = gTTS(text=text, lang='te', slow=False)
+            tts.save(raw_mp3)
+
+            raw_dur = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1", raw_mp3],
+                capture_output=True, text=True)
+            print(f"  [VOICE] gTTS raw duration: {raw_dur.stdout.strip()}s")
+
+            # Deep male voice: pitch down + bass boost + compression
+            af = (
+                "asetrate=44100*0.82,"
+                "aresample=44100,"
+                "bass=g=6:f=150:w=0.6,"
+                "acompressor=threshold=-20dB:ratio=3:attack=8:release=80:makeup=3dB,"
+                "volume=1.4"
+            )
+            cmd = [
+                "ffmpeg", "-y", "-i", raw_mp3,
+                "-af", af,
+                "-ar", "44100", "-ab", "128k",
+                "-codec:a", "libmp3lame",
+                final_mp3
+            ]
+            r = subprocess.run(cmd, capture_output=True, text=True)
+
+            src = final_mp3 if r.returncode == 0 else raw_mp3
+            if r.returncode != 0:
+                print(f"  [VOICE] FFmpeg failed, using raw: {r.stderr[-200:]}")
+            shutil.copy(src, output_path)
+
+            final_dur = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1", output_path],
+                capture_output=True, text=True)
+            print(f"  [VOICE] gTTS final duration: {final_dur.stdout.strip()}s  size={os.path.getsize(output_path)} bytes")
+        return True
+
+    except Exception as e:
+        print(f"  [VOICE] gTTS error: {e}"); return False
+
+
 def generate_voice(script, output_path, city_key=None):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     if isinstance(script, dict):
-        text = script.get("full_narration","") or script.get("narration","")
+        text = script.get("full_narration", "") or script.get("narration", "")
     else:
         text = str(script)
 
@@ -60,63 +167,20 @@ def generate_voice(script, output_path, city_key=None):
     print(f"  [VOICE] {word_count} words after clean")
     print(f"  [VOICE] Preview: {cleaned[:80]}...")
 
-    if not GTTS_AVAILABLE:
-        print("  [VOICE] gTTS not available — install gtts"); return None
+    # Try ElevenLabs first (voice tK3s6QVNCS9FKJl6hetZ)
+    if ELEVENLABS_AVAILABLE:
+        print(f"  [VOICE] Trying ElevenLabs voice {ELEVENLABS_VOICE_ID}...")
+        if _generate_elevenlabs(cleaned, output_path):
+            return output_path
+        print("  [VOICE] Falling back to gTTS...")
+    else:
+        print("  [VOICE] ElevenLabs SDK not installed — using gTTS")
 
-    try:
-        with tempfile.TemporaryDirectory() as tmp:
-            raw_mp3   = os.path.join(tmp, "raw.mp3")
-            final_mp3 = os.path.join(tmp, "final.mp3")
-
-            # Generate Telugu TTS at normal speed
-            tts = gTTS(text=cleaned, lang='te', slow=False)
-            tts.save(raw_mp3)
-
-            raw_dur = subprocess.run(
-                ["ffprobe","-v","error","-show_entries","format=duration",
-                 "-of","default=noprint_wrappers=1:nokey=1", raw_mp3],
-                capture_output=True, text=True)
-            print(f"  [VOICE] Raw duration: {raw_dur.stdout.strip()}s")
-
-            # DEEP MALE VOICE chain:
-            # 1. asetrate=44100*0.82  — lower pitch 3.5 semitones (male depth)
-            # 2. aresample=44100      — restore sample rate after pitch shift
-            # 3. bass=g=6             — boost bass frequencies for warmth/confidence
-            # 4. acompressor          — light compression for confident/punchy presence
-            # 5. volume=1.4           — final volume boost for clarity
-            af = (
-                "asetrate=44100*0.82,"
-                "aresample=44100,"
-                "bass=g=6:f=150:w=0.6,"
-                "acompressor=threshold=-20dB:ratio=3:attack=8:release=80:makeup=3dB,"
-                "volume=1.4"
-            )
-            cmd = [
-                "ffmpeg", "-y", "-i", raw_mp3,
-                "-af", af,
-                "-ar", "44100",
-                "-ab", "128k",
-                "-codec:a", "libmp3lame",
-                final_mp3
-            ]
-            r = subprocess.run(cmd, capture_output=True, text=True)
-
-            if r.returncode == 0:
-                shutil.copy(final_mp3, output_path)
-                final_dur = subprocess.run(
-                    ["ffprobe","-v","error","-show_entries","format=duration",
-                     "-of","default=noprint_wrappers=1:nokey=1", output_path],
-                    capture_output=True, text=True)
-                print(f"  [VOICE] Final duration: {final_dur.stdout.strip()}s  size={os.path.getsize(output_path)} bytes")
-            else:
-                # ffmpeg filter failed — use raw as fallback
-                shutil.copy(raw_mp3, output_path)
-                print(f"  [VOICE] Used raw (ffmpeg failed): {r.stderr[-200:]}")
-
+    # Fallback: gTTS
+    if _generate_gtts_fallback(cleaned, output_path):
         return output_path
 
-    except Exception as e:
-        print(f"  [VOICE] Error: {e}"); return None
+    print("  [VOICE] All TTS methods failed"); return None
 
 
 generate_voiceover = generate_voice
