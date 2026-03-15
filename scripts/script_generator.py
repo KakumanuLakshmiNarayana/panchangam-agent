@@ -30,9 +30,24 @@ import os, json
 import anthropic
 
 
+CITY_GREETINGS = {
+    "New York, NY":    "న్యూయార్క్ తెలుగు వారందరికీ శుభోదయం!",
+    "Chicago, IL":     "చికాగో తెలుగు సమాజానికి శుభోదయం!",
+    "Dallas, TX":      "డాలస్ తెలుగు వారందరికీ శుభోదయం!",
+    "Los Angeles, CA": "కాలిఫోర్నియా తెలుగు వారికి శుభోదయం!",
+    "Detroit, MI":     "మిషిగన్ తెలుగు వారందరికీ శుభోదయం!",
+}
+
+
 def tf(p, k):
     v = p.get(k, "N/A")
     return v if v and v != "" else "N/A"
+
+
+def strip_tz(val, tz):
+    """Remove embedded timezone label and take only the first slot."""
+    val = val.split("|")[0].strip()
+    return val.replace(f" {tz}", "").strip()
 
 
 def get_tithi_name(tithi_val):
@@ -79,18 +94,20 @@ def generate_video_script(panchang):
     paksha   = get_paksha_telugu(tf(panchang, "paksha"))
     tithi_name = get_tithi_name(tf(panchang, "tithi"))
 
+    city_greeting = CITY_GREETINGS.get(city, f"{city} తెలుగు వారికి శుభోదయం!")
+
     # Build the narration locally — no API needed for this structure
     # Pure Telugu, no time reading, ~22 words
     narration = (
-        f"నమస్కారం! నేను మీ పంచాంగం గురువు. "
-        f"{city} వారికి నేటి పంచాంగం. "
+        f"నమస్కారం! {city_greeting} "
+        f"నేటి పంచాంగం మీకోసం. "
         f"నేడు {paksha} {tithi_name}. "
         f"రాహు కాలం సమయంలో కొత్త పని మొదలు పెట్టకండి. "
         f"దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. "
         f"బ్రహ్మ ముహూర్తం ప్రార్థనకు శ్రేష్ఠమైన సమయం. "
         f"అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు అనువైన సమయం. "
         f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! "
-        f"లైక్ చేయండి, షేర్ చేయండి, సబ్స్క్రైబ్ చేయండి!"
+        f"save చేయండి, share చేయండి!"
     )
 
     # Also use Claude API to generate a better version if available
@@ -105,14 +122,14 @@ STRICT RULES — READ CAREFULLY:
 3. Maximum 22 words total — HARD LIMIT (gTTS Telugu = 1.6 words/sec)
 4. Structure: greeting → tithi name → rahu warning → durmuhurtam warning → brahma auspicious → abhijit auspicious → sunrise/sunset mention → blessing
 5. Use natural conversational Telugu — not Sanskrit-heavy
-6. Start with: నమస్కారం! నేను మీ పంచాంగం గురువు.
+6. Start with: నమస్కారం! then the city greeting, NOT "నేను మీ పంచాంగం గురువు".
 
 City: {city}
 Tithi name in Telugu: {tithi_name}
 Paksha: {paksha}
 
 EXAMPLE of correct style (22 words):
-నమస్కారం! నేను మీ పంచాంగం గురువు. {city} వారికి నేటి పంచాంగం. నేడు {paksha} {tithi_name}. రాహు కాలంలో జాగ్రత్త. బ్రహ్మ ముహూర్తం ప్రార్థనకు శ్రేష్ఠం. అభిజిత్ ముహూర్తం శుభం. మీకు మంచి రోజు కలగాలి! లైక్ చేయండి!
+నమస్కారం! {city_greeting} నేటి పంచాంగం మీకోసం. నేడు {paksha} {tithi_name}. రాహు కాలంలో జాగ్రత్త. బ్రహ్మ ముహూర్తం ప్రార్థనకు శ్రేష్ఠం. అభిజిత్ ముహూర్తం శుభం. మీకు మంచి రోజు కలగాలి! save చేయండి!
 
 Return ONLY valid JSON, no markdown:
 {{
@@ -122,11 +139,12 @@ Return ONLY valid JSON, no markdown:
   "full_narration": "22-word pure Telugu narration here — NO English, NO times",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
-    "రాహు కాలం: {tf(panchang, 'rahukaal').split('|')[0].strip()} {tz_label}",
-    "దుర్ముహూర్తం: {tf(panchang, 'durmuhurtam')} {tz_label}",
-    "బ్రహ్మ ముహూర్తం: {tf(panchang, 'brahma_muhurta').split('|')[0].strip()} {tz_label}",
-    "అభిజిత్: {tf(panchang, 'abhijit')} {tz_label}",
-    "సూర్యోదయం: {tf(panchang, 'sunrise')} | సూర్యాస్తమయం: {tf(panchang, 'sunset')} {tz_label}"
+    "నక్షత్రం: nakshatra_name",
+    "రాహు కాలం: stripped_rahu {tz_label}",
+    "దుర్ముహూర్తం: stripped_dur {tz_label}",
+    "బ్రహ్మ ముహూర్తం: stripped_brahma {tz_label}",
+    "అభిజిత్: stripped_abhijit {tz_label}",
+    "సూర్యోదయం: stripped_sunrise | సూర్యాస్తమయం: stripped_sunset {tz_label}"
   ]
 }}"""
 
@@ -153,10 +171,24 @@ Return ONLY valid JSON, no markdown:
         if has_digits or has_latin or word_count > 28:
             # API gave bad result — use local fallback
             result["full_narration"] = narration
+
+        nakshatra_raw = tf(panchang, "nakshatra").split()[0] if tf(panchang, "nakshatra") != "N/A" else "N/A"
+        # Always override on_screen_lines with correctly formatted (no double tz) values
+        result["on_screen_lines"] = [
+            f"తిథి: {tithi_name} ({paksha})",
+            f"నక్షత్రం: {nakshatra_raw}",
+            f"రాహు కాలం: {strip_tz(tf(panchang,'rahukaal'), tz_label)} {tz_label}",
+            f"దుర్ముహూర్తం: {strip_tz(tf(panchang,'durmuhurtam'), tz_label)} {tz_label}",
+            f"బ్రహ్మ ముహూర్తం: {strip_tz(tf(panchang,'brahma_muhurta'), tz_label)} {tz_label}",
+            f"అభిజిత్: {strip_tz(tf(panchang,'abhijit'), tz_label)} {tz_label}",
+            f"సూర్యోదయం: {strip_tz(tf(panchang,'sunrise'), tz_label)} | సూర్యాస్తమయం: {strip_tz(tf(panchang,'sunset'), tz_label)} {tz_label}",
+        ]
         return result
 
     except Exception:
         pass
+
+    nakshatra_raw = tf(panchang, "nakshatra").split()[0] if tf(panchang, "nakshatra") != "N/A" else "N/A"
 
     # Full fallback
     return {
@@ -166,10 +198,11 @@ Return ONLY valid JSON, no markdown:
         "full_narration": narration,
         "on_screen_lines": [
             f"తిథి: {tithi_name} ({paksha})",
-            f"రాహు కాలం: {tf(panchang,'rahukaal').split('|')[0].strip()} {tz_label}",
-            f"దుర్ముహూర్తం: {tf(panchang,'durmuhurtam')} {tz_label}",
-            f"బ్రహ్మ ముహూర్తం: {tf(panchang,'brahma_muhurta').split('|')[0].strip()} {tz_label}",
-            f"అభిజిత్: {tf(panchang,'abhijit')} {tz_label}",
-            f"సూర్యోదయం: {tf(panchang,'sunrise')} | సూర్యాస్తమయం: {tf(panchang,'sunset')} {tz_label}",
+            f"నక్షత్రం: {nakshatra_raw}",
+            f"రాహు కాలం: {strip_tz(tf(panchang,'rahukaal'), tz_label)} {tz_label}",
+            f"దుర్ముహూర్తం: {strip_tz(tf(panchang,'durmuhurtam'), tz_label)} {tz_label}",
+            f"బ్రహ్మ ముహూర్తం: {strip_tz(tf(panchang,'brahma_muhurta'), tz_label)} {tz_label}",
+            f"అభిజిత్: {strip_tz(tf(panchang,'abhijit'), tz_label)} {tz_label}",
+            f"సూర్యోదయం: {strip_tz(tf(panchang,'sunrise'), tz_label)} | సూర్యాస్తమయం: {strip_tz(tf(panchang,'sunset'), tz_label)} {tz_label}",
         ]
     }
