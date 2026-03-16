@@ -619,46 +619,177 @@ def create_panchang_video(panchang, script, audio_path, output_path):
 
 # ── THUMBNAIL ─────────────────────────────────────────────────────────────────
 
+def _modern_font(size, bold=False):
+    """Load a clean Latin font for modern thumbnail text."""
+    candidates = (
+        ["/home/user/panchangam-agent/scripts/FreeSansBold.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"]
+        if bold else
+        ["/home/user/panchangam-agent/scripts/FreeSans.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"]
+    )
+    for p in candidates:
+        if os.path.exists(p):
+            try: return ImageFont.truetype(p, size)
+            except: pass
+    return ImageFont.load_default()
+
+
+def _make_modern_bg(W, H):
+    """Deep dark gradient with subtle warm star field."""
+    import random as _random
+    img  = Image.new("RGBA", (W, H))
+    draw = ImageDraw.Draw(img)
+    # Gradient: deep charcoal-blue -> near-black
+    for y in range(H):
+        t = y / H
+        r = int(14 - 6 * t)
+        g = int(9  - 4 * t)
+        b = int(32 - 14 * t)
+        draw.line([(0, y), (W, y)], fill=(max(r,0), max(g,0), max(b,0), 255))
+    # Subtle warm star specks in upper half
+    rng = _random.Random(77)
+    for _ in range(220):
+        sx = rng.randint(0, W)
+        sy = rng.randint(0, int(H * 0.6))
+        sr = rng.choice([1, 1, 2])
+        sa = rng.randint(18, 55)
+        draw.ellipse([sx-sr, sy-sr, sx+sr, sy+sr], fill=(255, 210, 130, sa))
+    return img
+
+
+def _rrect(draw, x1, y1, x2, y2, radius, fill=None, outline=None, width=2):
+    draw.rounded_rectangle([x1, y1, x2, y2], radius=radius,
+                           fill=fill, outline=outline, width=width)
+
+
 def create_thumbnail(panchang, output_path):
-    """Bold hook + city + Rahu Kalam on warm temple background."""
+    """Modern, bold thumbnail — clean dark gradient, English text, high contrast."""
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    # Use temple background for visual consistency with video
-    img  = _get_temple_bg().copy()
-    img  = add_glow(img, CX, 680, radius=520, color=(200, 40,  0), alpha=30)
-    img  = add_glow(img, CX, 350, radius=380, color=(255, 100, 0), alpha=18)
+    # ── Data ──────────────────────────────────────────────────────────────────
+    city    = panchang.get("city", "USA")
+    date    = fmt_date(panchang.get("date", ""))
+    weekday = panchang.get("weekday", "")
+    tz      = panchang.get("tz_label", "CT")
+    rahu    = time_with_tz(tf(panchang, "rahukaal"), tz)
+    brahma  = time_with_tz(tf(panchang, "brahma_muhurta"), tz)
+
+    # Clean English-only tithi & nakshatra (strip "upto …" and arrows)
+    tithi_raw  = tf(panchang, "tithi")
+    tithi_eng  = re.split(r"\s+upto|\s*->|\s*\u2192", tithi_raw)[0].strip()
+    naksh_raw  = tf(panchang, "nakshatra")
+    naksh_eng  = re.split(r"\s+upto|\s*->|\s*\u2192", naksh_raw)[0].strip()
+
+    # ── Background ────────────────────────────────────────────────────────────
+    img  = _make_modern_bg(W, H)
+
+    # Warm central glow (behind character area)
+    img  = add_glow(img, CX, int(H * 0.72), radius=480, color=(255, 120, 20), alpha=22)
+
+    # ── Palette ───────────────────────────────────────────────────────────────
+    ORANGE = (255, 110, 15)
+    GOLD2  = (255, 210, 55)
+    RED2   = (255, 55,  55)
+    WHITE2 = (255, 250, 245)
+    MUTED  = (170, 155, 135)
+    CARD_D = (22,  12,  5,  235)   # dark card fill
+    CARD_R = (55,  6,   6,  245)   # red card fill
+
     draw = ImageDraw.Draw(img)
-    draw_border(draw)
+    fB = lambda sz: _modern_font(sz, bold=True)
+    fR = lambda sz: _modern_font(sz, bold=False)
 
-    city = panchang.get("city", "USA")
-    date = fmt_date(panchang.get("date", ""))
-    tz   = panchang.get("tz_label", "ET")
-    rahu = time_with_tz(tf(panchang, "rahukaal"), tz)
+    # ── Brand badge ───────────────────────────────────────────────────────────
+    _rrect(draw, CX-230, 34, CX+230, 92, radius=30,
+           fill=(38, 18, 4, 210), outline=ORANGE, width=2)
+    draw.text((CX, 63), "@PanthuluPanchangam", font=fB(27), fill=ORANGE, anchor="mm")
 
-    # Semi-transparent overlay behind text for readability on bright bg
-    draw_card(draw, PAD, 80, PAD + CARD_W, 450,
-              fill=(15, 5, 0), border=None, radius=20, alpha=170)
+    # ── City name ─────────────────────────────────────────────────────────────
+    csize = 88 if len(city) <= 12 else 68
+    draw.text((CX, 175), city, font=fB(csize), fill=WHITE2, anchor="mm")
 
-    draw_mixed(draw, (CX, 130), city, 58, bold=True, fill=SAFFRON, anchor="mm")
-    draw_mixed(draw, (CX, 192), date, 30, fill=WHITE,   anchor="mm")
-    draw.line([(PAD + 30, 220), (PAD + CARD_W - 30, 220)], fill=GOLD, width=2)
+    # Weekday + date
+    draw.text((CX, 254), f"{weekday}  \u2022  {date}", font=fR(33), fill=MUTED, anchor="mm")
 
-    draw_mixed(draw, (CX, 300), "ఈ సమయం",   88, bold=True, fill=GOLD,     anchor="mm")
-    draw_mixed(draw, (CX, 410), "తప్పించండి!", 92, bold=True, fill=WARN_RED, anchor="mm")
+    # Thin accent divider
+    dpad = PAD + 80
+    draw.line([(dpad, 284), (W - dpad, 284)], fill=(255, 140, 40, 90), width=2)
+    draw.ellipse([CX-6, 278, CX+6, 290], fill=ORANGE)
 
-    draw_card(draw, PAD, 470, PAD + CARD_W, 650,
-              fill=(120, 0, 0), border=WARN_RED, radius=24, alpha=250)
-    draw_mixed(draw, (CX, 508), "రాహు కాలం", 40, bold=True, fill=WARN_RED, anchor="mm")
-    draw_mixed(draw, (CX, 584), rahu,         56, bold=True, fill=CREAM,    anchor="mm")
+    # ── Tithi + Nakshatra cards (side by side) ────────────────────────────────
+    cy1, cy2 = 302, 458
+    mid = W // 2 - 8
+    # Left: Tithi
+    _rrect(draw, PAD, cy1, mid, cy2, radius=18, fill=CARD_D,
+           outline=(200, 155, 40, 200), width=2)
+    draw.text(((PAD + mid) // 2, cy1 + 36), "TITHI", font=fB(23), fill=GOLD2, anchor="mm")
+    draw.line([(PAD+24, cy1+58), (mid-24, cy1+58)], fill=(200,155,40,80), width=1)
+    tsize = 42 if len(tithi_eng) <= 10 else 33
+    draw.text(((PAD + mid) // 2, cy1 + 118), tithi_eng, font=fB(tsize), fill=WHITE2, anchor="mm")
 
-    # Paste character at ~50 % height on thumbnail
+    # Right: Nakshatra
+    _rrect(draw, mid + 16, cy1, W - PAD, cy2, radius=18, fill=CARD_D,
+           outline=(200, 155, 40, 200), width=2)
+    rx = (mid + 16 + W - PAD) // 2
+    draw.text((rx, cy1 + 36), "NAKSHATRA", font=fB(23), fill=GOLD2, anchor="mm")
+    draw.line([(mid+40, cy1+58), (W-PAD-24, cy1+58)], fill=(200,155,40,80), width=1)
+    nsize = 38 if len(naksh_eng) <= 10 else 28
+    draw.text((rx, cy1 + 118), naksh_eng, font=fB(nsize), fill=WHITE2, anchor="mm")
+
+    # ── Rahu Kalam warning card ────────────────────────────────────────────────
+    # Red glow behind the card
+    rg_ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    rgd   = ImageDraw.Draw(rg_ov)
+    for gr in range(260, 0, -26):
+        ga = int(28 * (1 - gr / 260) ** 1.8)
+        rgd.ellipse([CX - gr*2, 476 + 130 - gr, CX + gr*2, 476 + 130 + gr],
+                    fill=(255, 30, 30, ga))
+    rg_ov = rg_ov.filter(ImageFilter.GaussianBlur(32))
+    img   = Image.alpha_composite(img, rg_ov)
+    draw  = ImageDraw.Draw(img)
+
+    ry1, ry2 = 476, 740
+    _rrect(draw, PAD, ry1, W - PAD, ry2, radius=24, fill=CARD_R,
+           outline=(255, 60, 60, 230), width=3)
+    draw.text((CX, ry1 + 52), "RAHU KALAM", font=fB(44), fill=RED2, anchor="mm")
+    draw.line([(PAD + 70, ry1 + 86), (W - PAD - 70, ry1 + 86)],
+              fill=(255, 60, 60, 100), width=1)
+    rsize = 64 if len(rahu) <= 22 else 50
+    draw.text((CX, ry1 + 162), rahu, font=fB(rsize), fill=WHITE2, anchor="mm")
+    draw.text((CX, ry1 + 232), "Avoid starting new work", font=fR(30),
+              fill=(255, 150, 150), anchor="mm")
+
+    # ── Brahma Muhurta auspicious card ────────────────────────────────────────
+    by1, by2 = 758, 940
+    _rrect(draw, PAD, by1, W - PAD, by2, radius=20,
+           fill=(28, 18, 4, 235), outline=(200, 165, 30, 210), width=2)
+    draw.text((CX, by1 + 46), "BRAHMA MUHURTAM", font=fB(36), fill=GOLD2, anchor="mm")
+    draw.line([(PAD + 70, by1 + 76), (W - PAD - 70, by1 + 76)],
+              fill=(200, 165, 30, 80), width=1)
+    bsize = 52 if len(brahma) <= 22 else 40
+    draw.text((CX, by1 + 146), brahma, font=fB(bsize), fill=WHITE2, anchor="mm")
+
+    # ── Character with spotlight ──────────────────────────────────────────────
     from presenter_animator import load_character
     char = load_character(CHARACTER_PATH)
     if char:
-        ch  = int(H * 0.50)
+        ch  = int(H * 0.52)
         cw  = int(char.size[0] * (ch / char.size[1]))
         resized = char.resize((cw, ch), Image.LANCZOS)
-        img.paste(resized, (CX - cw // 2, H - ch - 8), resized)
+        char_y  = H - ch - 6
+
+        # Warm spotlight under character
+        sp_ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        spd   = ImageDraw.Draw(sp_ov)
+        for sr in range(300, 0, -24):
+            sa = int(30 * (1 - sr / 300) ** 2)
+            spd.ellipse([CX - sr, char_y + ch // 2 - sr // 2,
+                         CX + sr, char_y + ch // 2 + sr // 2],
+                        fill=(255, 165, 60, sa))
+        sp_ov = sp_ov.filter(ImageFilter.GaussianBlur(38))
+        img   = Image.alpha_composite(img, sp_ov)
+        img.paste(resized, (CX - cw // 2, char_y), resized)
 
     img.convert("RGB").save(output_path, "JPEG", quality=95)
     print(f"  OK Thumbnail: {output_path}")
