@@ -1,18 +1,16 @@
 """
-video_creator.py — 4-scene rewrite
+video_creator.py — presenter-style rewrite
 Scenes:
   0  Intro    — city, date, tithi, nakshatra, rahu preview
   1  Bad      — Rahu Kalam + Durmuhurtam (red)
   2  Good     — Brahma Muhurtam + Abhijit (gold)
   3  Closing  — Sunrise/Sunset + Save/Share CTA
 
-Key fixes:
-- Flash transition removed (was causing cream background glitch)
-- Dark fade-in used instead (subtle, professional)
-- tz shown inline with time — no more lonely "PT" label
-- Minimum 3 seconds per scene for readability
-- Character scaled to 45% height (less screen domination)
-- Narration maps 1:1 to 4 scenes
+Presenter features:
+- Warm Hindu temple arch background with marigold garlands
+- Animated character: breathing, sway, bob, hand-glow, sound-wave rings
+- Narration subtitles displayed per-scene at bottom of frame
+- Drifting marigold petal particles
 """
 
 import subprocess, os, tempfile, math, re
@@ -20,6 +18,10 @@ from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import numpy as np
+
+from presenter_animator import (
+    PresenterAnimator, make_temple_bg, draw_subtitle,
+)
 
 W, H, FPS = 1080, 1920, 24
 SCRIPTS_DIR    = os.path.dirname(os.path.abspath(__file__))
@@ -41,9 +43,31 @@ PAD    = 45
 CX     = W // 2
 CARD_W = W - PAD * 2
 
-CHAR_SCALE    = 0.48          # reduced — character takes ~40% of screen height
+CHAR_SCALE    = 0.72          # character height relative to H for presenter style
 CHAR_X        = W // 2
-CHAR_Y_BOTTOM = H - 10
+CHAR_Y_BOTTOM = H - 8
+
+# Module-level temple background cache and animator (initialised lazily)
+_temple_bg:  Image.Image | None = None
+_animator:   PresenterAnimator | None = None
+
+
+def _get_temple_bg() -> Image.Image:
+    global _temple_bg
+    if _temple_bg is None:
+        _temple_bg = make_temple_bg(W, H)
+    return _temple_bg
+
+
+def _get_animator() -> PresenterAnimator:
+    global _animator
+    if _animator is None:
+        _animator = PresenterAnimator(CHARACTER_PATH, W, H,
+                                      scale=CHAR_SCALE,
+                                      cx=CHAR_X,
+                                      bottom_y=CHAR_Y_BOTTOM)
+    return _animator
+
 
 # Word counts per scene — must match script_generator narration segments exactly
 SCENE_WORD_COUNTS = [12, 9, 8, 10]
@@ -262,61 +286,8 @@ def telugu_nakshatra(nakshatra_raw):
     return NAKSHATRA_MAP.get(name, name)
 
 
-# ── CHARACTER ─────────────────────────────────────────────────────────────────
-
-_char_cache = None
-
-def _load_char():
-    global _char_cache
-    if _char_cache is None and os.path.exists(CHARACTER_PATH):
-        from scipy import ndimage
-        orig = Image.open(CHARACTER_PATH).convert("RGBA")
-        arr  = np.array(orig)
-        r,g,b = arr[:,:,0].astype(int), arr[:,:,1].astype(int), arr[:,:,2].astype(int)
-        sat    = np.max([r,g,b], axis=0) - np.min([r,g,b], axis=0)
-        bright = (r + g + b) // 3
-        is_bg  = ((r<30)&(g<30)&(b<30)) | ((sat<30)&(bright>200))
-        labeled, _ = ndimage.label(is_bg)
-        bl = set()
-        for la in [labeled[0,:], labeled[-1,:], labeled[:,0], labeled[:,-1]]:
-            bl.update(la[la > 0])
-        mask = np.zeros(is_bg.shape, dtype=bool)
-        for lbl in bl: mask |= (labeled == lbl)
-        result = arr.copy(); result[mask, 3] = 0
-        _char_cache = Image.fromarray(result, "RGBA")
-    return _char_cache
-
-
-def paste_char(base_img, frame_idx, scene):
-    char = _load_char()
-    if char is None: return base_img
-    t = frame_idx/FPS
-    bob   = int(4*math.sin(2*math.pi*2.5*t))
-    scale = CHAR_SCALE + 0.010*math.sin(2*math.pi*1.2*t)
-    shake = int(4*math.sin(2*math.pi*7*t)) if scene == 1 else 0
-    nw = int(char.size[0]*scale); nh = int(char.size[1]*scale)
-    resized = char.resize((nw,nh), Image.LANCZOS)
-
-    # Red tint on bad-timings scene
-    if scene == 1:
-        arr  = np.array(resized).copy().astype(np.float32)
-        amask = arr[:,:,3] > 10
-        arr[amask, 0] = np.clip(arr[amask,0]*0.45 + 220*0.55, 0, 255)
-        arr[amask, 1] = np.clip(arr[amask,1]*0.45 +  15*0.55, 0, 255)
-        arr[amask, 2] = np.clip(arr[amask,2]*0.45 +  15*0.55, 0, 255)
-        resized = Image.fromarray(arr.astype(np.uint8), "RGBA")
-
-    glow = Image.new("RGBA", base_img.size, (0,0,0,0))
-    gd   = ImageDraw.Draw(glow)
-    gd.ellipse([CHAR_X-nw//2-30, CHAR_Y_BOTTOM-nh+bob-10,
-                CHAR_X+nw//2+30, CHAR_Y_BOTTOM+10+bob], fill=(255,100,0,10))
-    glow = glow.filter(ImageFilter.GaussianBlur(30))
-    base_img = Image.alpha_composite(base_img, glow)
-
-    px = max(0, min(CHAR_X-nw//2+shake, W-nw))
-    py = CHAR_Y_BOTTOM - nh + bob
-    base_img.paste(resized, (px,py), resized)
-    return base_img
+# ── CHARACTER — handled by PresenterAnimator (presenter_animator.py) ──────────
+# The old _load_char / paste_char are replaced by PresenterAnimator.composite().
 
 
 def tf(p, k):
@@ -517,17 +488,78 @@ SCENE_RENDERERS = [scene_intro, scene_bad_timings, scene_good_timings, scene_clo
 assert len(SCENE_RENDERERS) == N_SCENES
 
 
+def _split_narration(narration: str) -> list[str]:
+    """
+    Split full narration into 4 scene segments using SCENE_WORD_COUNTS weights.
+    Returns list of 4 subtitle strings (one per scene).
+    """
+    words  = narration.split()
+    total  = sum(SCENE_WORD_COUNTS)
+    segs   = []
+    idx    = 0
+    for wc in SCENE_WORD_COUNTS:
+        n = max(1, round(wc * len(words) / total))
+        segs.append(" ".join(words[idx: idx + n]))
+        idx += n
+    # put any leftover words in the last segment
+    if idx < len(words):
+        segs[-1] += " " + " ".join(words[idx:])
+    while len(segs) < N_SCENES:
+        segs.append("")
+    return segs[:N_SCENES]
+
+
 # ── FRAME BUILDER ─────────────────────────────────────────────────────────────
 
-def build_frame(frame_idx, panchang, scene_frames):
-    scene=0; f_in=frame_idx; acc=0
-    for i,nf in enumerate(scene_frames):
-        if frame_idx < acc+nf: scene=i; f_in=frame_idx-acc; break
-        acc+=nf
-    img = make_bg()
-    img = draw_om_watermark(img, alpha=7)
+def build_frame(frame_idx: int, panchang: dict, scene_frames: list,
+                scene_subtitles: list | None = None) -> Image.Image:
+    """
+    Build one video frame.
+
+    scene_subtitles : list of N_SCENES strings, one subtitle per scene.
+                      Pass None to skip subtitle rendering.
+    """
+    # Determine current scene and frame-within-scene
+    scene = 0
+    f_in  = frame_idx
+    acc   = 0
+    for i, nf in enumerate(scene_frames):
+        if frame_idx < acc + nf:
+            scene = i
+            f_in  = frame_idx - acc
+            break
+        acc += nf
+
+    t_global = frame_idx / FPS        # global clock (seconds)
+    t_scene  = f_in      / FPS        # clock within this scene
+
+    # ── Background: warm temple arch ─────────────────────────────────────────
+    img = _get_temple_bg().copy()
+    img = draw_om_watermark(img, alpha=5)
+
+    # ── Info cards (scene-specific) ───────────────────────────────────────────
     img = SCENE_RENDERERS[scene](img, f_in, panchang)
-    img = paste_char(img, frame_idx, scene)
+
+    # ── Animated presenter character ──────────────────────────────────────────
+    animator = _get_animator()
+    talking  = True              # character always appears to be presenting
+    img = animator.composite(img, t=t_global, talking=talking,
+                             scene=scene, petals=True)
+
+    # ── Subtitle ──────────────────────────────────────────────────────────────
+    if scene_subtitles and scene < len(scene_subtitles):
+        sub_text = scene_subtitles[scene]
+        scene_dur = scene_frames[scene] / FPS
+        img = draw_subtitle(
+            img, sub_text, t_scene, W, H,
+            font_fn=lambda sz, bold=False: get_font(sz, bold),
+            y_ratio=0.90,
+            fade_in=0.5,
+            fade_out=0.5,
+            duration=scene_dur,
+            start_t=0.0,
+        )
+
     return img
 
 
@@ -543,65 +575,91 @@ def get_audio_duration(path):
 
 def create_panchang_video(panchang, script, audio_path, output_path):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    city      = panchang.get("city","?")
+    city      = panchang.get("city", "?")
     has_audio = audio_path and os.path.exists(audio_path)
     audio_dur = get_audio_duration(audio_path) if has_audio else 20.0
-    scene_frames  = compute_scene_frames(audio_dur)
-    total_frames  = sum(scene_frames)
-    video_dur     = total_frames / FPS
+    scene_frames = compute_scene_frames(audio_dur)
+    total_frames = sum(scene_frames)
+    video_dur    = total_frames / FPS
     print(f"   {city} — audio={audio_dur:.2f}s  video={video_dur:.2f}s")
     print(f"   scene_frames={scene_frames}")
+
+    # Pre-warm temple background and animator (avoids per-frame init cost)
+    _get_temple_bg()
+    _get_animator()
+
+    # Compute per-scene subtitle text from narration
+    narration = script.get("full_narration", "") if script else ""
+    scene_subtitles = _split_narration(narration) if narration else None
+
     with tempfile.TemporaryDirectory() as tmp:
         for fi in range(total_frames):
-            frame = build_frame(fi, panchang, scene_frames)
-            frame.convert("RGB").save(str(Path(tmp)/f"frame_{fi:05d}.jpg"), "JPEG", quality=90)
+            frame = build_frame(fi, panchang, scene_frames, scene_subtitles)
+            frame.convert("RGB").save(
+                str(Path(tmp) / f"frame_{fi:05d}.jpg"), "JPEG", quality=92)
             if fi % 80 == 0:
-                sc=0; acc=0
-                for i,nf in enumerate(scene_frames):
-                    if fi<acc+nf: sc=i; break
-                    acc+=nf
+                sc = 0; acc = 0
+                for i, nf in enumerate(scene_frames):
+                    if fi < acc + nf:
+                        sc = i; break
+                    acc += nf
                 print(f"      frame {fi}/{total_frames} scene {sc+1}/{N_SCENES} ...")
-        cmd = ["ffmpeg","-y","-framerate",str(FPS),"-i",str(Path(tmp)/"frame_%05d.jpg")]
+        cmd = ["ffmpeg", "-y", "-framerate", str(FPS),
+               "-i", str(Path(tmp) / "frame_%05d.jpg")]
         if has_audio:
-            cmd += ["-i",audio_path,"-c:a","aac","-b:a","128k","-shortest"]
-        cmd += ["-c:v","libx264","-preset","fast","-crf","20",
-                "-pix_fmt","yuv420p","-movflags","+faststart",output_path]
+            cmd += ["-i", audio_path, "-c:a", "aac", "-b:a", "128k", "-shortest"]
+        cmd += ["-c:v", "libx264", "-preset", "fast", "-crf", "20",
+                "-pix_fmt", "yuv420p", "-movflags", "+faststart", output_path]
         r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode != 0: raise RuntimeError(f"FFmpeg: {r.stderr[-800:]}")
-    print(f"  OK {output_path}"); return output_path
+        if r.returncode != 0:
+            raise RuntimeError(f"FFmpeg: {r.stderr[-800:]}")
+    print(f"  OK {output_path}")
+    return output_path
 
 
 # ── THUMBNAIL ─────────────────────────────────────────────────────────────────
 
 def create_thumbnail(panchang, output_path):
-    """ONE bold hook + city + Rahu Kalam time."""
+    """Bold hook + city + Rahu Kalam on warm temple background."""
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    img  = make_bg()
-    img  = add_glow(img, CX, 680, radius=520, color=(200,40,0), alpha=30)
-    img  = add_glow(img, CX, 350, radius=380, color=(255,100,0), alpha=18)
-    draw = ImageDraw.Draw(img); draw_border(draw)
 
-    city = panchang.get("city","USA")
-    date = fmt_date(panchang.get("date",""))
-    tz   = panchang.get("tz_label","ET")
-    rahu = time_with_tz(tf(panchang,"rahukaal"), tz)
+    # Use temple background for visual consistency with video
+    img  = _get_temple_bg().copy()
+    img  = add_glow(img, CX, 680, radius=520, color=(200, 40,  0), alpha=30)
+    img  = add_glow(img, CX, 350, radius=380, color=(255, 100, 0), alpha=18)
+    draw = ImageDraw.Draw(img)
+    draw_border(draw)
 
-    draw_mixed(draw,(CX,130),city,58,bold=True,fill=SAFFRON,anchor="mm")
-    draw_mixed(draw,(CX,192),date,30,fill=WHITE,anchor="mm")
-    draw.line([(PAD+30,220),(PAD+CARD_W-30,220)],fill=GOLD,width=2)
+    city = panchang.get("city", "USA")
+    date = fmt_date(panchang.get("date", ""))
+    tz   = panchang.get("tz_label", "ET")
+    rahu = time_with_tz(tf(panchang, "rahukaal"), tz)
 
-    draw_mixed(draw,(CX,300),"ఈ సమయం",88,bold=True,fill=GOLD,anchor="mm")
-    draw_mixed(draw,(CX,410),"తప్పించండి!",92,bold=True,fill=WARN_RED,anchor="mm")
+    # Semi-transparent overlay behind text for readability on bright bg
+    draw_card(draw, PAD, 80, PAD + CARD_W, 450,
+              fill=(15, 5, 0), border=None, radius=20, alpha=170)
 
-    draw_card(draw,PAD,470,PAD+CARD_W,650,fill=(120,0,0),border=WARN_RED,radius=24,alpha=250)
-    draw_mixed(draw,(CX,508),"రాహు కాలం",40,bold=True,fill=WARN_RED,anchor="mm")
-    draw_mixed(draw,(CX,584),rahu,56,bold=True,fill=CREAM,anchor="mm")
+    draw_mixed(draw, (CX, 130), city, 58, bold=True, fill=SAFFRON, anchor="mm")
+    draw_mixed(draw, (CX, 192), date, 30, fill=WHITE,   anchor="mm")
+    draw.line([(PAD + 30, 220), (PAD + CARD_W - 30, 220)], fill=GOLD, width=2)
 
-    char = _load_char()
+    draw_mixed(draw, (CX, 300), "ఈ సమయం",   88, bold=True, fill=GOLD,     anchor="mm")
+    draw_mixed(draw, (CX, 410), "తప్పించండి!", 92, bold=True, fill=WARN_RED, anchor="mm")
+
+    draw_card(draw, PAD, 470, PAD + CARD_W, 650,
+              fill=(120, 0, 0), border=WARN_RED, radius=24, alpha=250)
+    draw_mixed(draw, (CX, 508), "రాహు కాలం", 40, bold=True, fill=WARN_RED, anchor="mm")
+    draw_mixed(draw, (CX, 584), rahu,         56, bold=True, fill=CREAM,    anchor="mm")
+
+    # Paste character at ~50 % height on thumbnail
+    from presenter_animator import load_character
+    char = load_character(CHARACTER_PATH)
     if char:
-        ch  = int(H*0.46); cw = int(char.size[0]*(ch/char.size[1]))
-        resized = char.resize((cw,ch), Image.LANCZOS)
-        img.paste(resized, (CX-cw//2, H-ch-20), resized)
+        ch  = int(H * 0.50)
+        cw  = int(char.size[0] * (ch / char.size[1]))
+        resized = char.resize((cw, ch), Image.LANCZOS)
+        img.paste(resized, (CX - cw // 2, H - ch - 8), resized)
 
-    img.convert("RGB").save(output_path,"JPEG",quality=95)
-    print(f"  OK Thumbnail: {output_path}"); return output_path
+    img.convert("RGB").save(output_path, "JPEG", quality=95)
+    print(f"  OK Thumbnail: {output_path}")
+    return output_path
