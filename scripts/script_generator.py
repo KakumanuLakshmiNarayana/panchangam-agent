@@ -86,50 +86,72 @@ def get_paksha_telugu(paksha_val):
     return paksha_val
 
 
+def get_nakshatra_telugu(nakshatra_val):
+    """Extract nakshatra name in Telugu."""
+    telugu_map = {
+        "Ashwini": "అశ్విని", "Bharani": "భరణి", "Krittika": "కృత్తిక",
+        "Rohini": "రోహిణి", "Mrigashira": "మృగశిర", "Ardra": "ఆర్ద్ర",
+        "Punarvasu": "పునర్వసు", "Pushya": "పుష్యమి", "Ashlesha": "ఆశ్లేష",
+        "Magha": "మఘ", "Purva Phalguni": "పూర్వ ఫల్గుణి",
+        "Uttara Phalguni": "ఉత్తర ఫల్గుణి", "Hasta": "హస్త",
+        "Chitra": "చిత్త", "Swati": "స్వాతి", "Vishakha": "విశాఖ",
+        "Anuradha": "అనూరాధ", "Jyeshtha": "జ్యేష్ఠ", "Moola": "మూల",
+        "Purva Ashadha": "పూర్వాషాఢ", "Uttara Ashadha": "ఉత్తరాషాఢ",
+        "Shravana": "శ్రవణం", "Dhanishtha": "ధనిష్ఠ",
+        "Shatabhisha": "శతభిష", "Purva Bhadrapada": "పూర్వ భాద్రపద",
+        "Uttara Bhadrapada": "ఉత్తర భాద్రపద", "Revati": "రేవతి",
+    }
+    for eng, tel in telugu_map.items():
+        if eng.lower() in nakshatra_val.lower():
+            return tel
+    return nakshatra_val.split()[0] if nakshatra_val else "నక్షత్రం"
+
+
 def generate_video_script(panchang):
-    city     = panchang.get("city",     "USA")
-    tz_label = panchang.get("tz_label", "ET")
-    weekday  = panchang.get("weekday",  "")
-    date_str = panchang.get("date",     "")
-    paksha   = get_paksha_telugu(tf(panchang, "paksha"))
+    city       = panchang.get("city",     "USA")
+    tz_label   = panchang.get("tz_label", "ET")
+    weekday    = panchang.get("weekday",  "")
+    date_str   = panchang.get("date",     "")
+    paksha     = get_paksha_telugu(tf(panchang, "paksha"))
     tithi_name = get_tithi_name(tf(panchang, "tithi"))
+    nak_name   = get_nakshatra_telugu(tf(panchang, "nakshatra"))
 
     city_greeting = CITY_GREETINGS.get(city, f"{city} తెలుగు వారికి శుభోదయం!")
 
-    # Build the narration locally — no API needed for this structure
-    # Pure Telugu, no time reading, ~22 words
+    # 4-scene narration — word counts must match video_creator.SCENE_WORD_COUNTS = [12, 9, 8, 10]
+    # Scene 0 (~12w): greeting + city + tithi + nakshatra
+    # Scene 1 (~9w):  rahu warning + durmuhurtam warning
+    # Scene 2 (~8w):  brahma auspicious + abhijit auspicious
+    # Scene 3 (~10w): blessing + save/share
     narration = (
         f"నమస్కారం! {city_greeting} "
-        f"నేటి పంచాంగం మీకోసం. "
-        f"నేడు {paksha} {tithi_name}. "
-        f"రాహు కాలం సమయంలో కొత్త పని మొదలు పెట్టకండి. "
-        f"దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. "
-        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు శ్రేష్ఠమైన సమయం. "
-        f"అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు అనువైన సమయం. "
-        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! "
-        f"save చేయండి, share చేయండి!"
+        f"నేడు {paksha} {tithi_name}. నక్షత్రం {nak_name}. "
+        f"రాహు కాలంలో కొత్త పనులు వద్దు. దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. "
+        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం శుభం. "
+        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! Save చేసి share చేయండి!"
     )
 
     # Also use Claude API to generate a better version if available
     try:
         client = anthropic.Anthropic()
 
-        prompt = f"""Write a Telugu voice narration for a 14-second Panchangam Instagram Reel.
+        prompt = f"""Write a Telugu voice narration for a 20-second Panchangam Instagram Reel.
+The video has exactly 4 scenes. The narration must align word-count to each scene.
 
-STRICT RULES — READ CAREFULLY:
-1. Write ONLY in Telugu script (తెలుగు లిపి) — NO English, NO numbers, NO time values
-2. DO NOT read any times — the screen shows times, voice only says section names
-3. Maximum 22 words total — HARD LIMIT (gTTS Telugu = 1.6 words/sec)
-4. Structure: greeting → tithi name → rahu warning → durmuhurtam warning → brahma auspicious → abhijit auspicious → sunrise/sunset mention → blessing
-5. Use natural conversational Telugu — not Sanskrit-heavy
-6. Start with: నమస్కారం! then the city greeting, NOT "నేను మీ పంచాంగం గురువు".
+STRICT RULES:
+1. Write ONLY in Telugu script — NO English letters, NO numbers, NO time values
+2. DO NOT read any times — screen shows them
+3. ~39 words total across 4 scenes, structure EXACTLY as below
+4. Scene 0 (~12w): greeting + city greeting + today's tithi + nakshatra
+5. Scene 1 (~9w):  rahu kalam warning + durmuhurtam warning
+6. Scene 2 (~8w):  brahma muhurtam auspicious + abhijit auspicious
+7. Scene 3 (~10w): blessing + save/share CTA
 
 City: {city}
-Tithi name in Telugu: {tithi_name}
-Paksha: {paksha}
+Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
 
-EXAMPLE of correct style (22 words):
-నమస్కారం! {city_greeting} నేటి పంచాంగం మీకోసం. నేడు {paksha} {tithi_name}. రాహు కాలంలో జాగ్రత్త. బ్రహ్మ ముహూర్తం ప్రార్థనకు శ్రేష్ఠం. అభిజిత్ ముహూర్తం శుభం. మీకు మంచి రోజు కలగాలి! save చేయండి!
+EXAMPLE (39 words):
+నమస్కారం! {city_greeting} నేడు {paksha} {tithi_name}. నక్షత్రం {nak_name}. రాహు కాలంలో కొత్త పనులు వద్దు. దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం శుభం. మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! Save చేసి share చేయండి!
 
 Return ONLY valid JSON, no markdown:
 {{
@@ -168,7 +190,7 @@ Return ONLY valid JSON, no markdown:
         has_latin  = any(c.isascii() and c.isalpha() for c in narr)
         word_count = len(narr.split())
 
-        if has_digits or has_latin or word_count > 28:
+        if has_digits or has_latin or word_count > 50:
             # API gave bad result — use local fallback
             result["full_narration"] = narration
 
