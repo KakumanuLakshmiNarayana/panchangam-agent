@@ -22,6 +22,11 @@ import numpy as np
 from presenter_animator import (
     PresenterAnimator, make_temple_bg, draw_subtitle,
 )
+from camera_system import CameraMotion, SCENE_CAMERA_PRESETS
+from cinematic_grader import CinematicGrader
+
+# Module-level cinematic grader (warm devotional grade, created once)
+_grader = CinematicGrader(warmth=0.20, contrast=0.14, saturation=1.08, vignette=0.30)
 
 W, H, FPS = 1080, 1920, 24
 SCRIPTS_DIR    = os.path.dirname(os.path.abspath(__file__))
@@ -325,7 +330,6 @@ def scene_intro(img, f, panchang):
     fa        = fade(f, 10)
 
     img = add_glow(img, CX, 420, radius=460, color=(200,80,0), alpha=18)
-    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
     # City
@@ -372,7 +376,6 @@ def scene_bad_timings(img, f, panchang):
     intensity = abs(math.sin(2*math.pi*2.0*(f/FPS)))
     img = add_warning_pulse(img, intensity*0.7)
     img = add_glow(img, CX, 500, radius=420, color=(180,15,15), alpha=20)
-    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
     # Header
@@ -412,7 +415,6 @@ def scene_good_timings(img, f, panchang):
     fa     = fade(f, 10)
 
     img = add_glow(img, CX, 500, radius=440, color=(255,170,0), alpha=22)
-    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
     # Header
@@ -452,7 +454,6 @@ def scene_closing(img, f, panchang):
     fa      = fade(f, 10)
 
     img = add_glow(img, CX, 420, radius=420, color=(255,130,0), alpha=22)
-    img = add_scene_fade(img, f)
     draw = ImageDraw.Draw(img); draw_border(draw)
 
     # Sunrise
@@ -512,14 +513,17 @@ def _split_narration(narration: str) -> list[str]:
 # ── FRAME BUILDER ─────────────────────────────────────────────────────────────
 
 def build_frame(frame_idx: int, panchang: dict, scene_frames: list,
-                scene_subtitles: list | None = None) -> Image.Image:
+                scene_subtitles: list | None = None,
+                cameras: list | None = None) -> Image.Image:
     """
     Build one video frame.
 
     scene_subtitles : list of N_SCENES strings, one subtitle per scene.
                       Pass None to skip subtitle rendering.
+    cameras         : list of CameraMotion, one per scene (created in
+                      create_panchang_video).  Pass None to skip camera.
     """
-    # Determine current scene and frame-within-scene
+    # ── Determine current scene + frame within scene ──────────────────────────
     scene = 0
     f_in  = frame_idx
     acc   = 0
@@ -532,6 +536,7 @@ def build_frame(frame_idx: int, panchang: dict, scene_frames: list,
 
     t_global = frame_idx / FPS        # global clock (seconds)
     t_scene  = f_in      / FPS        # clock within this scene
+    scene_nf = scene_frames[scene]    # total frames in this scene
 
     # ── Background: warm temple arch ─────────────────────────────────────────
     img = _get_temple_bg().copy()
@@ -542,14 +547,13 @@ def build_frame(frame_idx: int, panchang: dict, scene_frames: list,
 
     # ── Animated presenter character ──────────────────────────────────────────
     animator = _get_animator()
-    talking  = True              # character always appears to be presenting
-    img = animator.composite(img, t=t_global, talking=talking,
+    img = animator.composite(img, t=t_global, talking=True,
                              scene=scene, petals=True)
 
     # ── Subtitle ──────────────────────────────────────────────────────────────
     if scene_subtitles and scene < len(scene_subtitles):
-        sub_text = scene_subtitles[scene]
-        scene_dur = scene_frames[scene] / FPS
+        sub_text  = scene_subtitles[scene]
+        scene_dur = scene_nf / FPS
         img = draw_subtitle(
             img, sub_text, t_scene, W, H,
             font_fn=lambda sz, bold=False: get_font(sz, bold),
@@ -559,6 +563,26 @@ def build_frame(frame_idx: int, panchang: dict, scene_frames: list,
             duration=scene_dur,
             start_t=0.0,
         )
+
+    # ── Camera motion (scene-aware push-in / drift) ───────────────────────────
+    if cameras and scene < len(cameras):
+        img = cameras[scene].apply(img, t_scene)
+
+    # ── Scene crossfade transitions ───────────────────────────────────────────
+    FADE_F = 8                   # 8 frames = ~0.33 s at 24 fps
+    # Fade-in from black at scene start (overrides the existing add_scene_fade)
+    if f_in < FADE_F:
+        fade_alpha = int(220 * (1.0 - f_in / FADE_F))
+        ov = Image.new("RGBA", img.size, (0, 0, 0, fade_alpha))
+        img = Image.alpha_composite(img, ov)
+    # Fade-out to black at scene end
+    elif f_in >= scene_nf - FADE_F:
+        fade_alpha = int(200 * (1.0 - (scene_nf - f_in - 1) / FADE_F))
+        ov = Image.new("RGBA", img.size, (0, 0, 0, min(fade_alpha, 220)))
+        img = Image.alpha_composite(img, ov)
+
+    # ── Cinematic grade (warm tone + contrast + vignette) ─────────────────────
+    img = _grader.grade(img)
 
     return img
 
@@ -588,13 +612,23 @@ def create_panchang_video(panchang, script, audio_path, output_path):
     _get_temple_bg()
     _get_animator()
 
+    # Build one CameraMotion per scene (duration = scene length in seconds)
+    scene_cameras = [
+        CameraMotion(
+            SCENE_CAMERA_PRESETS[i] if i < len(SCENE_CAMERA_PRESETS) else "drift",
+            duration=scene_frames[i] / FPS,
+        )
+        for i in range(N_SCENES)
+    ]
+
     # Compute per-scene subtitle text from narration
     narration = script.get("full_narration", "") if script else ""
     scene_subtitles = _split_narration(narration) if narration else None
 
     with tempfile.TemporaryDirectory() as tmp:
         for fi in range(total_frames):
-            frame = build_frame(fi, panchang, scene_frames, scene_subtitles)
+            frame = build_frame(fi, panchang, scene_frames, scene_subtitles,
+                                cameras=scene_cameras)
             frame.convert("RGB").save(
                 str(Path(tmp) / f"frame_{fi:05d}.jpg"), "JPEG", quality=92)
             if fi % 80 == 0:

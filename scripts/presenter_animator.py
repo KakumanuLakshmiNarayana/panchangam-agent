@@ -8,6 +8,8 @@ Brings the static pandit_character.png to life with:
   - Temple arch background generator
   - Marigold petal particle system
   - Subtitle text renderer
+  - Blink simulation (irregular natural blink cadence)
+  - Rim light (cinematic side fill on character)
 
 Usage:
     from presenter_animator import PresenterAnimator, make_temple_bg, draw_subtitle
@@ -22,6 +24,33 @@ Usage:
 import math, os, random
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
+
+
+# ── Blink schedule (module-level, shared across all instances) ────────────────
+
+def _make_blink_times(seed: int = 17, span: float = 120.0) -> list[float]:
+    """Pre-compute irregular blink timestamps over *span* seconds (loops)."""
+    rng, ts, t = random.Random(seed), [], 0.8
+    while t < span:
+        t += rng.uniform(2.6, 5.4)
+        ts.append(t)
+    return ts
+
+_BLINK_TIMES: list[float] = _make_blink_times()
+
+
+def _blink_alpha(t: float, blink_dur: float = 0.10) -> float:
+    """
+    Return blink intensity in [0, 1] at time *t*.
+    0 = eyes fully open, 1 = eyes fully closed.
+    Uses a triangle envelope over *blink_dur* seconds.
+    """
+    t_mod = t % 120.0
+    for bt in _BLINK_TIMES:
+        dt = t_mod - bt
+        if 0.0 <= dt < blink_dur:
+            return 1.0 - abs(2.0 * dt / blink_dur - 1.0)
+    return 0.0
 
 # ── Colour palette ────────────────────────────────────────────────────────────
 GOLD        = (255, 215,   0)
@@ -325,11 +354,58 @@ def _draw_ground_shadow(img: Image.Image, cx: int, bottom_y: int,
                         char_w: int) -> Image.Image:
     ov   = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(ov)
-    sw   = int(char_w * 0.55)
-    sh   = int(sw * 0.18)
+    sw   = int(char_w * 0.62)
+    sh   = int(sw * 0.22)
+    # Two-layer shadow: broad soft base + sharper inner
     draw.ellipse([cx - sw, bottom_y - sh, cx + sw, bottom_y + sh],
-                 fill=(40, 20, 0, 70))
-    ov = ov.filter(ImageFilter.GaussianBlur(22))
+                 fill=(30, 14, 0, 55))
+    draw.ellipse([cx - sw//2, bottom_y - sh//2, cx + sw//2, bottom_y + sh//2],
+                 fill=(20, 8, 0, 80))
+    ov = ov.filter(ImageFilter.GaussianBlur(28))
+    return Image.alpha_composite(img, ov)
+
+
+def _draw_rim_light(img: Image.Image, px: int, py: int,
+                    nw: int, nh: int, scene: int) -> Image.Image:
+    """
+    Add a soft cinematic rim light on the left edge of the character.
+    Colour shifts to red in scene 1 (warning).
+    """
+    color = (255, 200, 90) if scene != 1 else (255, 110, 60)
+    ov    = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw  = ImageDraw.Draw(ov)
+    rim_w = int(nw * 0.12)
+    draw.ellipse(
+        [px - rim_w // 2,
+         py + nh // 10,
+         px + rim_w,
+         py + nh * 9 // 10],
+        fill=(*color, 38),
+    )
+    ov = ov.filter(ImageFilter.GaussianBlur(24))
+    return Image.alpha_composite(img, ov)
+
+
+def _draw_blink(img: Image.Image, cx: int, py: int,
+                nw: int, nh: int, alpha: float) -> Image.Image:
+    """
+    Overlay a dark ellipse over the estimated eye region to simulate a blink.
+    Works with a single character PNG — no separate face layers required.
+    Eye region is approximated at ~11 % from the top of the character.
+    """
+    if alpha < 0.02:
+        return img
+    ey  = py + int(nh * 0.115)       # eye row y
+    ew  = int(nw * 0.38)              # horizontal span of both eyes
+    eh  = max(5, int(nh * 0.042))     # half-height of eyelid strip
+    ov  = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(ov)
+    draw.ellipse(
+        [cx - ew // 2, ey - eh,
+         cx + ew // 2, ey + eh],
+        fill=(10, 5, 0, int(235 * alpha)),
+    )
+    ov = ov.filter(ImageFilter.GaussianBlur(4))
     return Image.alpha_composite(img, ov)
 
 
@@ -393,40 +469,42 @@ class PresenterAnimator:
         """
         Apply motion transforms to the character image.
 
-        Returns (animated_image, (paste_x, paste_y), (char_cx, char_mouth_y))
+        Returns (animated_image, (paste_x, paste_y), (char_cx, char_mouth_y), (nw, nh))
         """
         W, H = self.W, self.H
 
-        # ── Breathing scale ───────────────────────────────────────────────────
-        breath = 1.0 + 0.006 * math.sin(2 * math.pi * 0.45 * t)
+        # ── Breathing — two harmonics for more organic feel ───────────────────
+        breath = (1.0
+                  + 0.0055 * math.sin(2 * math.pi * 0.42 * t)
+                  + 0.0020 * math.sin(2 * math.pi * 0.87 * t + 1.1))
 
-        # ── Talking extra-breath (subtle chest movement) ──────────────────────
+        # ── Talking: subtle chest swell on syllable beats ─────────────────────
         if talking:
-            talk_breath = 1.0 + 0.004 * abs(math.sin(2 * math.pi * 4.0 * t))
-            breath *= talk_breath
+            breath *= 1.0 + 0.0035 * abs(math.sin(2 * math.pi * 3.8 * t))
 
         nw = int(char_img.size[0] * breath)
         nh = int(char_img.size[1] * breath)
         char_img = char_img.resize((nw, nh), Image.LANCZOS)
 
-        # ── Gentle sway rotation ──────────────────────────────────────────────
-        sway_deg = 0.7 * math.sin(2 * math.pi * 0.22 * t + 0.4)
-        if abs(sway_deg) > 0.05:
-            # Rotate around the bottom-centre of the character
+        # ── Gentle sway rotation (around bottom-centre) ───────────────────────
+        sway_deg = (0.55 * math.sin(2 * math.pi * 0.21 * t + 0.4)
+                  + 0.18 * math.sin(2 * math.pi * 0.49 * t + 2.1))
+        if abs(sway_deg) > 0.04:
             char_img = char_img.rotate(
                 sway_deg, resample=Image.BICUBIC,
                 expand=False,
-                center=(nw // 2, nh)
+                center=(nw // 2, nh),
             )
 
         # ── Vertical bob ──────────────────────────────────────────────────────
-        bob_y = int(4 * math.sin(2 * math.pi * 0.68 * t))
+        bob_y = int(3.5 * math.sin(2 * math.pi * 0.65 * t)
+                  + 1.2 * math.sin(2 * math.pi * 1.30 * t + 0.7))
 
         # ── Horizontal micro-drift ────────────────────────────────────────────
-        drift_x = int(2 * math.sin(2 * math.pi * 1.15 * t + 1.2))
+        drift_x = int(2.2 * math.sin(2 * math.pi * 1.10 * t + 1.2))
 
-        # ── Scene-1 shake ─────────────────────────────────────────────────────
-        shake_x = int(5 * math.sin(2 * math.pi * 7 * t)) if scene == 1 else 0
+        # ── Scene-1 shake (Rahu Kalam warning energy) ─────────────────────────
+        shake_x = int(5.5 * math.sin(2 * math.pi * 6.8 * t)) if scene == 1 else 0
 
         px = self.cx - nw // 2 + drift_x + shake_x
         py = self.bottom - nh + bob_y
@@ -435,12 +513,11 @@ class PresenterAnimator:
         px = max(0, min(px, W - nw))
         py = max(-nh // 4, py)
 
-        # Estimate mouth position on screen (≈17 % from top of char bbox)
-        char_top_on_screen = py
-        mouth_y_on_screen  = char_top_on_screen + int(nh * 0.175)
-        mouth_x_on_screen  = self.cx + drift_x + shake_x
+        # Estimate mouth/face positions (≈17 % from top of char bbox)
+        mouth_y = py + int(nh * 0.175)
+        mouth_x = self.cx + drift_x + shake_x
 
-        return char_img, (px, py), (mouth_x_on_screen, mouth_y_on_screen), (nw, nh)
+        return char_img, (px, py), (mouth_x, mouth_y), (nw, nh)
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -473,8 +550,11 @@ class PresenterAnimator:
 
         result = base_img.copy()
 
-        # ── Ground shadow ─────────────────────────────────────────────────────
+        # ── Ground shadow (two-layer, more depth) ─────────────────────────────
         result = _draw_ground_shadow(result, self.cx, self.bottom, nw)
+
+        # ── Rim light (cinematic left-side fill) ──────────────────────────────
+        result = _draw_rim_light(result, px, py, nw, nh, scene)
 
         # ── Hand glow (gesture indicator) ─────────────────────────────────────
         char_bbox = (px, py, px + nw, py + nh)
@@ -482,6 +562,11 @@ class PresenterAnimator:
 
         # ── Paste character ───────────────────────────────────────────────────
         result.paste(char_anim, (px, py), char_anim)
+
+        # ── Blink overlay ─────────────────────────────────────────────────────
+        ba = _blink_alpha(t)
+        if ba > 0.02:
+            result = _draw_blink(result, self.cx, py, nw, nh, ba)
 
         # ── Sound-wave rings when talking ────────────────────────────────────
         if talking:
