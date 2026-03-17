@@ -56,6 +56,19 @@ def clean_for_tts(text):
     return text
 
 
+def _clean_for_elevenlabs(text):
+    """Light cleaning for ElevenLabs eleven_multilingual_v2.
+
+    Only substitutes city names to Telugu equivalents.
+    Keeps digits, Latin words, and mixed content — the multilingual
+    model handles Telugu/English naturally, so aggressive stripping
+    (which was needed for gTTS) would degrade quality here.
+    """
+    for eng in sorted(CITY_TELUGU.keys(), key=len, reverse=True):
+        text = text.replace(eng, CITY_TELUGU[eng])
+    return text.strip()
+
+
 def _generate_elevenlabs(text, output_path):
     """Generate audio using ElevenLabs API. Returns True on success."""
     api_key = os.environ.get("ELEVENLABS_API_KEY", "")
@@ -162,22 +175,24 @@ def generate_voice(script, output_path, city_key=None):
     if not text:
         print("  [VOICE] No narration text"); return None
 
-    cleaned = clean_for_tts(text)
-    word_count = len(cleaned.split())
-    print(f"  [VOICE] {word_count} words after clean")
-    print(f"  [VOICE] Preview: {cleaned[:80]}...")
-
-    # Try ElevenLabs first (voice tK3s6QVNCS9FKJl6hetZ)
+    # Try ElevenLabs first — light cleaning preserves mixed Telugu/English
+    # (eleven_multilingual_v2 handles this natively; heavy stripping degrades quality)
     if ELEVENLABS_AVAILABLE:
+        el_text = _clean_for_elevenlabs(text)
+        print(f"  [VOICE] {len(el_text.split())} words for ElevenLabs")
+        print(f"  [VOICE] Preview: {el_text[:80]}...")
         print(f"  [VOICE] Trying ElevenLabs voice {ELEVENLABS_VOICE_ID}...")
-        if _generate_elevenlabs(cleaned, output_path):
+        if _generate_elevenlabs(el_text, output_path):
             return output_path
         print("  [VOICE] Falling back to gTTS...")
     else:
         print("  [VOICE] ElevenLabs SDK not installed — using gTTS")
 
-    # Fallback: gTTS
-    if _generate_gtts_fallback(cleaned, output_path):
+    # Fallback: gTTS requires aggressive cleaning (pure Telugu only)
+    gtts_text = clean_for_tts(text)
+    print(f"  [VOICE] {len(gtts_text.split())} words after gTTS clean")
+    print(f"  [VOICE] Preview: {gtts_text[:80]}...")
+    if _generate_gtts_fallback(gtts_text, output_path):
         return output_path
 
     print("  [VOICE] All TTS methods failed"); return None
