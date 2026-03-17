@@ -50,9 +50,11 @@ def clean_for_tts(text):
     text = re.sub(r'\d+', '', text)
     # Remove remaining Latin characters
     text = re.sub(r'[a-zA-Z]+', '', text)
-    # Clean leftover punctuation artifacts
-    text = re.sub(r'[\:\-–,\.]+', ' ', text)
+    # Preserve ... pause markers while cleaning other punctuation
+    text = text.replace('...', '\x00PAUSE\x00')
+    text = re.sub(r'[\:\-–,\.!?]+', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
+    text = text.replace('\x00PAUSE\x00', '...')
     return text
 
 
@@ -113,17 +115,55 @@ def _generate_elevenlabs(text, output_path):
 
 
 def _generate_gtts_fallback(text, output_path):
-    """Generate audio using gTTS with deep-male FFmpeg processing."""
+    """Generate audio using gTTS with pause support and deep-male FFmpeg processing.
+
+    Splits text at '...' markers, generates each chunk separately, then
+    concatenates with 500ms silence between chunks before voice processing.
+    """
     if not GTTS_AVAILABLE:
         print("  [VOICE] gTTS not available"); return False
 
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            raw_mp3   = os.path.join(tmp, "raw.mp3")
-            final_mp3 = os.path.join(tmp, "final.mp3")
+            # Split on pause markers
+            chunks = [c.strip() for c in text.split('...') if c.strip()]
+            if not chunks:
+                chunks = [text]
 
-            tts = gTTS(text=text, lang='te', slow=False)
-            tts.save(raw_mp3)
+            print(f"  [VOICE] gTTS: {len(chunks)} chunk(s) with pause markers")
+
+            # Generate audio for each chunk, interleaved with 500ms silence
+            segment_files = []
+            for i, chunk in enumerate(chunks):
+                chunk_mp3 = os.path.join(tmp, f"chunk_{i}.mp3")
+                tts = gTTS(text=chunk, lang='te', slow=False)
+                tts.save(chunk_mp3)
+                segment_files.append(chunk_mp3)
+
+                # Add 500ms silence after every chunk except the last
+                if i < len(chunks) - 1:
+                    silence_mp3 = os.path.join(tmp, f"silence_{i}.mp3")
+                    subprocess.run([
+                        "ffmpeg", "-y", "-f", "lavfi",
+                        "-i", "anullsrc=r=44100:cl=mono",
+                        "-t", "0.5", "-ar", "44100", "-ab", "128k",
+                        silence_mp3
+                    ], capture_output=True)
+                    segment_files.append(silence_mp3)
+
+            # Concatenate all segments
+            raw_mp3 = os.path.join(tmp, "raw.mp3")
+            if len(segment_files) > 1:
+                concat_txt = os.path.join(tmp, "concat.txt")
+                with open(concat_txt, "w") as f:
+                    for sf in segment_files:
+                        f.write(f"file '{sf}'\n")
+                subprocess.run([
+                    "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+                    "-i", concat_txt, "-c", "copy", raw_mp3
+                ], capture_output=True)
+            else:
+                shutil.copy(segment_files[0], raw_mp3)
 
             raw_dur = subprocess.run(
                 ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -132,6 +172,7 @@ def _generate_gtts_fallback(text, output_path):
             print(f"  [VOICE] gTTS raw duration: {raw_dur.stdout.strip()}s")
 
             # Deep male voice: pitch down + bass boost + compression
+            final_mp3 = os.path.join(tmp, "final.mp3")
             af = (
                 "asetrate=44100*0.82,"
                 "aresample=44100,"

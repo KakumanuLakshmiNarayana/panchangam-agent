@@ -31,11 +31,11 @@ import anthropic
 
 
 CITY_GREETINGS = {
-    "New York, NY":    "న్యూయార్క్ తెలుగు వారందరికీ శుభోదయం!",
-    "Chicago, IL":     "చికాగో తెలుగు సమాజానికి శుభోదయం!",
-    "Dallas, TX":      "డాలస్ తెలుగు వారందరికీ శుభోదయం!",
-    "Los Angeles, CA": "కాలిఫోర్నియా తెలుగు వారికి శుభోదయం!",
-    "Detroit, MI":     "మిషిగన్ తెలుగు వారందరికీ శుభోదయం!",
+    "New York, NY":    "న్యూయార్క్ తెలుగు వారికి... శుభోదయం.",
+    "Chicago, IL":     "చికాగో తెలుగు వారికి... శుభోదయం.",
+    "Dallas, TX":      "డాలస్ తెలుగు వారికి... శుభోదయం.",
+    "Los Angeles, CA": "కాలిఫోర్నియా తెలుగు వారికి... శుభోదయం.",
+    "Detroit, MI":     "మిషిగన్ తెలుగు వారికి... శుభోదయం.",
 }
 
 
@@ -124,11 +124,11 @@ def generate_video_script(panchang):
     # Scene 2 (~8w):  brahma auspicious + abhijit auspicious
     # Scene 3 (~10w): blessing + save/share
     narration = (
-        f"నమస్కారం! {city_greeting} "
-        f"నేడు {paksha} {tithi_name}. నక్షత్రం {nak_name}. "
-        f"రాహు కాలంలో కొత్త పనులు వద్దు. దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. "
-        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం శుభం. "
-        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! Save చేసి share చేయండి!"
+        f"నమస్కారం... {city_greeting} "
+        f"నేడు... {paksha} {tithi_name}. నక్షత్రం... {nak_name}. "
+        f"రాహు కాలంలో... కొత్త పనులు వద్దు. దుర్ముహూర్తంలో... శుభ కార్యాలు వద్దు. "
+        f"బ్రహ్మ ముహూర్తం... ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం... శుభం. "
+        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను... చేసి చేయండి."
     )
 
     # Also use Claude API to generate a better version if available
@@ -150,15 +150,15 @@ STRICT RULES:
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
 
-EXAMPLE (39 words):
-నమస్కారం! {city_greeting} నేడు {paksha} {tithi_name}. నక్షత్రం {nak_name}. రాహు కాలంలో కొత్త పనులు వద్దు. దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం శుభం. మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను! Save చేసి share చేయండి!
+EXAMPLE (with ... pause markers at natural breath points):
+నమస్కారం... {city_greeting} నేడు... {paksha} {tithi_name}. నక్షత్రం... {nak_name}. రాహు కాలంలో... కొత్త పనులు వద్దు. దుర్ముహూర్తంలో... శుభ కార్యాలు వద్దు. బ్రహ్మ ముహూర్తం... ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం... శుభం. మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను... చేసి చేయండి.
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "22-word pure Telugu narration here — NO English, NO times",
+  "full_narration": "pure Telugu narration with ... pause markers at natural breath points — NO English, NO times",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
     "నక్షత్రం: nakshatra_name",
