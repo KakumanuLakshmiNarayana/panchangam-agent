@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
-from presenter_animator import draw_subtitle
+from presenter_animator import draw_subtitle, PresenterAnimator
 
 W, H, FPS    = 1080, 1920, 24
 SCRIPTS_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +38,28 @@ DIV_DIM = (45,  45,  45)
 
 PAD = 60
 CX  = W // 2
+
+# Character sits in the lower empty zone (below content, above footer)
+_CHAR_SCALE     = 0.32    # 32 % of frame height ≈ 614 px tall
+_CHAR_BOTTOM_Y  = H - 75  # bottom edge at y=1845
+
+_ANIMATOR: "PresenterAnimator | None" = None
+
+
+def _get_animator() -> "PresenterAnimator | None":
+    global _ANIMATOR
+    if _ANIMATOR is None:
+        try:
+            _ANIMATOR = PresenterAnimator(
+                CHARACTER_PATH, W, H,
+                scale=_CHAR_SCALE,
+                cx=W // 2,
+                bottom_y=_CHAR_BOTTOM_Y,
+            )
+        except Exception:
+            pass
+    return _ANIMATOR
+
 
 # ── Scene timing ───────────────────────────────────────────────────────────────
 SCENE_WORD_COUNTS = [12, 9, 8, 10]
@@ -235,21 +257,21 @@ def scene_intro(img, f, panchang):
     _hline(draw, 352, color=(75, 60, 18, fa), width=2)
 
     # Tithi
-    draw.text((PAD, 400), "తిథి", font=get_font(28), fill=MUTED + (fa,))
+    draw.text((PAD, 400), "తిథి", font=get_font(28), fill=SAFFRON + (fa,))
     ts = 70 if len(tithi_tel) <= 5 else 56
     draw_mixed(draw, (PAD, 452), tithi_tel, ts, bold=True, fill=GOLD + (fa,))
 
     _hline(draw, 574, color=DIV_DIM + (fa,))
 
     # Nakshatra
-    draw.text((PAD, 618), "నక్షత్రం", font=get_font(28), fill=MUTED + (fa,))
+    draw.text((PAD, 618), "నక్షత్రం", font=get_font(28), fill=SAFFRON + (fa,))
     ns = 70 if len(nak_name) <= 5 else 56
     draw_mixed(draw, (PAD, 670), nak_name, ns, bold=True, fill=GOLD + (fa,))
 
     _hline(draw, 792, color=DIV_DIM + (fa,))
 
     # Paksha
-    draw.text((PAD, 836), "పక్షం", font=get_font(28), fill=MUTED + (fa,))
+    draw.text((PAD, 836), "పక్షం", font=get_font(28), fill=SAFFRON + (fa,))
     draw_mixed(draw, (PAD, 886), paksha, 44, fill=WHITE + (fa,))
 
     _hline(draw, 988, color=(95, 28, 28, fa), width=2)
@@ -259,8 +281,8 @@ def scene_intro(img, f, panchang):
     rsize = 60 if len(rahu) <= 20 else 48
     draw.text((PAD, 1090), rahu,
               font=get_latin_font(rsize, bold=True), fill=WHITE + (fa,))
-    draw.text((PAD, 1165), "Avoid starting new work",
-              font=get_latin_font(26), fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 1165), "కొత్త పని మొదలు పెట్టకండి",
+               26, fill=MUTED + (fa,))
 
     _footer(draw, fa)
     return img
@@ -283,7 +305,7 @@ def scene_bad_timings(img, f, panchang):
     _hline(draw, 268, color=(145, 28, 28, fa), width=2)
 
     # Rahu Kalam
-    draw_mixed(draw, (PAD, 334), "రాహు కాలం", 30, fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 334), "రాహు కాలం", 30, fill=RED + (fa,))
     rsize = 78 if len(rahu) <= 20 else 62
     draw.text((PAD, 390), rahu,
               font=get_latin_font(rsize, bold=True), fill=WHITE + (fa,))
@@ -293,7 +315,7 @@ def scene_bad_timings(img, f, panchang):
     _hline(draw, 572, color=DIV_DIM + (fa,))
 
     # Durmuhurtam
-    draw_mixed(draw, (PAD, 628), "దుర్ముహూర్తం", 30, fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 628), "దుర్ముహూర్తం", 30, fill=RED + (fa,))
     dsize = 70 if len(dur) <= 20 else 56
     draw.text((PAD, 684), dur,
               font=get_latin_font(dsize, bold=True), fill=WHITE + (fa,))
@@ -325,7 +347,7 @@ def scene_good_timings(img, f, panchang):
     _hline(draw, 268, color=(145, 115, 18, fa), width=2)
 
     # Brahma Muhurtam
-    draw_mixed(draw, (PAD, 334), "బ్రహ్మ ముహూర్తం", 30, fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 334), "బ్రహ్మ ముహూర్తం", 30, fill=GOLD + (fa,))
     bsize = 76 if len(brahma) <= 20 else 60
     draw.text((PAD, 390), brahma,
               font=get_latin_font(bsize, bold=True), fill=WHITE + (fa,))
@@ -335,7 +357,7 @@ def scene_good_timings(img, f, panchang):
     _hline(draw, 568, color=DIV_DIM + (fa,))
 
     # Abhijit
-    draw_mixed(draw, (PAD, 624), "అభిజిత్ ముహూర్తం", 30, fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 624), "అభిజిత్ ముహూర్తం", 30, fill=GOLD + (fa,))
     asize = 70 if len(abhijit) <= 20 else 56
     draw.text((PAD, 680), abhijit,
               font=get_latin_font(asize, bold=True), fill=WHITE + (fa,))
@@ -368,14 +390,14 @@ def scene_closing(img, f, panchang):
     _hline(draw, 268, color=(145, 115, 18, fa), width=2)
 
     # Sunrise
-    draw_mixed(draw, (PAD, 334), "సూర్యోదయం", 30, fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 334), "సూర్యోదయం", 30, fill=SAFFRON + (fa,))
     draw.text((PAD, 390), sunrise,
               font=get_latin_font(66, bold=True), fill=WHITE + (fa,))
 
     _hline(draw, 498, color=DIV_DIM + (fa,))
 
     # Sunset
-    draw_mixed(draw, (PAD, 548), "సూర్యాస్తమయం", 30, fill=MUTED + (fa,))
+    draw_mixed(draw, (PAD, 548), "సూర్యాస్తమయం", 30, fill=SAFFRON + (fa,))
     draw.text((PAD, 604), sunset,
               font=get_latin_font(66, bold=True), fill=WHITE + (fa,))
 
@@ -438,6 +460,13 @@ def build_frame(frame_idx: int, panchang: dict, scene_frames: list,
 
     # Render
     img = make_bg()
+
+    # Pandit character — composited first so text renders on top of it
+    anim = _get_animator()
+    if anim is not None:
+        t_abs = frame_idx / FPS
+        img = anim.composite(img, t_abs, talking=True, scene=scene, petals=False)
+
     img = SCENE_RENDERERS[scene](img, f_in, panchang)
 
     # Subtitle
