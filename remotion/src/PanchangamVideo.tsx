@@ -144,13 +144,13 @@ const PanditChar: React.FC<{ opacity: number; frame: number }> = ({ opacity, fra
     <div
       style={{
         position: 'absolute',
-        bottom: 55,
+        bottom: 0,
         left: '50%',
         transform: `translateX(-50%) scaleY(${breathe})`,
         transformOrigin: 'bottom center',
         opacity,
-        width: 520,
-        height: 920,
+        width: 600,
+        height: 1080,
       }}
     >
       {/* soft glow */}
@@ -160,11 +160,11 @@ const PanditChar: React.FC<{ opacity: number; frame: number }> = ({ opacity, fra
           bottom: 0,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 500,
-          height: 500,
+          width: 580,
+          height: 580,
           borderRadius: '50%',
           background:
-            'radial-gradient(circle, rgba(255,110,15,0.20) 0%, rgba(255,110,15,0.06) 40%, transparent 70%)',
+            'radial-gradient(circle, rgba(255,110,15,0.22) 0%, rgba(255,110,15,0.07) 40%, transparent 70%)',
         }}
       />
       <Img
@@ -174,7 +174,7 @@ const PanditChar: React.FC<{ opacity: number; frame: number }> = ({ opacity, fra
           bottom: 0,
           left: '50%',
           transform: 'translateX(-50%)',
-          height: 900,
+          height: 1060,
           width: 'auto',
           objectFit: 'contain',
         }}
@@ -236,7 +236,7 @@ const Divider: React.FC<{ color?: string; opacity?: number }> = ({
 const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
   const { opacity, ty } = useEntrance(localFrame);
   const card1 = useCard(localFrame, 6);
-  const card2 = useCard(localFrame, 18);
+  const paksha = useCard(localFrame, 20);
 
   return (
     <AbsoluteFill>
@@ -285,8 +285,8 @@ const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           <Divider />
         </div>
 
-        {/* Tithi + Nakshatra side by side */}
-        <div style={{ display: 'flex', gap: 18, marginBottom: 18, ...card1 }}>
+        {/* Tithi + Nakshatra side by side — bigger cards */}
+        <div style={{ display: 'flex', gap: 18, marginBottom: 22, ...card1 }}>
           {[
             { label: 'తిథి', value: P.tithi, sub: P.tithiTime },
             { label: 'నక్షత్రం', value: P.nakshatra, sub: P.nakshatraTime },
@@ -297,74 +297,59 @@ const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
                 flex: 1,
                 background: 'rgba(22, 12, 4, 0.92)',
                 border: '2px solid rgba(200, 155, 40, 0.8)',
-                borderRadius: 18,
-                padding: '22px 18px 20px',
+                borderRadius: 20,
+                padding: '28px 18px 26px',
                 textAlign: 'center',
               }}
             >
               <div
                 style={{
-                  fontSize: 22,
+                  fontSize: 26,
                   color: GOLD,
                   fontWeight: 'bold',
                   fontFamily: TELUGU,
-                  marginBottom: 8,
+                  marginBottom: 10,
                 }}
               >
                 {label}
               </div>
-              <div style={{ height: 1, background: 'rgba(200,155,40,0.35)', marginBottom: 12 }} />
+              <div style={{ height: 1, background: 'rgba(200,155,40,0.35)', marginBottom: 16 }} />
               <div
                 style={{
-                  fontSize: 36,
+                  fontSize: 52,
                   fontWeight: 'bold',
                   color: WHITE,
                   fontFamily: LATIN,
-                  marginBottom: 6,
+                  marginBottom: 8,
+                  lineHeight: 1.1,
                 }}
               >
                 {value}
               </div>
-              <div style={{ fontSize: 18, color: MUTED, fontFamily: LATIN }}>{sub}</div>
+              <div style={{ fontSize: 20, color: MUTED, fontFamily: LATIN }}>{sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Rahu preview */}
+        {/* Paksha */}
         <div
           style={{
-            background: 'rgba(55, 6, 6, 0.96)',
-            border: '2px solid rgba(230, 60, 60, 0.85)',
-            borderRadius: 20,
-            padding: '26px 30px',
-            ...card2,
+            background: 'rgba(22, 12, 4, 0.88)',
+            border: '2px solid rgba(200, 155, 40, 0.55)',
+            borderRadius: 18,
+            padding: '22px 30px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 20,
+            ...paksha,
           }}
         >
-          <div
-            style={{
-              fontSize: 30,
-              fontWeight: 'bold',
-              color: RED,
-              fontFamily: TELUGU,
-              marginBottom: 8,
-            }}
-          >
-            రాహు కాలం
+          <div style={{ fontSize: 26, color: GOLD, fontFamily: TELUGU, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+            పక్షం
           </div>
-          <div
-            style={{ fontSize: 56, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
-          >
-            {P.rahukaal}
-          </div>
-          <div
-            style={{
-              fontSize: 22,
-              color: 'rgba(255,160,160,0.85)',
-              marginTop: 10,
-              fontFamily: TELUGU,
-            }}
-          >
-            కొత్త పని మొదలు పెట్టకండి
+          <div style={{ width: 1, height: 40, background: 'rgba(200,155,40,0.4)' }} />
+          <div style={{ fontSize: 40, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
+            {P.paksha}
           </div>
         </div>
       </div>
