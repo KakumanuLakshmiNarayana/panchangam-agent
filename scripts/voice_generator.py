@@ -82,16 +82,19 @@ def clean_for_tts(text):
 
 
 def _clean_for_elevenlabs(text):
-    """Prepare text for ElevenLabs: city names → Telugu, pause markers → SSML breaks."""
+    """Prepare text for ElevenLabs: city names → Telugu, pause markers → SSML breaks.
+
+    ElevenLabs accepts inline <break> tags without a <speak> wrapper.
+    """
     for eng in sorted(CITY_TELUGU.keys(), key=len, reverse=True):
         text = text.replace(eng, CITY_TELUGU[eng])
 
-    # Convert pause markers to SSML break tags
-    text = text.replace("[LONG_PAUSE]",  '<break time="800ms"/>')
-    text = text.replace("[PAUSE]",       '<break time="500ms"/>')
-    text = text.replace("[SHORT_PAUSE]", '<break time="300ms"/>')
+    # Convert pause markers to inline SSML break tags (no <speak> wrapper needed)
+    text = text.replace("[LONG_PAUSE]",  '<break time="800ms"/> ')
+    text = text.replace("[PAUSE]",       '<break time="500ms"/> ')
+    text = text.replace("[SHORT_PAUSE]", '<break time="300ms"/> ')
 
-    return f"<speak>{text.strip()}</speak>"
+    return text.strip()
 
 
 def _generate_elevenlabs(text, output_path):
