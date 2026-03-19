@@ -31,12 +31,17 @@ import anthropic
 
 
 CITY_GREETINGS = {
-    "New York, NY":    "న్యూయార్క్ తెలుగు వారికి... శుభోదయం.",
-    "Chicago, IL":     "చికాగో తెలుగు వారికి... శుభోదయం.",
-    "Dallas, TX":      "డాలస్ తెలుగు వారికి... శుభోదయం.",
-    "Los Angeles, CA": "కాలిఫోర్నియా తెలుగు వారికి... శుభోదయం.",
-    "Detroit, MI":     "మిషిగన్ తెలుగు వారికి... శుభోదయం.",
+    "New York, NY":    "న్యూయార్క్ తెలుగు వారికి శుభోదయం.",
+    "Chicago, IL":     "చికాగో తెలుగు వారికి శుభోదయం.",
+    "Dallas, TX":      "డాలస్ తెలుగు వారికి శుభోదయం.",
+    "Los Angeles, CA": "కాలిఫోర్నియా తెలుగు వారికి శుభోదయం.",
+    "Detroit, MI":     "మిషిగన్ తెలుగు వారికి శుభోదయం.",
 }
+
+# Pause marker reference:
+#   [SHORT_PAUSE]  = 300ms  — brief breath between short phrases
+#   [PAUSE]        = 500ms  — natural sentence break
+#   [LONG_PAUSE]   = 800ms  — paragraph-level pause (after greeting)
 
 
 def tf(p, k):
@@ -124,11 +129,11 @@ def generate_video_script(panchang):
     # Scene 2 (~8w):  brahma auspicious + abhijit auspicious
     # Scene 3 (~10w): blessing + save/share
     narration = (
-        f"నమస్కారం... {city_greeting} "
-        f"నేడు... {paksha} {tithi_name}. నక్షత్రం... {nak_name}. "
-        f"రాహు కాలంలో... కొత్త పనులు వద్దు. దుర్ముహూర్తంలో... శుభ కార్యాలు వద్దు. "
-        f"బ్రహ్మ ముహూర్తం... ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం... శుభం. "
-        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను... చేసి చేయండి."
+        f"నమస్కారం! [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
+        f"నేడు {paksha} {tithi_name}. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] "
+        f"రాహుకాలంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. [PAUSE] "
+        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభం. [PAUSE] "
+        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. please like share and subscribe."
     )
 
     # Also use Claude API to generate a better version if available
@@ -150,15 +155,18 @@ STRICT RULES:
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
 
-EXAMPLE (with ... pause markers at natural breath points):
-నమస్కారం... {city_greeting} నేడు... {paksha} {tithi_name}. నక్షత్రం... {nak_name}. రాహు కాలంలో... కొత్త పనులు వద్దు. దుర్ముహూర్తంలో... శుభ కార్యాలు వద్దు. బ్రహ్మ ముహూర్తం... ప్రార్థనకు ఉత్తమం. అభిజిత్ ముహూర్తం... శుభం. మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను... చేసి చేయండి.
+PAUSE MARKERS (use exactly as shown):
+  [SHORT_PAUSE] = 300ms, [PAUSE] = 500ms, [LONG_PAUSE] = 800ms
+
+EXAMPLE:
+నమస్కారం! [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] నేడు {paksha} {tithi_name}. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] రాహుకాలంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. [PAUSE] బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభం. [PAUSE] మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. please like share and subscribe.
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "pure Telugu narration with ... pause markers at natural breath points — NO English, NO times",
+  "full_narration": "Telugu narration with [SHORT_PAUSE]/[PAUSE]/[LONG_PAUSE] markers — NO times, end with 'ధన్యవాదాలు. please like share and subscribe.'",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
     "నక్షత్రం: nakshatra_name",
@@ -184,13 +192,18 @@ Return ONLY valid JSON, no markdown:
         raw = raw.strip()
         result = json.loads(raw)
 
-        # Validate: reject if narration contains digits or Latin chars
+        # Validate: reject if narration contains digits or unexpected Latin chars
+        # Strip allowed markers/English CTA before checking
+        import re as _re
         narr = result.get("full_narration", "")
-        has_digits = any(c.isdigit() for c in narr)
-        has_latin  = any(c.isascii() and c.isalpha() for c in narr)
+        narr_check = _re.sub(r'\[(SHORT_PAUSE|PAUSE|LONG_PAUSE)\]', '', narr)
+        narr_check = narr_check.replace("please like share and subscribe", "")
+        narr_check = narr_check.replace("ధన్యవాదాలు.", "")
+        has_digits = any(c.isdigit() for c in narr_check)
+        has_latin  = any(c.isascii() and c.isalpha() for c in narr_check)
         word_count = len(narr.split())
 
-        if has_digits or has_latin or word_count > 50:
+        if has_digits or has_latin or word_count > 60:
             # API gave bad result — use local fallback
             result["full_narration"] = narration
 
