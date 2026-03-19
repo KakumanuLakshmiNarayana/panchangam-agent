@@ -3,6 +3,7 @@ import '@fontsource/noto-sans-telugu/700.css';
 import React, { useEffect, useState } from 'react';
 import {
   AbsoluteFill,
+  Audio,
   Img,
   Sequence,
   continueRender,
@@ -14,11 +15,32 @@ import {
   useVideoConfig,
 } from 'remotion';
 
-// ── Sample data (Dallas TX, March 16 2026) ────────────────────────────────
-const P = {
+// ── VideoData interface ───────────────────────────────────────────────────────
+export interface VideoData {
+  city: string;
+  date: string;
+  weekday: string;
+  tz: string;
+  tithi: string;
+  tithiTime: string;
+  nakshatra: string;
+  nakshatraTime: string;
+  paksha: string;
+  rahukaal: string;
+  durmuhurtam: string;
+  brahma: string;
+  abhijit: string;
+  sunrise: string;
+  sunset: string;
+  audioDurationSec: number;
+  audioFile: string;
+}
+
+export const defaultVideoData: VideoData = {
   city: 'Dallas, TX',
   date: 'March 16, 2026',
   weekday: 'Monday',
+  tz: 'CT',
   tithi: 'Dwadashi',
   tithiTime: 'upto 2:45 PM CT',
   nakshatra: 'Uttara Phalguni',
@@ -30,14 +52,9 @@ const P = {
   abhijit: '11:45 AM – 12:45 PM CT',
   sunrise: '6:45 AM CT',
   sunset: '6:15 PM CT',
+  audioDurationSec: 20,
+  audioFile: '',
 };
-
-// ── Scene frame allocation (word-count proportional, 480 total = 20s @ 24fps)
-const SCENE_FRAMES = [148, 111, 98, 123];
-const SCENE_STARTS = SCENE_FRAMES.reduce<number[]>((acc, _, i) => {
-  acc.push(i === 0 ? 0 : acc[i - 1] + SCENE_FRAMES[i - 1]);
-  return acc;
-}, []);
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 const WHITE = '#FFFFFF';
@@ -75,18 +92,14 @@ const Stars: React.FC = () => {
     const a = i * 137.508;
     return {
       x: ((a * 1.234) % 1080),
-      y: ((a * 0.765) % 1344), // top 70% of frame
+      y: ((a * 0.765) % 1344),
       r: i % 6 === 0 ? 2 : 1,
       opacity: 0.12 + (i % 8) * 0.055,
     };
   });
   return (
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
-      <svg
-        width={1080}
-        height={1920}
-        style={{ position: 'absolute', top: 0, left: 0 }}
-      >
+      <svg width={1080} height={1920} style={{ position: 'absolute', top: 0, left: 0 }}>
         {stars.map((s, i) => (
           <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#FFD882" opacity={s.opacity} />
         ))}
@@ -153,7 +166,6 @@ const PanditChar: React.FC<{ opacity: number; frame: number }> = ({ opacity, fra
         height: 1080,
       }}
     >
-      {/* soft glow */}
       <div
         style={{
           position: 'absolute',
@@ -208,14 +220,7 @@ const Divider: React.FC<{ color?: string; opacity?: number }> = ({
   color = ORANGE,
   opacity = 0.45,
 }) => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 28,
-    }}
-  >
+  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
     <div style={{ flex: 1, height: 2, background: color, opacity }} />
     <div
       style={{
@@ -233,7 +238,7 @@ const Divider: React.FC<{ color?: string; opacity?: number }> = ({
 // ════════════════════════════════════════════════════════════════════════════
 // Scene 0 — Intro
 // ════════════════════════════════════════════════════════════════════════════
-const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
+const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFrame, data }) => {
   const { opacity, ty } = useEntrance(localFrame);
   const card1 = useCard(localFrame, 6);
   const paksha = useCard(localFrame, 20);
@@ -263,7 +268,7 @@ const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
             lineHeight: 1.1,
           }}
         >
-          {P.city}
+          {data.city}
         </div>
 
         {/* Date */}
@@ -278,18 +283,18 @@ const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
             marginBottom: 22,
           }}
         >
-          {P.weekday} &nbsp;•&nbsp; {P.date}
+          {data.weekday} &nbsp;•&nbsp; {data.date}
         </div>
 
         <div style={{ opacity, transform: `translateY(${ty}px)` }}>
           <Divider />
         </div>
 
-        {/* Tithi + Nakshatra side by side — bigger cards */}
+        {/* Tithi + Nakshatra side by side */}
         <div style={{ display: 'flex', gap: 18, marginBottom: 22, ...card1 }}>
           {[
-            { label: 'తిథి', value: P.tithi, sub: P.tithiTime },
-            { label: 'నక్షత్రం', value: P.nakshatra, sub: P.nakshatraTime },
+            { label: 'తిథి', value: data.tithi, sub: data.tithiTime },
+            { label: 'నక్షత్రం', value: data.nakshatra, sub: data.nakshatraTime },
           ].map(({ label, value, sub }) => (
             <div
               key={label}
@@ -349,7 +354,7 @@ const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           </div>
           <div style={{ width: 1, height: 40, background: 'rgba(200,155,40,0.4)' }} />
           <div style={{ fontSize: 40, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
-            {P.paksha}
+            {data.paksha}
           </div>
         </div>
       </div>
@@ -360,7 +365,7 @@ const IntroScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
 // ════════════════════════════════════════════════════════════════════════════
 // Scene 1 — Bad Timings
 // ════════════════════════════════════════════════════════════════════════════
-const BadTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
+const BadTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFrame, data }) => {
   const headerOp = interpolate(localFrame, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
   const pulse = 1 + 0.012 * Math.sin(localFrame * 0.18);
   const card1 = useCard(localFrame, 6);
@@ -369,7 +374,6 @@ const BadTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
   return (
     <AbsoluteFill>
       <div style={{ padding: '130px 60px 0', color: WHITE }}>
-        {/* Header */}
         <div
           style={{
             textAlign: 'center',
@@ -411,8 +415,7 @@ const BadTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
               position: 'absolute',
               inset: 0,
               borderRadius: 24,
-              background:
-                'radial-gradient(ellipse at 50% 0%, rgba(230,60,60,0.14) 0%, transparent 55%)',
+              background: 'radial-gradient(ellipse at 50% 0%, rgba(230,60,60,0.14) 0%, transparent 55%)',
               pointerEvents: 'none',
             }}
           />
@@ -425,15 +428,10 @@ const BadTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           <div
             style={{ fontSize: 68, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
-            {P.rahukaal}
+            {data.rahukaal}
           </div>
           <div
-            style={{
-              fontSize: 24,
-              color: 'rgba(255,160,160,0.9)',
-              marginTop: 14,
-              fontFamily: TELUGU,
-            }}
+            style={{ fontSize: 24, color: 'rgba(255,160,160,0.9)', marginTop: 14, fontFamily: TELUGU }}
           >
             కొత్త పని మొదలు పెట్టకండి
           </div>
@@ -458,11 +456,9 @@ const BadTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           <div
             style={{ fontSize: 58, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
-            {P.durmuhurtam}
+            {data.durmuhurtam}
           </div>
-          <div
-            style={{ fontSize: 22, color: MUTED, marginTop: 10, fontFamily: TELUGU }}
-          >
+          <div style={{ fontSize: 22, color: MUTED, marginTop: 10, fontFamily: TELUGU }}>
             శుభ కార్యాలు వద్దు
           </div>
         </div>
@@ -474,7 +470,7 @@ const BadTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
 // ════════════════════════════════════════════════════════════════════════════
 // Scene 2 — Good Timings
 // ════════════════════════════════════════════════════════════════════════════
-const GoodTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
+const GoodTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFrame, data }) => {
   const headerOp = interpolate(localFrame, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
   const shimmer = 0.65 + 0.35 * Math.sin(localFrame * 0.11);
   const card1 = useCard(localFrame, 6);
@@ -483,7 +479,6 @@ const GoodTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
   return (
     <AbsoluteFill>
       <div style={{ padding: '130px 60px 0', color: WHITE }}>
-        {/* Header */}
         <div
           style={{
             textAlign: 'center',
@@ -525,8 +520,7 @@ const GoodTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
               position: 'absolute',
               inset: 0,
               borderRadius: 24,
-              background:
-                'radial-gradient(ellipse at 50% 0%, rgba(255,200,30,0.10) 0%, transparent 55%)',
+              background: 'radial-gradient(ellipse at 50% 0%, rgba(255,200,30,0.10) 0%, transparent 55%)',
               pointerEvents: 'none',
             }}
           />
@@ -539,15 +533,10 @@ const GoodTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           <div
             style={{ fontSize: 68, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
-            {P.brahma}
+            {data.brahma}
           </div>
           <div
-            style={{
-              fontSize: 24,
-              color: 'rgba(210,210,170,0.9)',
-              marginTop: 14,
-              fontFamily: TELUGU,
-            }}
+            style={{ fontSize: 24, color: 'rgba(210,210,170,0.9)', marginTop: 14, fontFamily: TELUGU }}
           >
             ప్రార్థన & ధ్యానానికి ఉత్తమ సమయం
           </div>
@@ -572,7 +561,7 @@ const GoodTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           <div
             style={{ fontSize: 58, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
-            {P.abhijit}
+            {data.abhijit}
           </div>
           <div style={{ fontSize: 22, color: MUTED, marginTop: 10, fontFamily: TELUGU }}>
             ముఖ్య పనులకు అత్యంత శుభ సమయం
@@ -586,7 +575,7 @@ const GoodTimingsScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
 // ════════════════════════════════════════════════════════════════════════════
 // Scene 3 — Closing
 // ════════════════════════════════════════════════════════════════════════════
-const ClosingScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
+const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFrame, data }) => {
   const headerOp = interpolate(localFrame, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
   const card1 = useCard(localFrame, 4);
   const card2 = useCard(localFrame, 14);
@@ -595,7 +584,6 @@ const ClosingScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
   return (
     <AbsoluteFill>
       <div style={{ padding: '130px 60px 0', color: WHITE }}>
-        {/* Header */}
         <div
           style={{
             textAlign: 'center',
@@ -633,7 +621,7 @@ const ClosingScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
             సూర్యోదయం 🌅
           </div>
           <div style={{ fontSize: 60, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
-            {P.sunrise}
+            {data.sunrise}
           </div>
         </div>
 
@@ -652,7 +640,7 @@ const ClosingScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
             సూర్యాస్తమయం 🌇
           </div>
           <div style={{ fontSize: 60, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
-            {P.sunset}
+            {data.sunset}
           </div>
         </div>
 
@@ -680,9 +668,7 @@ const ClosingScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
           >
             ఆశిస్తున్నాము! 🙏
           </div>
-          <div
-            style={{ height: 1, background: 'rgba(45,45,45,0.9)', marginBottom: 20 }}
-          />
+          <div style={{ height: 1, background: 'rgba(45,45,45,0.9)', marginBottom: 20 }} />
           <div
             style={{
               fontSize: 32,
@@ -709,7 +695,7 @@ const ClosingScene: React.FC<{ localFrame: number }> = ({ localFrame }) => {
 // ════════════════════════════════════════════════════════════════════════════
 // Main composition
 // ════════════════════════════════════════════════════════════════════════════
-export const PanchangamVideo: React.FC = () => {
+export const PanchangamVideo: React.FC<VideoData> = (props) => {
   const frame = useCurrentFrame();
   const [fontHandle] = useState(() => delayRender('Loading NotoSansTelugu fonts'));
 
@@ -717,7 +703,19 @@ export const PanchangamVideo: React.FC = () => {
     document.fonts.ready.then(() => continueRender(fontHandle));
   }, [fontHandle]);
 
-  const globalFade = interpolate(frame, [468, 480], [1, 0], {
+  // Compute scene frame allocation proportional to audio duration
+  const TOTAL = Math.max(Math.ceil(props.audioDurationSec * 24), 480);
+  const RATIOS = [148 / 480, 111 / 480, 98 / 480, 123 / 480];
+  const SCENE_FRAMES = RATIOS.map((r) => Math.round(r * TOTAL)) as [number, number, number, number];
+  // Fix any rounding drift in the last scene
+  SCENE_FRAMES[3] += TOTAL - SCENE_FRAMES.reduce((a, b) => a + b, 0);
+
+  const SCENE_STARTS = SCENE_FRAMES.reduce<number[]>((acc, _, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + SCENE_FRAMES[i - 1]);
+    return acc;
+  }, []);
+
+  const globalFade = interpolate(frame, [TOTAL - 12, TOTAL], [1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -726,13 +724,14 @@ export const PanchangamVideo: React.FC = () => {
     <AbsoluteFill style={{ background: '#080808', overflow: 'hidden', opacity: globalFade }}>
       {/* Background gradient */}
       <AbsoluteFill
-        style={{
-          background: 'radial-gradient(ellipse at 50% 22%, #0d1b2e 0%, #080808 62%)',
-        }}
+        style={{ background: 'radial-gradient(ellipse at 50% 22%, #0d1b2e 0%, #080808 62%)' }}
       />
 
       {/* Stars */}
       <Stars />
+
+      {/* Audio track */}
+      {props.audioFile ? <Audio src={staticFile(props.audioFile)} /> : null}
 
       {/* Pandit character — persistent across all scenes */}
       <PanditChar
@@ -742,16 +741,16 @@ export const PanchangamVideo: React.FC = () => {
 
       {/* Scene content */}
       <Sequence from={SCENE_STARTS[0]} durationInFrames={SCENE_FRAMES[0]}>
-        <IntroScene localFrame={frame - SCENE_STARTS[0]} />
+        <IntroScene localFrame={frame - SCENE_STARTS[0]} data={props} />
       </Sequence>
       <Sequence from={SCENE_STARTS[1]} durationInFrames={SCENE_FRAMES[1]}>
-        <BadTimingsScene localFrame={frame - SCENE_STARTS[1]} />
+        <BadTimingsScene localFrame={frame - SCENE_STARTS[1]} data={props} />
       </Sequence>
       <Sequence from={SCENE_STARTS[2]} durationInFrames={SCENE_FRAMES[2]}>
-        <GoodTimingsScene localFrame={frame - SCENE_STARTS[2]} />
+        <GoodTimingsScene localFrame={frame - SCENE_STARTS[2]} data={props} />
       </Sequence>
       <Sequence from={SCENE_STARTS[3]} durationInFrames={SCENE_FRAMES[3]}>
-        <ClosingScene localFrame={frame - SCENE_STARTS[3]} />
+        <ClosingScene localFrame={frame - SCENE_STARTS[3]} data={props} />
       </Sequence>
 
       {/* Persistent handle + footer on top */}
@@ -761,10 +760,7 @@ export const PanchangamVideo: React.FC = () => {
       {/* Per-scene crossfade overlays */}
       {SCENE_STARTS.map((start, i) => (
         <Sequence key={i} from={start} durationInFrames={SCENE_FRAMES[i]}>
-          <FadeOverlay
-            localFrame={frame - start}
-            totalFrames={SCENE_FRAMES[i]}
-          />
+          <FadeOverlay localFrame={frame - start} totalFrames={SCENE_FRAMES[i]} />
         </Sequence>
       ))}
     </AbsoluteFill>
