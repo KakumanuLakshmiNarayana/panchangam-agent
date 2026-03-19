@@ -129,11 +129,11 @@ def generate_video_script(panchang):
     # Scene 2 (~8w):  brahma auspicious + abhijit auspicious
     # Scene 3 (~10w): blessing + save/share
     narration = (
-        f"నమస్కారం! [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
-        f"నేడు {paksha} {tithi_name}. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] "
-        f"రాహుకాలంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. [PAUSE] "
-        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభం. [PAUSE] "
-        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. please like share and subscribe."
+        f"నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
+        f"ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] "
+        f"రాహుకాలం సమయంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు వద్దు. [PAUSE] "
+        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభప్రదం. [PAUSE] "
+        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్."
     )
 
     # Also use Claude API to generate a better version if available
@@ -147,10 +147,19 @@ STRICT RULES:
 1. Write ONLY in Telugu script — NO English letters, NO numbers, NO time values
 2. DO NOT read any times — screen shows them
 3. ~39 words total across 4 scenes, structure EXACTLY as below
-4. Scene 0 (~12w): greeting + city greeting + today's tithi + nakshatra
-5. Scene 1 (~9w):  rahu kalam warning + durmuhurtam warning
-6. Scene 2 (~8w):  brahma muhurtam auspicious + abhijit auspicious
-7. Scene 3 (~10w): blessing + save/share CTA
+4. Scene 0 (~12w): greeting + city greeting + today's paksha + tithi + nakshatra
+5. Scene 1 (~9w):  rahu kalam warning (use "సమయంలో") + durmuhurtam warning (use "సమయంలో")
+6. Scene 2 (~8w):  brahma muhurtam auspicious + abhijit auspicious (use "శుభప్రదం")
+7. Scene 3 (~10w): blessing + Telugu-script CTA
+
+VOCABULARY RULES (fix common TTS mispronunciations — follow exactly):
+- Use "ఈరోజు" NOT "నేడు"
+- Use "రాహుకాలం సమయంలో" NOT "రాహుకాలంలో"
+- Use "దుర్ముహూర్తం సమయంలో" NOT "దుర్ముహూర్తంలో"
+- Use "శుభకార్యాలు" (compound word) NOT "శుభ కార్యాలు"
+- Use "శుభప్రదం" NOT "శుభం" for abhijit
+- Use "వద్దు" NOT "వడ్డు"
+- End CTA in Telugu script: "ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్."
 
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
@@ -158,15 +167,15 @@ Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
 PAUSE MARKERS (use exactly as shown):
   [SHORT_PAUSE] = 300ms, [PAUSE] = 500ms, [LONG_PAUSE] = 800ms
 
-EXAMPLE:
-నమస్కారం! [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] నేడు {paksha} {tithi_name}. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] రాహుకాలంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తంలో శుభ కార్యాలు వద్దు. [PAUSE] బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభం. [PAUSE] మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. please like share and subscribe.
+EXAMPLE OUTPUT (follow this structure precisely):
+నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] రాహుకాలం సమయంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు వద్దు. [PAUSE] బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభప్రదం. [PAUSE] మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్.
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "Telugu narration with [SHORT_PAUSE]/[PAUSE]/[LONG_PAUSE] markers — NO times, end with 'ధన్యవాదాలు. please like share and subscribe.'",
+  "full_narration": "Telugu narration with pause markers — NO times, end with 'ధన్యవాదాలు. ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్.'",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
     "నక్షత్రం: nakshatra_name",
@@ -179,7 +188,7 @@ Return ONLY valid JSON, no markdown:
 }}"""
 
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-6",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -197,6 +206,7 @@ Return ONLY valid JSON, no markdown:
         import re as _re
         narr = result.get("full_narration", "")
         narr_check = _re.sub(r'\[(SHORT_PAUSE|PAUSE|LONG_PAUSE)\]', '', narr)
+        narr_check = narr_check.replace("ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్", "")
         narr_check = narr_check.replace("please like share and subscribe", "")
         narr_check = narr_check.replace("ధన్యవాదాలు.", "")
         has_digits = any(c.isdigit() for c in narr_check)
