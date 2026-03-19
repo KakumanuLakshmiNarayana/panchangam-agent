@@ -72,7 +72,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager
+          pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager elevenlabs
 
       - name: Run Pipeline
         env:
