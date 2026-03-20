@@ -49,6 +49,14 @@ def tf(p, k):
     return v if v and v != "" else "N/A"
 
 
+def fmt_time_voice(val, tz):
+    """Format a panchang time value for voice: '11:33 AM – 01:04 PM ET' → '11:33 AM to 1:04 PM'"""
+    val = val.split("|")[0].strip()          # first slot only
+    val = val.replace(f" {tz}", "").strip()  # strip timezone
+    val = val.replace(" – ", " to ").replace("–", " to ").replace(" - ", " to ")
+    return val.strip()
+
+
 def strip_tz(val, tz):
     """Remove embedded timezone label and take only the first slot."""
     val = val.split("|")[0].strip()
@@ -125,6 +133,12 @@ def generate_video_script(panchang):
     tithi_name = get_tithi_name(tithi_raw)
     nak_name   = get_nakshatra_telugu(nak_raw)
 
+    # Actual timings for voice narration
+    rahu_time   = fmt_time_voice(tf(panchang, "rahukaal"),      tz_label)
+    dur_time    = fmt_time_voice(tf(panchang, "durmuhurtam"),   tz_label)
+    brahma_time = fmt_time_voice(tf(panchang, "brahma_muhurta"),tz_label)
+    abhijit_time= fmt_time_voice(tf(panchang, "abhijit"),       tz_label)
+
     city_greeting = CITY_GREETINGS.get(city, f"{city} Telugu variki shubhodayam!")
 
     # 4-scene narration — word counts must match video_creator.SCENE_WORD_COUNTS = [12, 9, 8, 10]
@@ -135,8 +149,8 @@ def generate_video_script(panchang):
     narration = (
         f"Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
         f"Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] "
-        f"Rahu kalam samayamlo kotta panulu modalupettakandi. [SHORT_PAUSE] Durmuhurtam samayamlo shubhakaryaalu nivarinchandi. [PAUSE] "
-        f"Brahma muhurtam prarthana mariyu dhyananiki uttamam. [SHORT_PAUSE] Abhijit muhurtam mukhyamaina panulaku shubhapradam. [PAUSE] "
+        f"Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] "
+        f"Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam. [PAUSE] "
         f"Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
     )
 
@@ -153,32 +167,32 @@ Do NOT use Telugu script characters. Write everything phonetically in English le
 
 STRICT RULES:
 1. Write in ROMANIZED Telugu (English letters, Telugu pronunciation) — NO Telugu script characters
-2. NO time values (screen shows them)
-3. ~39 words total across 4 scenes, structure EXACTLY as below
+2. ALWAYS include the actual time values provided below — viewers need to hear the timings
+3. ~50 words total across 4 scenes, structure EXACTLY as below
 4. Scene 0 (~12w): greeting + city greeting + today's paksha + tithi + nakshatra
-5. Scene 1 (~9w):  rahu kalam warning + durmuhurtam warning
-6. Scene 2 (~8w):  brahma muhurtam auspicious + abhijit auspicious
+5. Scene 1 (~14w): rahu kalam time + durmuhurtam time + inauspicious warning
+6. Scene 2 (~14w): brahma muhurtam time + abhijit time + auspicious note
 7. Scene 3 (~10w): blessing + CTA
 
 VOCABULARY RULES (follow exactly for correct pronunciation):
 - Start with "Namaskaram."
 - City greeting format: "<CityName> Telugu nesthalaku shubhodayam."
 - Use "Eeroju" NOT "naadu"
-- Use "Rahu kalam samayamlo kotta panulu modalupettakandi"
-- Use "Durmuhurtam samayamlo shubhakaryaalu nivarinchandi"
-- Use "Brahma muhurtam prarthana mariyu dhyananiki uttamam"
-- Use "Abhijit muhurtam mukhyamaina panulaku shubhapradam"
+- Scene 1: "Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi."
+- Scene 2: "Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam."
 - Use "Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu"
 - End with: "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
 
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
+Rahu Kalam: {rahu_time}, Durmuhurtam: {dur_time}
+Brahma Muhurtam: {brahma_time}, Abhijit: {abhijit_time}
 
 PAUSE MARKERS (use exactly as shown):
   [SHORT_PAUSE] = 300ms, [PAUSE] = 500ms, [LONG_PAUSE] = 800ms
 
 EXAMPLE OUTPUT (follow this structure precisely):
-Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] Rahu kalam samayamlo kotta panulu modalupettakandi. [SHORT_PAUSE] Durmuhurtam samayamlo shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam prarthana mariyu dhyananiki uttamam. [SHORT_PAUSE] Abhijit muhurtam mukhyamaina panulaku shubhapradam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi.
+Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi.
 
 Return ONLY valid JSON, no markdown:
 {{
@@ -199,7 +213,7 @@ Return ONLY valid JSON, no markdown:
 
         message = client.messages.create(
             model="claude-sonnet-4-6",
-            max_tokens=500,
+            max_tokens=700,
             messages=[{"role": "user", "content": prompt}]
         )
 

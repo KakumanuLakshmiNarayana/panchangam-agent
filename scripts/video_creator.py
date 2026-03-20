@@ -239,7 +239,6 @@ def scene_intro(img, f, panchang):
     tithi_tel = telugu_tithi_short(tf(panchang, "tithi"))
     paksha    = telugu_paksha(tf(panchang, "paksha"))
     nak_name  = telugu_nakshatra(tf(panchang, "nakshatra"))
-    rahu      = time_with_tz(tf(panchang, "rahukaal"), tz)
     fa        = fade(f, 12)
 
     draw = ImageDraw.Draw(img)
@@ -273,16 +272,6 @@ def scene_intro(img, f, panchang):
     # Paksha
     draw.text((PAD, 836), "పక్షం", font=get_font(28), fill=SAFFRON + (fa,))
     draw_mixed(draw, (PAD, 886), paksha, 44, fill=WHITE + (fa,))
-
-    _hline(draw, 988, color=(95, 28, 28, fa), width=2)
-
-    # Rahu preview
-    draw_mixed(draw, (PAD, 1034), "రాహు కాలం", 34, bold=True, fill=RED + (fa,))
-    rsize = 60 if len(rahu) <= 20 else 48
-    draw.text((PAD, 1090), rahu,
-              font=get_latin_font(rsize, bold=True), fill=WHITE + (fa,))
-    draw_mixed(draw, (PAD, 1165), "కొత్త పని మొదలు పెట్టకండి",
-               26, fill=MUTED + (fa,))
 
     _footer(draw, fa)
     return img
