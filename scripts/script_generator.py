@@ -89,6 +89,20 @@ def fmt_time_voice(val, tz):
     return val.strip()
 
 
+def fmt_time_te(val, tz):
+    """Convert 'HH:MM AM – HH:MM PM TZ' to Telugu-readable format for gTTS lang='te'.
+    Replaces English AM/PM with Telugu words so numbers are read in Telugu without Hindi mixing.
+    Example: '12:00 PM – 1:30 PM CT' → '12:00 సాయంత్రం నుండి 1:30 వరకు'
+    """
+    val = val.split("|")[0].strip()
+    val = val.replace(f" {tz}", "").strip()
+    # Replace AM/PM with Telugu before stripping so order is preserved
+    val = val.replace(" AM", " ఉదయం").replace(" PM", " సాయంత్రం")
+    val = val.replace(" – ", " నుండి ").replace("–", " నుండి ").replace(" - ", " నుండి ")
+    # Drop trailing duplicate period markers
+    return val.strip()
+
+
 def strip_tz(val, tz):
     """Remove embedded timezone label and take only the first slot."""
     val = val.split("|")[0].strip()
@@ -154,10 +168,11 @@ def get_nakshatra_telugu(nakshatra_val):
 
 def _build_gtts_scene_texts(panchang):
     """Return [scene0, scene1, scene2, scene3] Telugu-script texts for per-scene audio.
-    No time values — screen shows those.
+    Timings are spoken in Telugu-readable format (AM/PM replaced with Telugu words).
     """
     city      = panchang.get("city", "")
     city_te   = CITY_TELUGU_SCRIPT.get(city, city)
+    tz        = panchang.get("tz_label", "ET")
 
     tithi_raw = tf(panchang, "tithi").split()[0]
     tithi_te  = TITHI_TELUGU.get(tithi_raw, tithi_raw)
@@ -168,15 +183,20 @@ def _build_gtts_scene_texts(panchang):
     paksha_val = tf(panchang, "paksha")
     paksha_te  = "కృష్ణ పక్షం" if "Krishna" in paksha_val else "శుక్ల పక్షం"
 
+    rahu_te    = fmt_time_te(tf(panchang, "rahukaal"),       tz)
+    dur_te     = fmt_time_te(tf(panchang, "durmuhurtam"),    tz)
+    brahma_te  = fmt_time_te(tf(panchang, "brahma_muhurta"), tz)
+    abhijit_te = fmt_time_te(tf(panchang, "abhijit"),        tz)
+
     return [
         # Scene 0 — intro
         f"నమస్కారం. {city_te} తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు {paksha_te}, {tithi_te} తిథి. నక్షత్రం {nak_te}.",
-        # Scene 1 — bad timings (NO time values — screen shows them)
-        "రాహు కాలం మరియు దుర్ముహూర్తం సమయంలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
-        # Scene 2 — good timings (NO time values — screen shows them)
-        "బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమ సమయం. అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు అత్యంత శుభప్రదం.",
+        # Scene 1 — bad timings with actual times in Telugu
+        f"రాహు కాలం {rahu_te} వరకు. దుర్ముహూర్తం {dur_te} వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
+        # Scene 2 — good timings with actual times in Telugu
+        f"బ్రహ్మ ముహూర్తం {brahma_te} వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం {abhijit_te} వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
         # Scene 3 — closing
-        "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, పంతులు పంచాంగం సబ్స్క్రైబ్ చేసుకోండి.",
+        "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
     ]
 
 
@@ -214,7 +234,7 @@ def generate_video_script(panchang):
         "Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] "
         "Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] "
         "Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] "
-        "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
+        "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi."
     )
 
     # Also use Claude API to generate a better version if available
@@ -244,7 +264,7 @@ VOCABULARY RULES (follow exactly for correct pronunciation):
 - Scene 1: "Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi."
 - Scene 2: "Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam."
 - Use "Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu"
-- End with: "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
+- End with: "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi."
 
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
@@ -255,14 +275,14 @@ PAUSE MARKERS (use exactly as shown):
   [SHORT_PAUSE] = 300ms, [PAUSE] = 500ms, [LONG_PAUSE] = 800ms
 
 EXAMPLE OUTPUT (follow this structure precisely):
-Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi.
+Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "Romanized Telugu narration with pause markers — NO times, end with 'Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi.'",
+  "full_narration": "Romanized Telugu narration with pause markers — NO times, end with 'Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.'",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
     "నక్షత్రం: nakshatra_name",
