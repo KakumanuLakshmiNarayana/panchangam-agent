@@ -108,10 +108,15 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
     public_subdir = output_dir / "public"
     public_subdir.mkdir(parents=True, exist_ok=True)
 
-    # Copy pandit_character.png from remotion/public/ into output_dir/public/
-    pandit_src = REMOTION_DIR / "public" / "pandit_character.png"
+    # Copy pandit_character.png — use scripts/ as the canonical source (always committed)
+    pandit_src = Path(__file__).parent / "pandit_character.png"
+    if not pandit_src.exists():
+        # Fallback: try remotion/public/
+        pandit_src = REMOTION_DIR / "public" / "pandit_character.png"
     if pandit_src.exists():
         shutil.copy2(str(pandit_src), str(public_subdir / "pandit_character.png"))
+    else:
+        print(f"  ⚠️  pandit_character.png not found — image will be missing in video")
 
     # Copy the audio file into output_dir/public/ so staticFile(audioFile) resolves
     if audio_path and Path(audio_path).exists():
