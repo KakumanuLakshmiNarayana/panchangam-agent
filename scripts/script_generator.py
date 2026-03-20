@@ -31,11 +31,11 @@ import anthropic
 
 
 CITY_GREETINGS = {
-    "New York, NY":    "న్యూయార్క్ తెలుగు వారికి శుభోదయం.",
-    "Chicago, IL":     "చికాగో తెలుగు వారికి శుభోదయం.",
-    "Dallas, TX":      "డాలస్ తెలుగు వారికి శుభోదయం.",
-    "Los Angeles, CA": "కాలిఫోర్నియా తెలుగు వారికి శుభోదయం.",
-    "Detroit, MI":     "మిషిగన్ తెలుగు వారికి శుభోదయం.",
+    "New York, NY":    "న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం.",
+    "Chicago, IL":     "చికాగో తెలుగు నేస్తాలకు శుభోదయం.",
+    "Dallas, TX":      "డాలస్ తెలుగు నేస్తాలకు శుభోదయం.",
+    "Los Angeles, CA": "లాస్ ఏంజిల్స్ తెలుగు నేస్తాలకు శుభోదయం.",
+    "Detroit, MI":     "డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం.",
 }
 
 # Pause marker reference:
@@ -85,9 +85,9 @@ def get_tithi_name(tithi_val):
 
 def get_paksha_telugu(paksha_val):
     if "Krishna" in paksha_val:
-        return "కృష్ణ పక్షం"
+        return "కృష్ణపక్షం"
     elif "Shukla" in paksha_val:
-        return "శుక్ల పక్షం"
+        return "శుక్లపక్షం"
     return paksha_val
 
 
@@ -130,10 +130,10 @@ def generate_video_script(panchang):
     # Scene 3 (~10w): blessing + save/share
     narration = (
         f"నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
-        f"ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] "
-        f"రాహుకాలం సమయంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు వద్దు. [PAUSE] "
-        f"బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభప్రదం. [PAUSE] "
-        f"మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్."
+        f"ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం {nak_name}. [PAUSE] "
+        f"రాహు కాలం సమయంలో కొత్త పనులు మొదలుపెట్టకండి. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు నివారించండి. [PAUSE] "
+        f"బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు శుభప్రదం. [PAUSE] "
+        f"మీకు ఈ రోజు శుభప్రదంగా, ఆనందంగా గడవాలని మనఃపూర్వంగా ఆశిస్తున్నాను. [PAUSE] నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి."
     )
 
     # Also use Claude API to generate a better version if available
@@ -154,12 +154,17 @@ STRICT RULES:
 
 VOCABULARY RULES (fix common TTS mispronunciations — follow exactly):
 - Use "ఈరోజు" NOT "నేడు"
-- Use "రాహుకాలం సమయంలో" NOT "రాహుకాలంలో"
-- Use "దుర్ముహూర్తం సమయంలో" NOT "దుర్ముహూర్తంలో"
+- Use "నేస్తాలకు" NOT "వారికి" in city greeting (warmer tone)
+- Use "లాస్ ఏంజిల్స్" NOT "కాలిఫోర్నియా" for Los Angeles city
+- Use "డెట్రాయిట్" NOT "మిషిగన్" for Detroit city
+- Use "శుక్లపక్షం" / "కృష్ణపక్షం" (sandhi, one word) NOT "శుక్ల పక్షం" / "కృష్ణ పక్షం"
+- Use "రాహు కాలం సమయంలో కొత్త పనులు మొదలుపెట్టకండి" NOT "రాహుకాలం సమయంలో కొత్త పనులు వద్దు"
+- Use "దుర్ముహూర్తం సమయంలో శుభకార్యాలు నివారించండి" NOT "దుర్ముహూర్తం సమయంలో శుభకార్యాలు వద్దు"
 - Use "శుభకార్యాలు" (compound word) NOT "శుభ కార్యాలు"
-- Use "శుభప్రదం" NOT "శుభం" for abhijit
-- Use "వద్దు" NOT "వడ్డు"
-- End CTA in Telugu script: "ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్."
+- Use "బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమం"
+- Use "అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు శుభప్రదం"
+- Use "మీకు ఈ రోజు శుభప్రదంగా, ఆనందంగా గడవాలని మనఃపూర్వంగా ఆశిస్తున్నాను"
+- End with: "నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి."
 
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
@@ -168,14 +173,14 @@ PAUSE MARKERS (use exactly as shown):
   [SHORT_PAUSE] = 300ms, [PAUSE] = 500ms, [LONG_PAUSE] = 800ms
 
 EXAMPLE OUTPUT (follow this structure precisely):
-నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం: {nak_name}. [PAUSE] రాహుకాలం సమయంలో కొత్త పనులు వద్దు. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు వద్దు. [PAUSE] బ్రహ్మ ముహూర్తం ప్రార్థనకు ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం శుభప్రదం. [PAUSE] మీకు శుభమైన రోజు కలగాలని ఆశిస్తున్నాను. [PAUSE] ధన్యవాదాలు. ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్.
+నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం {nak_name}. [PAUSE] రాహు కాలం సమయంలో కొత్త పనులు మొదలుపెట్టకండి. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు నివారించండి. [PAUSE] బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు శుభప్రదం. [PAUSE] మీకు ఈ రోజు శుభప్రదంగా, ఆనందంగా గడవాలని మనఃపూర్వంగా ఆశిస్తున్నాను. [PAUSE] నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి.
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "Telugu narration with pause markers — NO times, end with 'ధన్యవాదాలు. ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్.'",
+  "full_narration": "Telugu narration with pause markers — NO times, end with 'నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి.'",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
     "నక్షత్రం: nakshatra_name",
@@ -207,8 +212,11 @@ Return ONLY valid JSON, no markdown:
         narr = result.get("full_narration", "")
         narr_check = _re.sub(r'\[(SHORT_PAUSE|PAUSE|LONG_PAUSE)\]', '', narr)
         narr_check = narr_check.replace("ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్", "")
+        narr_check = narr_check.replace("లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి", "")
+        narr_check = narr_check.replace("PanthuluPanchangam", "")
         narr_check = narr_check.replace("please like share and subscribe", "")
         narr_check = narr_check.replace("ధన్యవాదాలు.", "")
+        narr_check = narr_check.replace("నమస్కారం.", "")
         has_digits = any(c.isdigit() for c in narr_check)
         has_latin  = any(c.isascii() and c.isalpha() for c in narr_check)
         word_count = len(narr.split())
