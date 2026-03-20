@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scraper
 from script_generator import generate_video_script
 from voice_generator  import generate_voiceover
-from video_creator    import create_thumbnail
+from video_creator    import create_panchang_video, create_thumbnail
 from remotion_renderer import render_with_remotion
 
 # ── Output dir: use env var if set (GitHub Actions), else go up one level from scripts/
@@ -52,7 +52,12 @@ def process_city(city_key, today, date_str, driver):
 
     video_path     = str(OUTPUT_DIR / f"video_{city_key}_{date_str}.mp4")
     thumbnail_path = str(OUTPUT_DIR / f"thumb_{city_key}_{date_str}.jpg")
-    render_with_remotion(panchang, script, audio_path, video_path)
+    try:
+        render_with_remotion(panchang, script, audio_path, video_path)
+    except Exception as e:
+        print(f"     ⚠️  Remotion render failed: {e}")
+        print(f"     ↩️  Falling back to Pillow renderer...")
+        create_panchang_video(panchang, script, audio_path, video_path)
     create_thumbnail(panchang, thumbnail_path)
 
     return {
