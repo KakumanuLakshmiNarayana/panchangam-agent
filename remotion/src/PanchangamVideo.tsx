@@ -131,7 +131,7 @@ const Handle: React.FC<{ opacity: number }> = ({ opacity }) => (
       whiteSpace: 'nowrap',
     }}
   >
-    @PanthuluPanchangam
+    @MeePanthulu
   </div>
 );
 
@@ -669,7 +669,7 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
             Family WhatsApp లో పంచుకోండి
           </div>
           <div style={{ fontSize: 42, fontWeight: 'bold', color: GOLD, fontFamily: LATIN }}>
-            @PanthuluPanchangam
+            @MeePanthulu
           </div>
         </div>
       </div>

@@ -219,7 +219,7 @@ def make_bg():
 # ── Shared layout helpers ──────────────────────────────────────────────────────
 
 def _handle(draw, fa):
-    draw.text((CX, 82), "@PanthuluPanchangam",
+    draw.text((CX, 82), "@MeePanthulu",
               font=get_latin_font(26), fill=(155, 125, 55, fa), anchor="mm")
 
 def _footer(draw, fa):
@@ -406,7 +406,7 @@ def scene_closing(img, f, panchang):
     draw_mixed(draw, (CX, 1072), "Family WhatsApp లో పంచుకోండి",
                26, fill=MUTED + (fa,), anchor="mm")
 
-    draw.text((CX, 1160), "@PanthuluPanchangam",
+    draw.text((CX, 1160), "@MeePanthulu",
               font=get_latin_font(30, bold=True), fill=GOLD + (fa,), anchor="mm")
 
     _footer(draw, fa)
@@ -605,7 +605,7 @@ def create_thumbnail(panchang, output_path):
 
     _rrect(draw, CX-230, 34, CX+230, 92, radius=30,
            fill=(38, 18, 4, 210), outline=ORANGE, width=2)
-    draw.text((CX, 63), "@PanthuluPanchangam", font=fB(27), fill=ORANGE, anchor="mm")
+    draw.text((CX, 63), "@MeePanthulu", font=fB(27), fill=ORANGE, anchor="mm")
 
     csize = 88 if len(city) <= 12 else 68
     draw.text((CX, 175), city, font=fB(csize), fill=WHITE2, anchor="mm")
