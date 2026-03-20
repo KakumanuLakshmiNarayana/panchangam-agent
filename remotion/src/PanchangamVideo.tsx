@@ -133,23 +133,6 @@ const Handle: React.FC<{ opacity: number }> = ({ opacity }) => (
   </div>
 );
 
-// ── Footer ────────────────────────────────────────────────────────────────────
-const Footer: React.FC<{ opacity: number }> = ({ opacity }) => (
-  <div
-    style={{
-      position: 'absolute',
-      bottom: 36,
-      width: '100%',
-      textAlign: 'center',
-      fontSize: 28,
-      color: `rgba(125, 105, 45, ${opacity})`,
-      fontFamily: TELUGU,
-    }}
-  >
-    జయ శ్రీమన్నారాయణ!
-  </div>
-);
-
 // ── Pandit character ──────────────────────────────────────────────────────────
 const PanditChar: React.FC<{ opacity: number; frame: number }> = ({ opacity, frame }) => {
   const breathe = 1 + 0.007 * Math.sin(frame * 0.14);
@@ -705,8 +688,8 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
 
   // Compute scene frame allocation proportional to audio duration
   const TOTAL = Math.max(Math.ceil(props.audioDurationSec * 24), 480);
-  // Ratios: intro 30%, bad-timings 25%, good-timings 22%, closing 23%
-  const RATIOS = [0.30, 0.25, 0.22, 0.23];
+  // Ratios match script word counts: intro 12w, bad 14w, good 14w, closing 10w → 24/28/28/20%
+  const RATIOS = [0.24, 0.28, 0.28, 0.20];
   const SCENE_FRAMES = RATIOS.map((r) => Math.round(r * TOTAL)) as [number, number, number, number];
   // Fix any rounding drift in the last scene
   SCENE_FRAMES[3] += TOTAL - SCENE_FRAMES.reduce((a, b) => a + b, 0);
@@ -734,13 +717,7 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
       {/* Audio track — starts at frame 0, no delay */}
       {props.audioFile ? <Audio src={staticFile(props.audioFile)} startFrom={0} /> : null}
 
-      {/* Pandit character — persistent across all scenes */}
-      <PanditChar
-        opacity={interpolate(frame, [0, 18], [0, 1], { extrapolateRight: 'clamp' })}
-        frame={frame}
-      />
-
-      {/* Scene content */}
+      {/* Scene content — renders BEFORE pandit so pandit covers any overflow */}
       <Sequence from={SCENE_STARTS[0]} durationInFrames={SCENE_FRAMES[0]}>
         <IntroScene localFrame={frame - SCENE_STARTS[0]} data={props} />
       </Sequence>
@@ -753,6 +730,12 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
       <Sequence from={SCENE_STARTS[3]} durationInFrames={SCENE_FRAMES[3]}>
         <ClosingScene localFrame={frame - SCENE_STARTS[3]} data={props} />
       </Sequence>
+
+      {/* Pandit character — renders AFTER scene content so it always appears in front */}
+      <PanditChar
+        opacity={interpolate(frame, [0, 18], [0, 1], { extrapolateRight: 'clamp' })}
+        frame={frame}
+      />
 
       {/* Persistent handle on top */}
       <Handle opacity={interpolate(frame, [0, 10], [0, 1], { extrapolateRight: 'clamp' })} />
