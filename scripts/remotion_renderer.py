@@ -123,7 +123,7 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
         "--codec=h264",
         "--concurrency=2",
         f"--props={json.dumps(props)}",
-        f"--public-dir={output_dir}",
+        f"--public-dir={public_subdir}",
     ] + _browser_args()
 
     print(f"  🎬 Remotion render → {Path(output_path).name}")
