@@ -101,16 +101,19 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
     # staticFile() in Remotion 4 generates URLs like /public/<file> relative to
     # --public-dir, so both pandit.png and the audio file must live in a
     # public/ sub-directory inside the public-dir root.
+    # staticFile('foo.png') → URL: /public/foo.png
+    # Remotion serves --public-dir at root /, so file must be at <public-dir>/public/foo.png
+    # We set --public-dir=output_dir so pandit.png at output_dir/public/pandit.png → /public/pandit.png ✓
     output_dir = Path(output_path).parent.resolve()
     public_subdir = output_dir / "public"
     public_subdir.mkdir(parents=True, exist_ok=True)
 
-    # Copy pandit.png from remotion/public/ into public_subdir
+    # Copy pandit.png from remotion/public/ into output_dir/public/
     pandit_src = REMOTION_DIR / "public" / "pandit.png"
     if pandit_src.exists():
         shutil.copy2(str(pandit_src), str(public_subdir / "pandit.png"))
 
-    # Copy the audio file into public_subdir so staticFile(audioFile) resolves
+    # Copy the audio file into output_dir/public/ so staticFile(audioFile) resolves
     if audio_path and Path(audio_path).exists():
         audio_dest = public_subdir / Path(audio_path).name
         if not audio_dest.exists() or audio_dest.resolve() != Path(audio_path).resolve():
@@ -123,7 +126,7 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
         "--codec=h264",
         "--concurrency=2",
         f"--props={json.dumps(props)}",
-        f"--public-dir={public_subdir}",
+        f"--public-dir={output_dir}",   # serve output_dir/ at root → /public/pandit.png resolves correctly
     ] + _browser_args()
 
     print(f"  🎬 Remotion render → {Path(output_path).name}")
