@@ -180,7 +180,7 @@ const PanditChar: React.FC<{ opacity: number; frame: number }> = ({ opacity, fra
         }}
       />
       <Img
-        src={staticFile('pandit.png')}
+        src={staticFile('pandit_character.png')}
         style={{
           position: 'absolute',
           bottom: 0,

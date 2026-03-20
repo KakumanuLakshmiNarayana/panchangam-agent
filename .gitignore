@@ -14,6 +14,7 @@ output/
 *.jpeg
 *.png
 !scripts/pandit_character.png
+!remotion/public/pandit_character.png
 !scripts/FreeSans.ttf
 !scripts/FreeSansBold.ttf
 remotion/node_modules/
