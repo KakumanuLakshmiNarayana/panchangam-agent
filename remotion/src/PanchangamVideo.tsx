@@ -69,10 +69,10 @@ const LATIN = 'system-ui, -apple-system, sans-serif';
 // ── Shared helpers ────────────────────────────────────────────────────────────
 const useEntrance = (localFrame: number) => {
   const { fps } = useVideoConfig();
-  const prog = spring({ frame: localFrame, fps, config: { damping: 28, mass: 0.8, stiffness: 80 } });
+  const prog = spring({ frame: localFrame, fps, config: { damping: 28, mass: 0.8, stiffness: 120 } });
   return {
-    opacity: interpolate(localFrame, [0, 10], [0, 1], { extrapolateRight: 'clamp' }),
-    ty: interpolate(prog, [0, 1], [40, 0]),
+    opacity: interpolate(localFrame, [0, 5], [0, 1], { extrapolateRight: 'clamp' }),
+    ty: interpolate(prog, [0, 1], [24, 0]),
   };
 };
 
@@ -120,8 +120,8 @@ const Handle: React.FC<{ opacity: number }> = ({ opacity }) => (
       background: 'rgba(35, 16, 3, 0.88)',
       border: `2px solid ${ORANGE}`,
       borderRadius: 30,
-      padding: '12px 44px',
-      fontSize: 27,
+      padding: '16px 52px',
+      fontSize: 38,
       color: ORANGE,
       fontFamily: LATIN,
       fontWeight: 'bold',
@@ -258,7 +258,7 @@ const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFr
         <div
           style={{
             textAlign: 'center',
-            fontSize: 86,
+            fontSize: 110,
             fontWeight: 'bold',
             color: WHITE,
             fontFamily: LATIN,
@@ -275,7 +275,7 @@ const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFr
         <div
           style={{
             textAlign: 'center',
-            fontSize: 30,
+            fontSize: 46,
             color: MUTED,
             fontFamily: LATIN,
             opacity,
@@ -309,7 +309,7 @@ const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFr
             >
               <div
                 style={{
-                  fontSize: 26,
+                  fontSize: 42,
                   color: GOLD,
                   fontWeight: 'bold',
                   fontFamily: TELUGU,
@@ -321,7 +321,7 @@ const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFr
               <div style={{ height: 1, background: 'rgba(200,155,40,0.35)', marginBottom: 16 }} />
               <div
                 style={{
-                  fontSize: 52,
+                  fontSize: 72,
                   fontWeight: 'bold',
                   color: WHITE,
                   fontFamily: LATIN,
@@ -331,7 +331,7 @@ const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFr
               >
                 {value}
               </div>
-              <div style={{ fontSize: 20, color: MUTED, fontFamily: LATIN }}>{sub}</div>
+              <div style={{ fontSize: 34, color: MUTED, fontFamily: LATIN }}>{sub}</div>
             </div>
           ))}
         </div>
@@ -349,11 +349,11 @@ const IntroScene: React.FC<{ localFrame: number; data: VideoData }> = ({ localFr
             ...paksha,
           }}
         >
-          <div style={{ fontSize: 26, color: GOLD, fontFamily: TELUGU, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 42, color: GOLD, fontFamily: TELUGU, fontWeight: 'bold', whiteSpace: 'nowrap' }}>
             పక్షం
           </div>
-          <div style={{ width: 1, height: 40, background: 'rgba(200,155,40,0.4)' }} />
-          <div style={{ fontSize: 40, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
+          <div style={{ width: 1, height: 52, background: 'rgba(200,155,40,0.4)' }} />
+          <div style={{ fontSize: 60, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
             {data.paksha}
           </div>
         </div>
@@ -377,7 +377,7 @@ const BadTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ lo
         <div
           style={{
             textAlign: 'center',
-            fontSize: 50,
+            fontSize: 72,
             fontWeight: 'bold',
             color: RED,
             fontFamily: TELUGU,
@@ -420,18 +420,18 @@ const BadTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ lo
             }}
           />
           <div
-            style={{ fontSize: 34, fontWeight: 'bold', color: RED, fontFamily: TELUGU, marginBottom: 10 }}
+            style={{ fontSize: 52, fontWeight: 'bold', color: RED, fontFamily: TELUGU, marginBottom: 10 }}
           >
             రాహు కాలం
           </div>
           <div style={{ height: 1, background: 'rgba(230,60,60,0.3)', marginBottom: 16 }} />
           <div
-            style={{ fontSize: 68, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
+            style={{ fontSize: 86, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
             {data.rahukaal}
           </div>
           <div
-            style={{ fontSize: 24, color: 'rgba(255,160,160,0.9)', marginTop: 14, fontFamily: TELUGU }}
+            style={{ fontSize: 40, color: 'rgba(255,160,160,0.9)', marginTop: 14, fontFamily: TELUGU }}
           >
             కొత్త పని మొదలు పెట్టకండి
           </div>
@@ -448,17 +448,17 @@ const BadTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ lo
           }}
         >
           <div
-            style={{ fontSize: 30, fontWeight: 'bold', color: RED, fontFamily: TELUGU, marginBottom: 10 }}
+            style={{ fontSize: 48, fontWeight: 'bold', color: RED, fontFamily: TELUGU, marginBottom: 10 }}
           >
             దుర్ముహూర్తం
           </div>
           <div style={{ height: 1, background: 'rgba(200,50,50,0.3)', marginBottom: 14 }} />
           <div
-            style={{ fontSize: 58, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
+            style={{ fontSize: 76, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
             {data.durmuhurtam}
           </div>
-          <div style={{ fontSize: 22, color: MUTED, marginTop: 10, fontFamily: TELUGU }}>
+          <div style={{ fontSize: 38, color: MUTED, marginTop: 10, fontFamily: TELUGU }}>
             శుభ కార్యాలు వద్దు
           </div>
         </div>
@@ -482,7 +482,7 @@ const GoodTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ l
         <div
           style={{
             textAlign: 'center',
-            fontSize: 52,
+            fontSize: 72,
             fontWeight: 'bold',
             color: GOLD,
             fontFamily: TELUGU,
@@ -525,18 +525,18 @@ const GoodTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ l
             }}
           />
           <div
-            style={{ fontSize: 32, fontWeight: 'bold', color: GOLD, fontFamily: TELUGU, marginBottom: 10 }}
+            style={{ fontSize: 50, fontWeight: 'bold', color: GOLD, fontFamily: TELUGU, marginBottom: 10 }}
           >
             బ్రహ్మ ముహూర్తం
           </div>
           <div style={{ height: 1, background: 'rgba(200,165,30,0.3)', marginBottom: 16 }} />
           <div
-            style={{ fontSize: 68, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
+            style={{ fontSize: 86, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
             {data.brahma}
           </div>
           <div
-            style={{ fontSize: 24, color: 'rgba(210,210,170,0.9)', marginTop: 14, fontFamily: TELUGU }}
+            style={{ fontSize: 40, color: 'rgba(210,210,170,0.9)', marginTop: 14, fontFamily: TELUGU }}
           >
             ప్రార్థన & ధ్యానానికి ఉత్తమ సమయం
           </div>
@@ -553,17 +553,17 @@ const GoodTimingsScene: React.FC<{ localFrame: number; data: VideoData }> = ({ l
           }}
         >
           <div
-            style={{ fontSize: 30, fontWeight: 'bold', color: GOLD, fontFamily: TELUGU, marginBottom: 10 }}
+            style={{ fontSize: 48, fontWeight: 'bold', color: GOLD, fontFamily: TELUGU, marginBottom: 10 }}
           >
             అభిజిత్ ముహూర్తం
           </div>
           <div style={{ height: 1, background: 'rgba(180,145,20,0.3)', marginBottom: 14 }} />
           <div
-            style={{ fontSize: 58, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
+            style={{ fontSize: 76, fontWeight: 'bold', color: WHITE, fontFamily: LATIN, lineHeight: 1.1 }}
           >
             {data.abhijit}
           </div>
-          <div style={{ fontSize: 22, color: MUTED, marginTop: 10, fontFamily: TELUGU }}>
+          <div style={{ fontSize: 38, color: MUTED, marginTop: 10, fontFamily: TELUGU }}>
             ముఖ్య పనులకు అత్యంత శుభ సమయం
           </div>
         </div>
@@ -587,7 +587,7 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
         <div
           style={{
             textAlign: 'center',
-            fontSize: 52,
+            fontSize: 72,
             fontWeight: 'bold',
             color: GOLD,
             fontFamily: TELUGU,
@@ -617,10 +617,10 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
             ...card1,
           }}
         >
-          <div style={{ fontSize: 28, color: SAFFRON, fontFamily: TELUGU, marginBottom: 8 }}>
+          <div style={{ fontSize: 46, color: SAFFRON, fontFamily: TELUGU, marginBottom: 8 }}>
             సూర్యోదయం 🌅
           </div>
-          <div style={{ fontSize: 60, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
+          <div style={{ fontSize: 80, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
             {data.sunrise}
           </div>
         </div>
@@ -636,10 +636,10 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
             ...card2,
           }}
         >
-          <div style={{ fontSize: 28, color: SAFFRON, fontFamily: TELUGU, marginBottom: 8 }}>
+          <div style={{ fontSize: 46, color: SAFFRON, fontFamily: TELUGU, marginBottom: 8 }}>
             సూర్యాస్తమయం 🌇
           </div>
-          <div style={{ fontSize: 60, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
+          <div style={{ fontSize: 80, fontWeight: 'bold', color: WHITE, fontFamily: LATIN }}>
             {data.sunset}
           </div>
         </div>
@@ -648,7 +648,7 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
         <div style={{ textAlign: 'center', ...blessing }}>
           <div
             style={{
-              fontSize: 38,
+              fontSize: 54,
               fontWeight: 'bold',
               color: WHITE,
               fontFamily: TELUGU,
@@ -659,7 +659,7 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
           </div>
           <div
             style={{
-              fontSize: 46,
+              fontSize: 64,
               fontWeight: 'bold',
               color: GOLD,
               fontFamily: TELUGU,
@@ -671,7 +671,7 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
           <div style={{ height: 1, background: 'rgba(45,45,45,0.9)', marginBottom: 20 }} />
           <div
             style={{
-              fontSize: 32,
+              fontSize: 46,
               fontWeight: 'bold',
               color: SAFFRON,
               fontFamily: TELUGU,
@@ -680,10 +680,10 @@ const ClosingScene: React.FC<{ localFrame: number; data: VideoData }> = ({ local
           >
             Save చేయండి &nbsp;|&nbsp; Share చేయండి
           </div>
-          <div style={{ fontSize: 24, color: MUTED, fontFamily: TELUGU, marginBottom: 16 }}>
+          <div style={{ fontSize: 38, color: MUTED, fontFamily: TELUGU, marginBottom: 16 }}>
             Family WhatsApp లో పంచుకోండి
           </div>
-          <div style={{ fontSize: 28, fontWeight: 'bold', color: GOLD, fontFamily: LATIN }}>
+          <div style={{ fontSize: 42, fontWeight: 'bold', color: GOLD, fontFamily: LATIN }}>
             @PanthuluPanchangam
           </div>
         </div>
@@ -705,7 +705,8 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
 
   // Compute scene frame allocation proportional to audio duration
   const TOTAL = Math.max(Math.ceil(props.audioDurationSec * 24), 480);
-  const RATIOS = [148 / 480, 111 / 480, 98 / 480, 123 / 480];
+  // Ratios: intro 30%, bad-timings 25%, good-timings 22%, closing 23%
+  const RATIOS = [0.30, 0.25, 0.22, 0.23];
   const SCENE_FRAMES = RATIOS.map((r) => Math.round(r * TOTAL)) as [number, number, number, number];
   // Fix any rounding drift in the last scene
   SCENE_FRAMES[3] += TOTAL - SCENE_FRAMES.reduce((a, b) => a + b, 0);
@@ -730,8 +731,8 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
       {/* Stars */}
       <Stars />
 
-      {/* Audio track */}
-      {props.audioFile ? <Audio src={staticFile(props.audioFile)} /> : null}
+      {/* Audio track — starts at frame 0, no delay */}
+      {props.audioFile ? <Audio src={staticFile(props.audioFile)} startFrom={0} /> : null}
 
       {/* Pandit character — persistent across all scenes */}
       <PanditChar
@@ -753,9 +754,8 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
         <ClosingScene localFrame={frame - SCENE_STARTS[3]} data={props} />
       </Sequence>
 
-      {/* Persistent handle + footer on top */}
+      {/* Persistent handle on top */}
       <Handle opacity={interpolate(frame, [0, 10], [0, 1], { extrapolateRight: 'clamp' })} />
-      <Footer opacity={interpolate(frame, [0, 15], [0, 1], { extrapolateRight: 'clamp' })} />
 
       {/* Per-scene crossfade overlays */}
       {SCENE_STARTS.map((start, i) => (
