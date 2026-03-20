@@ -118,10 +118,14 @@ def generate_video_script(panchang):
     weekday    = panchang.get("weekday",  "")
     date_str   = panchang.get("date",     "")
     paksha     = get_paksha_telugu(tf(panchang, "paksha"))
-    tithi_name = get_tithi_name(tf(panchang, "tithi"))
-    nak_name   = get_nakshatra_telugu(tf(panchang, "nakshatra"))
+    # Use only the FIRST tithi/nakshatra (before any "→ SecondOne" transition)
+    # so voice narration and on-screen display show the same value
+    tithi_raw  = tf(panchang, "tithi").split()[0]
+    nak_raw    = tf(panchang, "nakshatra").split()[0]
+    tithi_name = get_tithi_name(tithi_raw)
+    nak_name   = get_nakshatra_telugu(nak_raw)
 
-    city_greeting = CITY_GREETINGS.get(city, f"{city} తెలుగు వారికి శుభోదయం!")
+    city_greeting = CITY_GREETINGS.get(city, f"{city} Telugu variki shubhodayam!")
 
     # 4-scene narration — word counts must match video_creator.SCENE_WORD_COUNTS = [12, 9, 8, 10]
     # Scene 0 (~12w): greeting + city + tithi + nakshatra
