@@ -94,10 +94,27 @@ def _browser_args() -> list:
 
 def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_path: str):
     """Render a Panchangam video using Remotion CLI."""
+    import shutil
+
     props = build_props(panchang, audio_path)
 
-    # --public-dir points to the output folder so Remotion can serve the audio file
-    output_dir = str(Path(output_path).parent.resolve())
+    # staticFile() in Remotion 4 generates URLs like /public/<file> relative to
+    # --public-dir, so both pandit.png and the audio file must live in a
+    # public/ sub-directory inside the public-dir root.
+    output_dir = Path(output_path).parent.resolve()
+    public_subdir = output_dir / "public"
+    public_subdir.mkdir(parents=True, exist_ok=True)
+
+    # Copy pandit.png from remotion/public/ into public_subdir
+    pandit_src = REMOTION_DIR / "public" / "pandit.png"
+    if pandit_src.exists():
+        shutil.copy2(str(pandit_src), str(public_subdir / "pandit.png"))
+
+    # Copy the audio file into public_subdir so staticFile(audioFile) resolves
+    if audio_path and Path(audio_path).exists():
+        audio_dest = public_subdir / Path(audio_path).name
+        if not audio_dest.exists() or audio_dest.resolve() != Path(audio_path).resolve():
+            shutil.copy2(audio_path, str(audio_dest))
 
     cmd = [
         "npx", "--yes", "remotion", "render",
