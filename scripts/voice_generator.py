@@ -141,12 +141,13 @@ def _generate_elevenlabs(text, output_path):
         return False
 
 
-def _generate_gtts_fallback(text, output_path):
+def _generate_gtts_fallback(text, output_path, lang="te"):
     """Generate audio using gTTS with typed pause support and deep-male FFmpeg processing.
 
     Splits text on [SHORT_PAUSE] / [PAUSE] / [LONG_PAUSE] markers,
     generates each text chunk via gTTS, inserts the matching silence duration,
     then concatenates and applies deep-male voice processing.
+    Uses lang='te' for proper Telugu-script pronunciation by default.
     """
     if not GTTS_AVAILABLE:
         print("  [VOICE] gTTS not available"); return False
@@ -175,7 +176,7 @@ def _generate_gtts_fallback(text, output_path):
                     segment_files.append(silence_mp3)
                 else:
                     chunk_mp3 = os.path.join(tmp, f"chunk_{idx}.mp3")
-                    tts = gTTS(text=part, lang='en', slow=False)
+                    tts = gTTS(text=part, lang=lang, slow=False)
                     tts.save(chunk_mp3)
                     segment_files.append(chunk_mp3)
 
@@ -260,10 +261,11 @@ def generate_voice(script, output_path, city_key=None):
     else:
         print("  [VOICE] ElevenLabs SDK not installed — using gTTS")
 
-    # Fallback: gTTS — strip to pure Telugu, keep pause markers as silence
-    gtts_text = clean_for_tts(text)
-    print(f"  [VOICE] gTTS preview: {gtts_text[:80]}...")
-    if _generate_gtts_fallback(gtts_text, output_path):
+    # Fallback: gTTS with proper Telugu script (lang='te') so pronunciation is correct
+    gtts_text = (script.get("gtts_narration", "") if isinstance(script, dict) else "") or clean_for_tts(text)
+    gtts_lang = "te" if isinstance(script, dict) and script.get("gtts_narration") else "en"
+    print(f"  [VOICE] gTTS lang={gtts_lang} preview: {gtts_text[:80]}...")
+    if _generate_gtts_fallback(gtts_text, output_path, lang=gtts_lang):
         return output_path
 
     print("  [VOICE] All TTS methods failed"); return None
