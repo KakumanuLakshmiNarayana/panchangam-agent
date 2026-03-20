@@ -38,6 +38,38 @@ CITY_GREETINGS = {
     "Detroit, MI":     "Detroit Telugu nesthalaku shubhodayam.",
 }
 
+# Telugu script city names for gTTS fallback narration
+CITY_TELUGU_SCRIPT = {
+    "New York, NY":    "న్యూయార్క్",
+    "Chicago, IL":     "చికాగో",
+    "Dallas, TX":      "డాల్లస్",
+    "Los Angeles, CA": "లాస్ ఏంజెలెస్",
+    "Detroit, MI":     "డెట్రాయిట్",
+}
+
+TITHI_TELUGU = {
+    "Ekadashi": "ఏకాదశి", "Dwadashi": "ద్వాదశి", "Trayodashi": "త్రయోదశి",
+    "Chaturdashi": "చతుర్దశి", "Purnima": "పూర్ణిమ", "Pratipada": "పాడ్యమి",
+    "Dwitiya": "విదియ", "Tritiya": "తదియ", "Chaturthi": "చవితి",
+    "Panchami": "పంచమి", "Shashthi": "షష్ఠి", "Saptami": "సప్తమి",
+    "Ashtami": "అష్టమి", "Navami": "నవమి", "Dashami": "దశమి",
+    "Amavasya": "అమావాస్య",
+}
+
+NAKSHATRA_TELUGU = {
+    "Ashwini": "అశ్వని", "Bharani": "భరణి", "Krittika": "కృత్తిక",
+    "Rohini": "రోహిణి", "Mrigashira": "మృగశిర", "Ardra": "ఆర్ద్ర",
+    "Punarvasu": "పునర్వసు", "Pushya": "పుష్యమి", "Ashlesha": "ఆశ్లేష",
+    "Magha": "మఖ", "Purva Phalguni": "పూర్వ ఫల్గుణి",
+    "Uttara Phalguni": "ఉత్తర ఫల్గుణి", "Hasta": "హస్త",
+    "Chitra": "చిత్ర", "Swati": "స్వాతి", "Vishakha": "విశాఖ",
+    "Anuradha": "అనూరాధ", "Jyeshtha": "జ్యేష్ఠ", "Moola": "మూల",
+    "Purva Ashadha": "పూర్వాషాఢ", "Uttara Ashadha": "ఉత్తరాషాఢ",
+    "Shravana": "శ్రవణం", "Dhanishtha": "ధనిష్ఠ",
+    "Shatabhisha": "శతభిష", "Purva Bhadrapada": "పూర్వాభాద్ర",
+    "Uttara Bhadrapada": "ఉత్తరాభాద్ర", "Revati": "రేవతి",
+}
+
 # Pause marker reference:
 #   [SHORT_PAUSE]  = 300ms  — brief breath between short phrases
 #   [PAUSE]        = 500ms  — natural sentence break
@@ -118,6 +150,36 @@ def get_nakshatra_telugu(nakshatra_val):
         if eng.lower() in nakshatra_val.lower():
             return roman
     return nakshatra_val.split()[0] if nakshatra_val else "Nakshatram"
+
+
+def _build_gtts_telugu_narration(panchang):
+    """Build a clean Telugu-script narration for gTTS lang='te' fallback.
+    Times are NOT spoken — they appear on screen.
+    """
+    city      = panchang.get("city", "")
+    city_te   = CITY_TELUGU_SCRIPT.get(city, city)
+
+    tithi_raw = tf(panchang, "tithi").split()[0]
+    tithi_te  = TITHI_TELUGU.get(tithi_raw, tithi_raw)
+
+    nak_raw   = tf(panchang, "nakshatra").split()[0]
+    nak_te    = NAKSHATRA_TELUGU.get(nak_raw, nak_raw)
+
+    paksha_val = tf(panchang, "paksha")
+    if "Krishna" in paksha_val:
+        paksha_te = "కృష్ణ పక్షం"
+    else:
+        paksha_te = "శుక్ల పక్షం"
+
+    return (
+        f"నమస్కారం. {city_te} తెలుగు నేస్తాలకు శుభోదయం. "
+        f"ఈరోజు {paksha_te}, {tithi_te} తిథి. నక్షత్రం {nak_te}. "
+        "రాహు కాలం మరియు దుర్ముహూర్తం సమయంలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. "
+        "బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమ సమయం. "
+        "అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు అత్యంత శుభప్రదం. "
+        "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. "
+        "లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, పంతులు పంచాంగం సబ్స్క్రైబ్ చేయండి."
+    )
 
 
 def generate_video_script(panchang):
@@ -248,6 +310,7 @@ Return ONLY valid JSON, no markdown:
             f"అభిజిత్: {strip_tz(tf(panchang,'abhijit'), tz_label)} {tz_label}",
             f"సూర్యోదయం: {strip_tz(tf(panchang,'sunrise'), tz_label)} | సూర్యాస్తమయం: {strip_tz(tf(panchang,'sunset'), tz_label)} {tz_label}",
         ]
+        result["gtts_narration"] = _build_gtts_telugu_narration(panchang)
         return result
 
     except Exception:
@@ -261,6 +324,7 @@ Return ONLY valid JSON, no markdown:
         "description": f"Complete Hindu Panchang for {city}.",
         "hashtags":    ["DailyPanchangam", "TeluguPanchang", "HinduCalendar", "Shorts"],
         "full_narration": narration,
+        "gtts_narration": _build_gtts_telugu_narration(panchang),
         "on_screen_lines": [
             f"తిథి: {tithi_name} ({paksha})",
             f"నక్షత్రం: {nakshatra_raw}",
