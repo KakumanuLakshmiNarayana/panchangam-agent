@@ -98,31 +98,27 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
 
     props = build_props(panchang, audio_path)
 
-    # staticFile() in Remotion 4 generates URLs like /public/<file> relative to
-    # --public-dir, so both pandit.png and the audio file must live in a
-    # public/ sub-directory inside the public-dir root.
-    # staticFile('foo.png') → URL: /public/foo.png
-    # Remotion serves --public-dir at root /, so file must be at <public-dir>/public/foo.png
-    # We set --public-dir=output_dir so pandit.png at output_dir/public/pandit.png → /public/pandit.png ✓
-    output_dir = Path(output_path).parent.resolve()
-    public_subdir = output_dir / "public"
-    public_subdir.mkdir(parents=True, exist_ok=True)
+    # Use Remotion's default public dir (remotion/public/).
+    # staticFile('foo') → served at /public/foo from remotion/public/foo.
+    # pandit_character.png is already committed there.
+    # Copy the audio file in, render, then remove the audio copy.
+    remotion_public = REMOTION_DIR / "public"
+    remotion_public.mkdir(parents=True, exist_ok=True)
 
-    # Copy pandit_character.png — use scripts/ as the canonical source (always committed)
-    pandit_src = Path(__file__).parent / "pandit_character.png"
-    if not pandit_src.exists():
-        # Fallback: try remotion/public/
-        pandit_src = REMOTION_DIR / "public" / "pandit_character.png"
-    if pandit_src.exists():
-        shutil.copy2(str(pandit_src), str(public_subdir / "pandit_character.png"))
-    else:
-        print(f"  ⚠️  pandit_character.png not found — image will be missing in video")
+    # Ensure pandit_character.png is in remotion/public/ (copy from scripts/ if missing)
+    pandit_dst = remotion_public / "pandit_character.png"
+    if not pandit_dst.exists():
+        pandit_src = Path(__file__).parent / "pandit_character.png"
+        if pandit_src.exists():
+            shutil.copy2(str(pandit_src), str(pandit_dst))
+        else:
+            print("  ⚠️  pandit_character.png not found — image will be missing in video")
 
-    # Copy the audio file into output_dir/public/ so staticFile(audioFile) resolves
+    # Copy audio into remotion/public/ so staticFile(audioFile) resolves
+    audio_copy = None
     if audio_path and Path(audio_path).exists():
-        audio_dest = public_subdir / Path(audio_path).name
-        if not audio_dest.exists() or audio_dest.resolve() != Path(audio_path).resolve():
-            shutil.copy2(audio_path, str(audio_dest))
+        audio_copy = remotion_public / Path(audio_path).name
+        shutil.copy2(audio_path, str(audio_copy))
 
     cmd = [
         "npx", "--yes", "remotion", "render",
@@ -131,10 +127,14 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
         "--codec=h264",
         "--concurrency=2",
         f"--props={json.dumps(props)}",
-        f"--public-dir={output_dir}",   # serve output_dir/ at root → /public/pandit.png resolves correctly
     ] + _browser_args()
 
     print(f"  🎬 Remotion render → {Path(output_path).name}")
     print(f"     props: city={props['city']!r}, date={props['date']!r}, audio={props['audioFile']!r}")
-    subprocess.run(cmd, cwd=str(REMOTION_DIR), check=True)
+    try:
+        subprocess.run(cmd, cwd=str(REMOTION_DIR), check=True)
+    finally:
+        # Clean up the audio copy from remotion/public/
+        if audio_copy and audio_copy.exists():
+            audio_copy.unlink()
     print(f"  ✅ Video rendered: {output_path}")
