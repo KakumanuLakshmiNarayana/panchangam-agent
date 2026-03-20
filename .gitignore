@@ -16,3 +16,5 @@ output/
 !scripts/pandit_character.png
 !scripts/FreeSans.ttf
 !scripts/FreeSansBold.ttf
+remotion/node_modules/
+remotion/.cache/
