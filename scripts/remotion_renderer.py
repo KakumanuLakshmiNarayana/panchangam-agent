@@ -46,7 +46,7 @@ def _fmt_date(iso_date: str) -> str:
         return iso_date
 
 
-def build_props(panchang: dict, audio_path: str) -> dict:
+def build_props(panchang: dict, audio_path: str, scene_durations_sec: list = None) -> dict:
     tithi_name, tithi_time = _parse_field(panchang.get("tithi", "N/A"))
     nak_name, nak_time = _parse_field(panchang.get("nakshatra", "N/A"))
 
@@ -54,7 +54,7 @@ def build_props(panchang: dict, audio_path: str) -> dict:
     audio_dur = _get_audio_duration(audio_path) if audio_exists else 20.0
     audio_file = Path(audio_path).name if audio_exists else ""
 
-    return {
+    props = {
         "city":            panchang.get("city", ""),
         "date":            _fmt_date(panchang.get("date", "")),
         "weekday":         panchang.get("weekday", ""),
@@ -73,6 +73,18 @@ def build_props(panchang: dict, audio_path: str) -> dict:
         "audioDurationSec": audio_dur,
         "audioFile":       audio_file,
     }
+
+    # If per-scene durations were measured, compute exact frame counts for sync
+    if scene_durations_sec and len(scene_durations_sec) == 4:
+        scene_frames = [max(1, round(d * FPS)) for d in scene_durations_sec]
+        total_frames = round(audio_dur * FPS)
+        # Adjust last scene so total matches audio duration exactly
+        scene_frames[-1] += total_frames - sum(scene_frames)
+        scene_frames[-1] = max(1, scene_frames[-1])
+        props["sceneFrames"] = scene_frames
+        print(f"  🎬 Scene frames from audio: {scene_frames}  (durations: {[f'{d:.2f}s' for d in scene_durations_sec]})")
+
+    return props
 
 
 def _browser_args() -> list:
@@ -96,7 +108,8 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
     """Render a Panchangam video using Remotion CLI."""
     import shutil
 
-    props = build_props(panchang, audio_path)
+    scene_durations = script.get("scene_durations_sec") if isinstance(script, dict) else None
+    props = build_props(panchang, audio_path, scene_durations)
 
     # Use Remotion's default public dir (remotion/public/).
     # staticFile('foo') → served at /public/foo from remotion/public/foo.

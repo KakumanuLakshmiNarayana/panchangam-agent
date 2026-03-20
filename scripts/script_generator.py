@@ -152,9 +152,9 @@ def get_nakshatra_telugu(nakshatra_val):
     return nakshatra_val.split()[0] if nakshatra_val else "Nakshatram"
 
 
-def _build_gtts_telugu_narration(panchang):
-    """Build a clean Telugu-script narration for gTTS lang='te' fallback.
-    Times are NOT spoken — they appear on screen.
+def _build_gtts_scene_texts(panchang):
+    """Return [scene0, scene1, scene2, scene3] Telugu-script texts for per-scene audio.
+    No time values — screen shows those.
     """
     city      = panchang.get("city", "")
     city_te   = CITY_TELUGU_SCRIPT.get(city, city)
@@ -166,20 +166,23 @@ def _build_gtts_telugu_narration(panchang):
     nak_te    = NAKSHATRA_TELUGU.get(nak_raw, nak_raw)
 
     paksha_val = tf(panchang, "paksha")
-    if "Krishna" in paksha_val:
-        paksha_te = "కృష్ణ పక్షం"
-    else:
-        paksha_te = "శుక్ల పక్షం"
+    paksha_te  = "కృష్ణ పక్షం" if "Krishna" in paksha_val else "శుక్ల పక్షం"
 
-    return (
-        f"నమస్కారం. {city_te} తెలుగు నేస్తాలకు శుభోదయం. "
-        f"ఈరోజు {paksha_te}, {tithi_te} తిథి. నక్షత్రం {nak_te}. "
-        "రాహు కాలం మరియు దుర్ముహూర్తం సమయంలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. "
-        "బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమ సమయం. "
-        "అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు అత్యంత శుభప్రదం. "
-        "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. "
-        "లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, పంతులు పంచాంగం సబ్స్క్రైబ్ చేయండి."
-    )
+    return [
+        # Scene 0 — intro
+        f"నమస్కారం. {city_te} తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు {paksha_te}, {tithi_te} తిథి. నక్షత్రం {nak_te}.",
+        # Scene 1 — bad timings (NO time values — screen shows them)
+        "రాహు కాలం మరియు దుర్ముహూర్తం సమయంలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
+        # Scene 2 — good timings (NO time values — screen shows them)
+        "బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమ సమయం. అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు అత్యంత శుభప్రదం.",
+        # Scene 3 — closing
+        "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, పంతులు పంచాంగం సబ్స్క్రైబ్ చేసుకోండి.",
+    ]
+
+
+def _build_gtts_telugu_narration(panchang):
+    """Full narration joined from scene texts (for backward compat / single-file gTTS)."""
+    return " ".join(_build_gtts_scene_texts(panchang))
 
 
 def generate_video_script(panchang):
@@ -203,17 +206,15 @@ def generate_video_script(panchang):
 
     city_greeting = CITY_GREETINGS.get(city, f"{city} Telugu variki shubhodayam!")
 
-    # 4-scene narration — word counts must match video_creator.SCENE_WORD_COUNTS = [12, 9, 8, 10]
-    # Scene 0 (~12w): greeting + city + tithi + nakshatra
-    # Scene 1 (~9w):  rahu warning + durmuhurtam warning
-    # Scene 2 (~8w):  brahma auspicious + abhijit auspicious
-    # Scene 3 (~10w): blessing + save/share
+    # 4-scene romanized narration for ElevenLabs — NO time values (screen shows those)
+    # Time values caused ElevenLabs to switch to Hindi-accent mid-sentence
     narration = (
         f"Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
         f"Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] "
-        f"Rahu kalam {rahu_time}. [SHORT_PAUSE] Durmuhurtam {dur_time}. [SHORT_PAUSE] Ee samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] "
-        f"Brahma muhurtam {brahma_time}. [SHORT_PAUSE] Abhijit muhurtam {abhijit_time}. [SHORT_PAUSE] Ee samayaalu shubhapradamaina panulaku uttamamaina samayam. [PAUSE] "
-        f"Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
+        "Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] "
+        "Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] "
+        "Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] "
+        "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
     )
 
     # Also use Claude API to generate a better version if available
@@ -310,7 +311,8 @@ Return ONLY valid JSON, no markdown:
             f"అభిజిత్: {strip_tz(tf(panchang,'abhijit'), tz_label)} {tz_label}",
             f"సూర్యోదయం: {strip_tz(tf(panchang,'sunrise'), tz_label)} | సూర్యాస్తమయం: {strip_tz(tf(panchang,'sunset'), tz_label)} {tz_label}",
         ]
-        result["gtts_narration"] = _build_gtts_telugu_narration(panchang)
+        result["gtts_narration"]    = _build_gtts_telugu_narration(panchang)
+        result["gtts_scene_texts"]  = _build_gtts_scene_texts(panchang)
         return result
 
     except Exception:
@@ -324,7 +326,8 @@ Return ONLY valid JSON, no markdown:
         "description": f"Complete Hindu Panchang for {city}.",
         "hashtags":    ["DailyPanchangam", "TeluguPanchang", "HinduCalendar", "Shorts"],
         "full_narration": narration,
-        "gtts_narration": _build_gtts_telugu_narration(panchang),
+        "gtts_narration":   _build_gtts_telugu_narration(panchang),
+        "gtts_scene_texts": _build_gtts_scene_texts(panchang),
         "on_screen_lines": [
             f"తిథి: {tithi_name} ({paksha})",
             f"నక్షత్రం: {nakshatra_raw}",

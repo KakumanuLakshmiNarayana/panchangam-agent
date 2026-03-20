@@ -34,6 +34,8 @@ export interface VideoData {
   sunset: string;
   audioDurationSec: number;
   audioFile: string;
+  /** Per-scene frame counts measured from actual audio segments — enables exact sync */
+  sceneFrames?: [number, number, number, number];
 }
 
 export const defaultVideoData: VideoData = {
@@ -686,13 +688,21 @@ export const PanchangamVideo: React.FC<VideoData> = (props) => {
     document.fonts.ready.then(() => continueRender(fontHandle));
   }, [fontHandle]);
 
-  // Compute scene frame allocation proportional to audio duration
-  const TOTAL = Math.max(Math.ceil(props.audioDurationSec * 24), 480);
-  // Ratios match script word counts: intro 12w, bad 14w, good 14w, closing 10w → 24/28/28/20%
-  const RATIOS = [0.24, 0.28, 0.28, 0.20];
-  const SCENE_FRAMES = RATIOS.map((r) => Math.round(r * TOTAL)) as [number, number, number, number];
-  // Fix any rounding drift in the last scene
-  SCENE_FRAMES[3] += TOTAL - SCENE_FRAMES.reduce((a, b) => a + b, 0);
+  // Use measured per-scene frame counts when available (exact sync),
+  // otherwise fall back to ratio estimation.
+  const audioDurFrames = Math.max(Math.ceil(props.audioDurationSec * 24), 480);
+  const SCENE_FRAMES: [number, number, number, number] =
+    props.sceneFrames && props.sceneFrames.every((f) => f > 0)
+      ? props.sceneFrames
+      : (() => {
+          // Fallback ratios: intro 24%, bad 19%, good 24%, closing 33%
+          // (based on Telugu syllable counts per scene)
+          const RATIOS = [0.24, 0.19, 0.24, 0.33];
+          const sf = RATIOS.map((r) => Math.round(r * audioDurFrames)) as [number, number, number, number];
+          sf[3] += audioDurFrames - sf.reduce((a, b) => a + b, 0);
+          return sf;
+        })();
+  const TOTAL = SCENE_FRAMES.reduce((a, b) => a + b, 0);
 
   const SCENE_STARTS = SCENE_FRAMES.reduce<number[]>((acc, _, i) => {
     acc.push(i === 0 ? 0 : acc[i - 1] + SCENE_FRAMES[i - 1]);
