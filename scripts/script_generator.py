@@ -31,11 +31,11 @@ import anthropic
 
 
 CITY_GREETINGS = {
-    "New York, NY":    "న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం.",
-    "Chicago, IL":     "చికాగో తెలుగు నేస్తాలకు శుభోదయం.",
-    "Dallas, TX":      "డాలస్ తెలుగు నేస్తాలకు శుభోదయం.",
-    "Los Angeles, CA": "లాస్ ఏంజిల్స్ తెలుగు నేస్తాలకు శుభోదయం.",
-    "Detroit, MI":     "డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం.",
+    "New York, NY":    "New York Telugu nesthalaku shubhodayam.",
+    "Chicago, IL":     "Chicago Telugu nesthalaku shubhodayam.",
+    "Dallas, TX":      "Dallas Telugu nesthalaku shubhodayam.",
+    "Los Angeles, CA": "Los Angeles Telugu nesthalaku shubhodayam.",
+    "Detroit, MI":     "Detroit Telugu nesthalaku shubhodayam.",
 }
 
 # Pause marker reference:
@@ -56,60 +56,60 @@ def strip_tz(val, tz):
 
 
 def get_tithi_name(tithi_val):
-    """Extract just the tithi name in Telugu — no English, no times."""
-    # Map common tithi names to Telugu
-    telugu_map = {
-        "Ekadashi":  "ఏకాదశి",
-        "Dwadashi":  "ద్వాదశి",
-        "Trayodashi":"త్రయోదశి",
-        "Chaturdashi":"చతుర్దశి",
-        "Purnima":   "పూర్ణిమ",
-        "Pratipada": "పాడ్యమి",
-        "Dwitiya":   "విదియ",
-        "Tritiya":   "తదియ",
-        "Chaturthi": "చవితి",
-        "Panchami":  "పంచమి",
-        "Shashthi":  "షష్ఠి",
-        "Saptami":   "సప్తమి",
-        "Ashtami":   "అష్టమి",
-        "Navami":    "నవమి",
-        "Dashami":   "దశమి",
-        "Amavasya":  "అమావాస్య",
+    """Extract just the tithi name in romanized Telugu pronunciation."""
+    # Map common tithi names to romanized Telugu pronunciation
+    roman_map = {
+        "Ekadashi":   "Ekadashi",
+        "Dwadashi":   "Dwadashi",
+        "Trayodashi": "Trayodashi",
+        "Chaturdashi":"Chaturdashi",
+        "Purnima":    "Purnima",
+        "Pratipada":  "Padyami",
+        "Dwitiya":    "Vidiya",
+        "Tritiya":    "Tadiya",
+        "Chaturthi":  "Chaviti",
+        "Panchami":   "Panchami",
+        "Shashthi":   "Shashti",
+        "Saptami":    "Saptami",
+        "Ashtami":    "Ashtami",
+        "Navami":     "Navami",
+        "Dashami":    "Dashami",
+        "Amavasya":   "Amavasya",
     }
-    for eng, tel in telugu_map.items():
+    for eng, roman in roman_map.items():
         if eng.lower() in tithi_val.lower():
-            return tel
+            return roman
     # fallback — return first word
-    return tithi_val.split()[0] if tithi_val else "తిథి"
+    return tithi_val.split()[0] if tithi_val else "Tithi"
 
 
 def get_paksha_telugu(paksha_val):
     if "Krishna" in paksha_val:
-        return "కృష్ణపక్షం"
+        return "Krishna Paksham"
     elif "Shukla" in paksha_val:
-        return "శుక్లపక్షం"
+        return "Shukla Paksham"
     return paksha_val
 
 
 def get_nakshatra_telugu(nakshatra_val):
-    """Extract nakshatra name in Telugu."""
-    telugu_map = {
-        "Ashwini": "అశ్విని", "Bharani": "భరణి", "Krittika": "కృత్తిక",
-        "Rohini": "రోహిణి", "Mrigashira": "మృగశిర", "Ardra": "ఆర్ద్ర",
-        "Punarvasu": "పునర్వసు", "Pushya": "పుష్యమి", "Ashlesha": "ఆశ్లేష",
-        "Magha": "మఘ", "Purva Phalguni": "పూర్వ ఫల్గుణి",
-        "Uttara Phalguni": "ఉత్తర ఫల్గుణి", "Hasta": "హస్త",
-        "Chitra": "చిత్త", "Swati": "స్వాతి", "Vishakha": "విశాఖ",
-        "Anuradha": "అనూరాధ", "Jyeshtha": "జ్యేష్ఠ", "Moola": "మూల",
-        "Purva Ashadha": "పూర్వాషాఢ", "Uttara Ashadha": "ఉత్తరాషాఢ",
-        "Shravana": "శ్రవణం", "Dhanishtha": "ధనిష్ఠ",
-        "Shatabhisha": "శతభిష", "Purva Bhadrapada": "పూర్వ భాద్రపద",
-        "Uttara Bhadrapada": "ఉత్తర భాద్రపద", "Revati": "రేవతి",
+    """Extract nakshatra name in romanized Telugu pronunciation."""
+    roman_map = {
+        "Ashwini": "Ashwini", "Bharani": "Bharani", "Krittika": "Krittika",
+        "Rohini": "Rohini", "Mrigashira": "Mrigashira", "Ardra": "Ardra",
+        "Punarvasu": "Punarvasu", "Pushya": "Pushyami", "Ashlesha": "Ashlesha",
+        "Magha": "Magha", "Purva Phalguni": "Purva Phalguni",
+        "Uttara Phalguni": "Uttara Phalguni", "Hasta": "Hasta",
+        "Chitra": "Chitta", "Swati": "Swati", "Vishakha": "Vishakha",
+        "Anuradha": "Anuradha", "Jyeshtha": "Jyeshtha", "Moola": "Moola",
+        "Purva Ashadha": "Purva Ashadha", "Uttara Ashadha": "Uttara Ashadha",
+        "Shravana": "Shravana", "Dhanishtha": "Dhanishtha",
+        "Shatabhisha": "Shatabhisha", "Purva Bhadrapada": "Purva Bhadrapada",
+        "Uttara Bhadrapada": "Uttara Bhadrapada", "Revati": "Revati",
     }
-    for eng, tel in telugu_map.items():
+    for eng, roman in roman_map.items():
         if eng.lower() in nakshatra_val.lower():
-            return tel
-    return nakshatra_val.split()[0] if nakshatra_val else "నక్షత్రం"
+            return roman
+    return nakshatra_val.split()[0] if nakshatra_val else "Nakshatram"
 
 
 def generate_video_script(panchang):
@@ -129,11 +129,11 @@ def generate_video_script(panchang):
     # Scene 2 (~8w):  brahma auspicious + abhijit auspicious
     # Scene 3 (~10w): blessing + save/share
     narration = (
-        f"నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
-        f"ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం {nak_name}. [PAUSE] "
-        f"రాహు కాలం సమయంలో కొత్త పనులు మొదలుపెట్టకండి. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు నివారించండి. [PAUSE] "
-        f"బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు శుభప్రదం. [PAUSE] "
-        f"మీకు ఈ రోజు శుభప్రదంగా, ఆనందంగా గడవాలని మనఃపూర్వంగా ఆశిస్తున్నాను. [PAUSE] నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి."
+        f"Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] "
+        f"Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] "
+        f"Rahu kalam samayamlo kotta panulu modalupettakandi. [SHORT_PAUSE] Durmuhurtam samayamlo shubhakaryaalu nivarinchandi. [PAUSE] "
+        f"Brahma muhurtam prarthana mariyu dhyananiki uttamam. [SHORT_PAUSE] Abhijit muhurtam mukhyamaina panulaku shubhapradam. [PAUSE] "
+        f"Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
     )
 
     # Also use Claude API to generate a better version if available
@@ -143,28 +143,29 @@ def generate_video_script(panchang):
         prompt = f"""Write a Telugu voice narration for a 20-second Panchangam Instagram Reel.
 The video has exactly 4 scenes. The narration must align word-count to each scene.
 
+CRITICAL: Write the narration in ROMANIZED Telugu (Telugu words spelled in English letters).
+This is for ElevenLabs TTS which pronounces romanized Telugu correctly.
+Do NOT use Telugu script characters. Write everything phonetically in English letters.
+
 STRICT RULES:
-1. Write ONLY in Telugu script — NO English letters, NO numbers, NO time values
-2. DO NOT read any times — screen shows them
+1. Write in ROMANIZED Telugu (English letters, Telugu pronunciation) — NO Telugu script characters
+2. NO time values (screen shows them)
 3. ~39 words total across 4 scenes, structure EXACTLY as below
 4. Scene 0 (~12w): greeting + city greeting + today's paksha + tithi + nakshatra
-5. Scene 1 (~9w):  rahu kalam warning (use "సమయంలో") + durmuhurtam warning (use "సమయంలో")
-6. Scene 2 (~8w):  brahma muhurtam auspicious + abhijit auspicious (use "శుభప్రదం")
-7. Scene 3 (~10w): blessing + Telugu-script CTA
+5. Scene 1 (~9w):  rahu kalam warning + durmuhurtam warning
+6. Scene 2 (~8w):  brahma muhurtam auspicious + abhijit auspicious
+7. Scene 3 (~10w): blessing + CTA
 
-VOCABULARY RULES (fix common TTS mispronunciations — follow exactly):
-- Use "ఈరోజు" NOT "నేడు"
-- Use "నేస్తాలకు" NOT "వారికి" in city greeting (warmer tone)
-- Use "లాస్ ఏంజిల్స్" NOT "కాలిఫోర్నియా" for Los Angeles city
-- Use "డెట్రాయిట్" NOT "మిషిగన్" for Detroit city
-- Use "శుక్లపక్షం" / "కృష్ణపక్షం" (sandhi, one word) NOT "శుక్ల పక్షం" / "కృష్ణ పక్షం"
-- Use "రాహు కాలం సమయంలో కొత్త పనులు మొదలుపెట్టకండి" NOT "రాహుకాలం సమయంలో కొత్త పనులు వద్దు"
-- Use "దుర్ముహూర్తం సమయంలో శుభకార్యాలు నివారించండి" NOT "దుర్ముహూర్తం సమయంలో శుభకార్యాలు వద్దు"
-- Use "శుభకార్యాలు" (compound word) NOT "శుభ కార్యాలు"
-- Use "బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమం"
-- Use "అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు శుభప్రదం"
-- Use "మీకు ఈ రోజు శుభప్రదంగా, ఆనందంగా గడవాలని మనఃపూర్వంగా ఆశిస్తున్నాను"
-- End with: "నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి."
+VOCABULARY RULES (follow exactly for correct pronunciation):
+- Start with "Namaskaram."
+- City greeting format: "<CityName> Telugu nesthalaku shubhodayam."
+- Use "Eeroju" NOT "naadu"
+- Use "Rahu kalam samayamlo kotta panulu modalupettakandi"
+- Use "Durmuhurtam samayamlo shubhakaryaalu nivarinchandi"
+- Use "Brahma muhurtam prarthana mariyu dhyananiki uttamam"
+- Use "Abhijit muhurtam mukhyamaina panulaku shubhapradam"
+- Use "Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu"
+- End with: "Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi."
 
 City: {city}
 Tithi: {tithi_name}, Nakshatra: {nak_name}, Paksha: {paksha}
@@ -173,14 +174,14 @@ PAUSE MARKERS (use exactly as shown):
   [SHORT_PAUSE] = 300ms, [PAUSE] = 500ms, [LONG_PAUSE] = 800ms
 
 EXAMPLE OUTPUT (follow this structure precisely):
-నమస్కారం. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] ఈరోజు {paksha}, {tithi_name} తిథి. [SHORT_PAUSE] నక్షత్రం {nak_name}. [PAUSE] రాహు కాలం సమయంలో కొత్త పనులు మొదలుపెట్టకండి. [SHORT_PAUSE] దుర్ముహూర్తం సమయంలో శుభకార్యాలు నివారించండి. [PAUSE] బ్రహ్మ ముహూర్తం ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. [SHORT_PAUSE] అభిజిత్ ముహూర్తం ముఖ్యమైన పనులకు శుభప్రదం. [PAUSE] మీకు ఈ రోజు శుభప్రదంగా, ఆనందంగా గడవాలని మనఃపూర్వంగా ఆశిస్తున్నాను. [PAUSE] నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి.
+Namaskaram. [SHORT_PAUSE] {city_greeting} [LONG_PAUSE] Eeroju {paksha}, {tithi_name} tithi. [SHORT_PAUSE] Nakshatram {nak_name}. [PAUSE] Rahu kalam samayamlo kotta panulu modalupettakandi. [SHORT_PAUSE] Durmuhurtam samayamlo shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam prarthana mariyu dhyananiki uttamam. [SHORT_PAUSE] Abhijit muhurtam mukhyamaina panulaku shubhapradam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi.
 
 Return ONLY valid JSON, no markdown:
 {{
   "title": "Daily Panchangam {city} | {weekday} {date_str} | Rahu Kalam & All Timings",
   "description": "Today's complete Hindu Panchang for {city}. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
   "hashtags": ["DailyPanchangam","TeluguPanchang","HinduCalendar","RahuKalam","Panchang","Shorts","Reels","TeluguAmerica","HinduAmerica","DailyBlessing"],
-  "full_narration": "Telugu narration with pause markers — NO times, end with 'నమస్కారం. లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి.'",
+  "full_narration": "Romanized Telugu narration with pause markers — NO times, end with 'Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, PanthuluPanchangam subscribe chesukundi.'",
   "on_screen_lines": [
     "తిథి: {tithi_name} ({paksha})",
     "నక్షత్రం: nakshatra_name",
@@ -206,22 +207,15 @@ Return ONLY valid JSON, no markdown:
         raw = raw.strip()
         result = json.loads(raw)
 
-        # Validate: reject if narration contains digits or unexpected Latin chars
-        # Strip allowed markers/English CTA before checking
+        # Validate: reject if narration contains unexpected digits (time values)
+        # Romanized Telugu is expected — Latin chars are correct now
         import re as _re
         narr = result.get("full_narration", "")
         narr_check = _re.sub(r'\[(SHORT_PAUSE|PAUSE|LONG_PAUSE)\]', '', narr)
-        narr_check = narr_check.replace("ప్లీజ్ లైక్, షేర్ అండ్ సబ్స్క్రైబ్", "")
-        narr_check = narr_check.replace("లైక్ చేయండి, కుటుంబసభ్యులతో షేర్ చేయండి, PanthuluPanchangam సబ్స్క్రైబ్ చేసుకోండి", "")
-        narr_check = narr_check.replace("PanthuluPanchangam", "")
-        narr_check = narr_check.replace("please like share and subscribe", "")
-        narr_check = narr_check.replace("ధన్యవాదాలు.", "")
-        narr_check = narr_check.replace("నమస్కారం.", "")
         has_digits = any(c.isdigit() for c in narr_check)
-        has_latin  = any(c.isascii() and c.isalpha() for c in narr_check)
         word_count = len(narr.split())
 
-        if has_digits or has_latin or word_count > 60:
+        if has_digits or word_count > 80:
             # API gave bad result — use local fallback
             result["full_narration"] = narration
 

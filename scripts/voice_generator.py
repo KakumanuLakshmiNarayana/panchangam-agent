@@ -56,11 +56,7 @@ CITY_TELUGU = {
 
 
 def clean_for_tts(text):
-    """Clean text for gTTS — pure Telugu + pause markers, strip everything else."""
-    # Replace city names — longest first to prevent partial matches
-    for eng in sorted(CITY_TELUGU.keys(), key=len, reverse=True):
-        text = text.replace(eng, CITY_TELUGU[eng])
-
+    """Clean romanized Telugu text for gTTS — keep Latin chars, strip digits and punctuation."""
     # Protect pause markers from being stripped
     text = text.replace("[SHORT_PAUSE]", "\x00SP\x00")
     text = text.replace("[PAUSE]",       "\x00P\x00")
@@ -68,10 +64,8 @@ def clean_for_tts(text):
 
     # Remove digits (times shown on screen, not spoken)
     text = re.sub(r'\d+', '', text)
-    # Remove Latin characters (gTTS Telugu only)
-    text = re.sub(r'[a-zA-Z]+', '', text)
-    # Clean punctuation
-    text = re.sub(r'[\:\-–,\.!?;]+', ' ', text)
+    # Clean punctuation (keep letters, spaces, hyphens for compound words)
+    text = re.sub(r'[\:\–,\.!?;]+', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
 
     # Restore pause markers
@@ -82,13 +76,11 @@ def clean_for_tts(text):
 
 
 def _clean_for_elevenlabs(text):
-    """Prepare text for ElevenLabs: city names → Telugu, pause markers → SSML breaks.
+    """Prepare text for ElevenLabs: pause markers → SSML breaks.
 
+    Text is now romanized Telugu (English letters) so no substitution needed.
     ElevenLabs accepts inline <break> tags without a <speak> wrapper.
     """
-    for eng in sorted(CITY_TELUGU.keys(), key=len, reverse=True):
-        text = text.replace(eng, CITY_TELUGU[eng])
-
     # Convert pause markers to inline SSML break tags (no <speak> wrapper needed)
     text = text.replace("[LONG_PAUSE]",  '<break time="800ms"/> ')
     text = text.replace("[PAUSE]",       '<break time="500ms"/> ')
@@ -183,7 +175,7 @@ def _generate_gtts_fallback(text, output_path):
                     segment_files.append(silence_mp3)
                 else:
                     chunk_mp3 = os.path.join(tmp, f"chunk_{idx}.mp3")
-                    tts = gTTS(text=part, lang='te', slow=False)
+                    tts = gTTS(text=part, lang='en', slow=False)
                     tts.save(chunk_mp3)
                     segment_files.append(chunk_mp3)
 
