@@ -141,100 +141,107 @@ def _generate_elevenlabs(text, output_path):
         return False
 
 
-def _generate_gtts_fallback(text, output_path, lang="te"):
-    """Generate audio using gTTS with typed pause support and deep-male FFmpeg processing.
+def _ffprobe_duration(path):
+    """Return audio duration in seconds via ffprobe."""
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", path],
+        capture_output=True, text=True)
+    try:
+        return float(r.stdout.strip())
+    except ValueError:
+        return 0.0
 
-    Splits text on [SHORT_PAUSE] / [PAUSE] / [LONG_PAUSE] markers,
-    generates each text chunk via gTTS, inserts the matching silence duration,
-    then concatenates and applies deep-male voice processing.
-    Uses lang='te' for proper Telugu-script pronunciation by default.
+
+def _apply_voice_filter(src_mp3, dst_mp3):
+    """Bass boost + compression only — no pitch shift so duration is preserved."""
+    af = (
+        "bass=g=5:f=150:w=0.6,"
+        "acompressor=threshold=-20dB:ratio=3:attack=8:release=80:makeup=2dB,"
+        "volume=1.3"
+    )
+    r = subprocess.run(
+        ["ffmpeg", "-y", "-i", src_mp3, "-af", af,
+         "-ar", "44100", "-ab", "128k", "-codec:a", "libmp3lame", dst_mp3],
+        capture_output=True, text=True)
+    return r.returncode == 0
+
+
+def _generate_gtts_scenes(scene_texts, output_path, lang="te"):
+    """Generate one audio file from 4 scene texts, returning per-scene durations.
+
+    Each scene is synthesised separately so we can measure its exact duration,
+    enabling frame-accurate video/audio sync.  tld='co.in' uses Google India
+    which has better Telugu pronunciation.
+    Returns list of 4 float durations in seconds, or None on failure.
     """
     if not GTTS_AVAILABLE:
-        print("  [VOICE] gTTS not available"); return False
-
+        print("  [VOICE] gTTS not available"); return None
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            # Split on any pause marker, preserving the delimiters
-            marker_pattern = r'(\[SHORT_PAUSE\]|\[PAUSE\]|\[LONG_PAUSE\])'
-            parts = re.split(marker_pattern, text)
+            raw_files, scene_durations = [], []
+            for i, text in enumerate(scene_texts):
+                raw_mp3 = os.path.join(tmp, f"scene_{i}_raw.mp3")
+                try:
+                    tts = gTTS(text=text, lang=lang, slow=False, tld='co.in')
+                    tts.save(raw_mp3)
+                except Exception:
+                    # tld kwarg not supported in older gtts — retry without it
+                    tts = gTTS(text=text, lang=lang, slow=False)
+                    tts.save(raw_mp3)
 
-            segment_files = []
-            for idx, part in enumerate(parts):
-                part = part.strip()
-                if not part:
-                    continue
+                # Measure raw duration (before filter — filter doesn't change duration)
+                dur = _ffprobe_duration(raw_mp3)
+                scene_durations.append(dur)
+                raw_files.append(raw_mp3)
+                print(f"  [VOICE] Scene {i} raw: {dur:.2f}s  text={text[:40]!r}...")
 
-                if part in PAUSE_DURATIONS:
-                    silence_mp3 = os.path.join(tmp, f"silence_{idx}.mp3")
-                    subprocess.run([
-                        "ffmpeg", "-y", "-f", "lavfi",
-                        "-i", "anullsrc=r=44100:cl=mono",
-                        "-t", PAUSE_DURATIONS[part],
-                        "-ar", "44100", "-ab", "128k",
-                        silence_mp3
-                    ], capture_output=True)
-                    segment_files.append(silence_mp3)
-                else:
-                    chunk_mp3 = os.path.join(tmp, f"chunk_{idx}.mp3")
-                    tts = gTTS(text=part, lang=lang, slow=False)
-                    tts.save(chunk_mp3)
-                    segment_files.append(chunk_mp3)
+            # Concatenate all 4 scenes
+            concat_mp3 = os.path.join(tmp, "concat.mp3")
+            concat_txt = os.path.join(tmp, "concat.txt")
+            with open(concat_txt, "w") as f:
+                for rf in raw_files:
+                    f.write(f"file '{rf}'\n")
+            subprocess.run(
+                ["ffmpeg", "-y", "-f", "concat", "-safe", "0",
+                 "-i", concat_txt, "-c", "copy", concat_mp3],
+                capture_output=True)
 
-            if not segment_files:
-                return False
-
-            print(f"  [VOICE] gTTS: {len(segment_files)} segment(s)")
-
-            # Concatenate all segments
-            raw_mp3 = os.path.join(tmp, "raw.mp3")
-            if len(segment_files) > 1:
-                concat_txt = os.path.join(tmp, "concat.txt")
-                with open(concat_txt, "w") as f:
-                    for sf in segment_files:
-                        f.write(f"file '{sf}'\n")
-                subprocess.run([
-                    "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-                    "-i", concat_txt, "-c", "copy", raw_mp3
-                ], capture_output=True)
-            else:
-                shutil.copy(segment_files[0], raw_mp3)
-
-            raw_dur = subprocess.run(
-                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                 "-of", "default=noprint_wrappers=1:nokey=1", raw_mp3],
-                capture_output=True, text=True)
-            print(f"  [VOICE] gTTS raw duration: {raw_dur.stdout.strip()}s")
-
-            # Deep male voice: pitch down + bass boost + compression
+            # Apply voice enhancement (bass + compression, no duration change)
             final_mp3 = os.path.join(tmp, "final.mp3")
-            af = (
-                "asetrate=44100*0.82,"
-                "aresample=44100,"
-                "bass=g=6:f=150:w=0.6,"
-                "acompressor=threshold=-20dB:ratio=3:attack=8:release=80:makeup=3dB,"
-                "volume=1.4"
-            )
-            cmd = [
-                "ffmpeg", "-y", "-i", raw_mp3,
-                "-af", af,
-                "-ar", "44100", "-ab", "128k",
-                "-codec:a", "libmp3lame",
-                final_mp3
-            ]
-            r = subprocess.run(cmd, capture_output=True, text=True)
+            ok = _apply_voice_filter(concat_mp3, final_mp3)
+            shutil.copy(final_mp3 if ok else concat_mp3, output_path)
 
-            src = final_mp3 if r.returncode == 0 else raw_mp3
-            if r.returncode != 0:
-                print(f"  [VOICE] FFmpeg failed, using raw: {r.stderr[-200:]}")
-            shutil.copy(src, output_path)
+            total = _ffprobe_duration(output_path)
+            print(f"  [VOICE] gTTS scenes: {scene_durations}  total={total:.2f}s")
+            return scene_durations
 
-            final_dur = subprocess.run(
-                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                 "-of", "default=noprint_wrappers=1:nokey=1", output_path],
-                capture_output=True, text=True)
-            print(f"  [VOICE] gTTS final duration: {final_dur.stdout.strip()}s  size={os.path.getsize(output_path)} bytes")
+    except Exception as e:
+        print(f"  [VOICE] gTTS scene error: {e}")
+        return None
+
+
+def _generate_gtts_fallback(text, output_path, lang="te"):
+    """Single-text gTTS fallback (used when scene texts unavailable)."""
+    if not GTTS_AVAILABLE:
+        print("  [VOICE] gTTS not available"); return False
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_mp3 = os.path.join(tmp, "raw.mp3")
+            try:
+                tts = gTTS(text=text, lang=lang, slow=False, tld='co.in')
+                tts.save(raw_mp3)
+            except Exception:
+                tts = gTTS(text=text, lang=lang, slow=False)
+                tts.save(raw_mp3)
+
+            final_mp3 = os.path.join(tmp, "final.mp3")
+            ok = _apply_voice_filter(raw_mp3, final_mp3)
+            shutil.copy(final_mp3 if ok else raw_mp3, output_path)
+
+            dur = _ffprobe_duration(output_path)
+            print(f"  [VOICE] gTTS fallback: {dur:.2f}s  size={os.path.getsize(output_path)} bytes")
         return True
-
     except Exception as e:
         print(f"  [VOICE] gTTS error: {e}"); return False
 
@@ -261,10 +268,20 @@ def generate_voice(script, output_path, city_key=None):
     else:
         print("  [VOICE] ElevenLabs SDK not installed — using gTTS")
 
-    # Fallback: gTTS with proper Telugu script (lang='te') so pronunciation is correct
+    # Fallback: gTTS with Telugu script — generate per-scene for accurate sync
+    scene_texts = (script.get("gtts_scene_texts") if isinstance(script, dict) else None)
+    if scene_texts and len(scene_texts) == 4:
+        print(f"  [VOICE] gTTS per-scene mode (lang=te, tld=co.in)...")
+        durations = _generate_gtts_scenes(scene_texts, output_path, lang="te")
+        if durations:
+            if isinstance(script, dict):
+                script["scene_durations_sec"] = durations  # used by remotion_renderer
+            return output_path
+
+    # Last resort: single-text gTTS
     gtts_text = (script.get("gtts_narration", "") if isinstance(script, dict) else "") or clean_for_tts(text)
     gtts_lang = "te" if isinstance(script, dict) and script.get("gtts_narration") else "en"
-    print(f"  [VOICE] gTTS lang={gtts_lang} preview: {gtts_text[:80]}...")
+    print(f"  [VOICE] gTTS single-text lang={gtts_lang} preview: {gtts_text[:80]}...")
     if _generate_gtts_fallback(gtts_text, output_path, lang=gtts_lang):
         return output_path
 
