@@ -1,0 +1,70 @@
+name: Fetch Analytics
+
+on:
+  # Run daily at 06:00 UTC (1 AM EST) — after overnight uploads are processed
+  schedule:
+    - cron: '0 6 * * *'
+  # Also allow manual trigger from dashboard
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  fetch-analytics:
+    name: Fetch Instagram + YouTube Analytics
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Fetch analytics
+        env:
+          INSTAGRAM_ACCESS_TOKEN:   ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID:     ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          YOUTUBE_CREDENTIALS_JSON: ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
+        run: |
+          mkdir -p dashboard
+          cd scripts && python analytics_fetcher.py
+
+      - name: Commit analytics data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/analytics.json
+          git diff --cached --quiet || git commit -m "chore: update analytics data [skip ci]"
+          git push
+
+      - name: Deploy updated dashboard
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+
+      - name: Summary
+        run: |
+          echo "## 📊 Analytics Updated" >> $GITHUB_STEP_SUMMARY
+          python3 -c "
+          import json
+          data = json.load(open('dashboard/analytics.json'))
+          ig = data.get('instagram', {}).get('account', {})
+          yt = data.get('youtube', {}).get('channel', {})
+          print(f'### Instagram')
+          print(f'- Followers: {ig.get(\"followers\", \"N/A\")}')
+          print(f'- Reels: {len(data.get(\"instagram\", {}).get(\"reels\", []))}')
+          print(f'### YouTube')
+          print(f'- Subscribers: {yt.get(\"subscribers\", \"N/A\")}')
+          print(f'- Videos: {len(data.get(\"youtube\", {}).get(\"videos\", []))}')
+          " >> $GITHUB_STEP_SUMMARY || true
