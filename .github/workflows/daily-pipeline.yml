@@ -2,7 +2,8 @@ name: Daily Panchangam Pipeline
 
 on:
   schedule:
-    - cron: '0 10 * * *'
+    # 01:00 UTC = 8 PM EST / 9 PM EDT — generates TOMORROW's videos each evening
+    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       skip_approval:
@@ -13,6 +14,10 @@ on:
         description: 'Upload already-approved video (true/false)'
         required: false
         default: 'false'
+      use_tomorrow:
+        description: 'Generate for tomorrow instead of today (true/false)'
+        required: false
+        default: 'true'
 
 permissions:
   contents: write
@@ -27,6 +32,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
@@ -41,7 +48,6 @@ jobs:
           echo "=== Installed ==="
           ffmpeg -version | head -1
 
-          # Export Chromium path for Remotion so it does not try to download its own browser
           CHROMIUM_BIN="$(which chromium-browser 2>/dev/null || which chromium 2>/dev/null || echo '')"
           if [ -n "$CHROMIUM_BIN" ]; then
             echo "REMOTION_BROWSER_EXECUTABLE=$CHROMIUM_BIN" >> $GITHUB_ENV
@@ -50,33 +56,20 @@ jobs:
             echo "System Chromium not found — Remotion will download its own browser"
           fi
 
-      - name: Download NotoSansTelugu fonts (static, Pillow-compatible)
+      - name: Download NotoSansTelugu fonts
         run: |
-          # Download static TTFs directly from notofonts/noto-fonts via raw.githubusercontent.com
-          # These are guaranteed to work with Pillow — no system font hunting needed
           mkdir -p /home/runner/fonts/telugu
           BASE="https://raw.githubusercontent.com/notofonts/noto-fonts/refs/heads/main/hinted/ttf/NotoSansTelugu"
-          curl -fsSL "${BASE}/NotoSansTelugu-Regular.ttf" \
-               -o /home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf
-          curl -fsSL "${BASE}/NotoSansTelugu-Bold.ttf" \
-               -o /home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf
-          # Latin fallback — fixes AM/PM/ET/CT/PT and all English words showing as boxes
+          curl -fsSL "${BASE}/NotoSansTelugu-Regular.ttf" -o /home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf
+          curl -fsSL "${BASE}/NotoSansTelugu-Bold.ttf"    -o /home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf
           BASE2="https://raw.githubusercontent.com/notofonts/noto-fonts/refs/heads/main/hinted/ttf/NotoSans"
-          curl -fsSL "${BASE2}/NotoSans-Regular.ttf" \
-               -o /home/runner/fonts/telugu/NotoSans-Regular.ttf
-          curl -fsSL "${BASE2}/NotoSans-Bold.ttf" \
-               -o /home/runner/fonts/telugu/NotoSans-Bold.ttf
-          echo "=== Font files ==="
-          ls -lh /home/runner/fonts/telugu/
-          # Quick Pillow sanity check
+          curl -fsSL "${BASE2}/NotoSans-Regular.ttf" -o /home/runner/fonts/telugu/NotoSans-Regular.ttf
+          curl -fsSL "${BASE2}/NotoSans-Bold.ttf"    -o /home/runner/fonts/telugu/NotoSans-Bold.ttf
           pip install pillow -q
           python3 -c "
           from PIL import ImageFont, Image, ImageDraw
-          reg  = ImageFont.truetype('/home/runner/fonts/telugu/NotoSansTelugu-Regular.ttf', 40)
           bold = ImageFont.truetype('/home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf', 40)
-          img = Image.new('RGB', (400,80), (0,0,0))
-          ImageDraw.Draw(img).text((10,10), 'నేటి పంచాంగం', font=bold, fill=(255,200,0))
-          print('Telugu font test PASSED')
+          print('Telugu font OK')
           "
 
       - name: Setup Node.js
@@ -95,45 +88,55 @@ jobs:
 
       - name: Run Pipeline
         env:
-          ANTHROPIC_API_KEY:              ${{ secrets.ANTHROPIC_API_KEY }}
-          ELEVENLABS_API_KEY:             ${{ secrets.ELEVENLABS_API_KEY }}
-          APPROVAL_EMAIL_FROM:            ${{ secrets.APPROVAL_EMAIL_FROM }}
-          APPROVAL_EMAIL_TO:              ${{ secrets.APPROVAL_EMAIL_TO }}
-          SMTP_HOST:                      smtp.gmail.com
-          SMTP_PORT:                      587
-          SMTP_PASS:                      ${{ secrets.SMTP_PASS }}
-          REMOTION_BROWSER_EXECUTABLE:    ${{ env.REMOTION_BROWSER_EXECUTABLE }}
+          ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY:          ${{ secrets.ELEVENLABS_API_KEY }}
+          APPROVAL_EMAIL_FROM:         ${{ secrets.APPROVAL_EMAIL_FROM }}
+          APPROVAL_EMAIL_TO:           ${{ secrets.APPROVAL_EMAIL_TO }}
+          SMTP_HOST:                   smtp.gmail.com
+          SMTP_PORT:                   587
+          SMTP_PASS:                   ${{ secrets.SMTP_PASS }}
+          REMOTION_BROWSER_EXECUTABLE: ${{ env.REMOTION_BROWSER_EXECUTABLE }}
         run: |
           mkdir -p output
           cd scripts
-          if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
-            python pipeline.py --skip-approval
+          # Scheduled runs always use --tomorrow; manual dispatch uses the input
+          USE_TOMORROW="${{ github.event.inputs.use_tomorrow }}"
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "$USE_TOMORROW" = "true" ]; then
+            TOMORROW_FLAG="--tomorrow"
           else
-            python pipeline.py
+            TOMORROW_FLAG=""
           fi
 
-      - name: Debug - list output files
-        if: always()
-        continue-on-error: true
-        run: |
-          echo "=== Output files ==="
-          ls -lh output/ || echo "No output dir"
-          echo "=== Font test ==="
-          python3 -c "
-          import glob
-          paths = glob.glob('/usr/local/share/fonts/telugu/*.ttf')
-          paths += glob.glob('/usr/share/fonts/**/*Telugu*', recursive=True)
-          print('Telugu fonts:', paths[:5])
-          from PIL import ImageFont
-          if paths:
-              f = ImageFont.truetype(paths[0], 40)
-              print('Font loaded OK:', paths[0])
-          else:
-              print('No Telugu fonts found!')
-          "
+          if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
+            python pipeline.py --skip-approval $TOMORROW_FLAG
+          else
+            python pipeline.py $TOMORROW_FLAG
+          fi
 
-      - name: Copy state to dashboard
-        run: cp output/pipeline_state.json dashboard/pipeline_state.json || true
+      - name: Copy thumbnails and state to dashboard
+        run: |
+          mkdir -p dashboard/thumbs
+          # Copy all thumbnails into dashboard/thumbs/
+          for f in output/thumb_*.jpg; do
+            [ -f "$f" ] && cp "$f" dashboard/thumbs/
+          done
+          # Copy state JSON
+          cp output/pipeline_state.json dashboard/pipeline_state.json || true
+          # Write repo config for the dashboard JS
+          echo '{
+            "owner": "${{ github.repository_owner }}",
+            "repo":  "${{ github.event.repository.name }}",
+            "run_id": "${{ github.run_id }}",
+            "workflow_file": "daily-pipeline.yml"
+          }' > dashboard/repo_config.json
+
+      - name: Commit dashboard assets to repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/pipeline_state.json dashboard/thumbs/ dashboard/repo_config.json
+          git diff --cached --quiet || git commit -m "chore: update dashboard state + thumbnails [skip ci]"
+          git push
 
       - name: Upload video artifact
         uses: actions/upload-artifact@v4
@@ -156,7 +159,9 @@ jobs:
         run: |
           echo "## 🕉 Panchangam Pipeline Done" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📧 Check your email to approve." >> $GITHUB_STEP_SUMMARY
+          echo "📧 Check your dashboard to approve." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact ID:** \`${{ github.run_id }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Output Files**" >> $GITHUB_STEP_SUMMARY
           ls output/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY || true
@@ -171,7 +176,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install requests boto3 pytz anthropic
+      - run: pip install requests boto3 pytz anthropic google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
       - name: Download latest artifact
         uses: dawidd6/action-download-artifact@v3
@@ -183,14 +188,13 @@ jobs:
 
       - name: Upload approved video
         env:
-          YOUTUBE_CLIENT_ID:      ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET:  ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN:  ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-          INSTAGRAM_ACCOUNT_ID:   ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
-          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID:      ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          S3_BUCKET_NAME:         ${{ secrets.S3_BUCKET_NAME }}
+          YOUTUBE_CREDENTIALS_JSON:   ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
+          INSTAGRAM_ACCOUNT_ID:       ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          INSTAGRAM_ACCESS_TOKEN:     ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID:          ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY:      ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME:             ${{ secrets.S3_BUCKET_NAME }}
+          VIDEO_PUBLIC_URL:           ${{ secrets.VIDEO_PUBLIC_URL }}
         run: |
           python3 -c "
           import json

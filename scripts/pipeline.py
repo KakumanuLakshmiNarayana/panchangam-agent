@@ -141,9 +141,10 @@ def send_approval_email(all_cities, date_str):
         print(f"❌ Email error: {e}")
 
 
-def run_pipeline(skip_approval=False):
+def run_pipeline(skip_approval=False, use_tomorrow=False):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    today    = date.today()
+    from datetime import timedelta
+    today    = date.today() + (timedelta(days=1) if use_tomorrow else timedelta(0))
     date_str = today.isoformat()
 
     print("\n" + "="*55)
@@ -223,8 +224,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-approval",   action="store_true")
     parser.add_argument("--upload-approved", action="store_true")
+    parser.add_argument("--tomorrow",        action="store_true",
+                        help="Fetch and generate for tomorrow's date (run at 8 PM)")
     args = parser.parse_args()
     if args.upload_approved:
         upload_approved()
     else:
-        run_pipeline(skip_approval=args.skip_approval)
+        run_pipeline(skip_approval=args.skip_approval, use_tomorrow=args.tomorrow)
