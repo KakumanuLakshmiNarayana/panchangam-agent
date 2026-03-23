@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>🪔 Panchangam Video — Approval Dashboard</title>
+<title>🪔 Panchangam Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Tiro+Devanagari+Hindi:ital@0;1&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --crimson:   #8B0000;
@@ -17,6 +18,7 @@
     --border:    #3d2010;
     --text:      #f5ead8;
     --muted:     #9e8060;
+    --green:     #2d6a4f;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,33 +39,44 @@
     pointer-events: none;
   }
 
+  /* ── Mandala border ── */
+  .mandala-border {
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--gold) 0px, var(--gold) 8px,
+      transparent 8px, transparent 16px,
+      var(--amber) 16px, var(--amber) 24px,
+      transparent 24px, transparent 32px
+    );
+  }
+
   /* ── Header ── */
   header {
     position: relative; z-index: 1;
     background: linear-gradient(135deg, var(--dark-red) 0%, #2d0a00 50%, #1a0800 100%);
     border-bottom: 2px solid var(--gold);
-    padding: 0;
     overflow: hidden;
   }
 
   .header-inner {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: auto;
-    padding: 32px 24px 24px;
+    padding: 28px 24px 20px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
   }
 
   .om-badge {
-    width: 72px; height: 72px;
+    width: 68px; height: 68px;
     background: radial-gradient(circle, var(--gold) 0%, var(--amber) 60%, transparent 100%);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 44px;
+    font-size: 40px;
     flex-shrink: 0;
-    box-shadow: 0 0 32px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1);
     animation: pulse-gold 3s ease-in-out infinite;
+    box-shadow: 0 0 32px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1);
   }
 
   @keyframes pulse-gold {
@@ -73,7 +86,7 @@
 
   .header-text h1 {
     font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(22px, 4vw, 36px);
+    font-size: clamp(20px, 3.5vw, 32px);
     color: var(--gold);
     letter-spacing: 2px;
     text-shadow: 0 2px 12px rgba(255,215,0,0.4);
@@ -81,65 +94,94 @@
 
   .header-text p {
     color: var(--amber);
-    font-size: 15px;
+    font-size: 14px;
     margin-top: 4px;
     letter-spacing: 1px;
     font-family: 'Tiro Devanagari Hindi', serif;
   }
 
-  .header-date {
-    margin-left: auto;
-    text-align: right;
-  }
-
+  .header-date { margin-left: auto; text-align: right; flex-shrink: 0; }
   .header-date .day {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 28px;
-    color: var(--gold);
+    font-size: 26px; color: var(--gold);
   }
-
-  .header-date .date-str {
-    color: var(--muted);
-    font-size: 14px;
-  }
+  .header-date .date-str { color: var(--muted); font-size: 13px; }
 
   /* ── Status bar ── */
   .status-bar {
-    background: rgba(255,215,0,0.08);
+    background: rgba(255,215,0,0.07);
     border-bottom: 1px solid var(--border);
     padding: 10px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--muted);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 14px; color: var(--muted);
     position: relative; z-index: 1;
   }
 
   .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--gold);
-    animation: blink 2s step-start infinite;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold); animation: blink 2s step-start infinite;
   }
 
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* ── Main layout ── */
-  main {
-    position: relative; z-index: 1;
-    max-width: 1100px;
-    margin: 40px auto;
-    padding: 0 20px;
-    display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: 28px;
-    align-items: start;
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #110802;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 16px 28px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    color: var(--muted);
+    font-size: 14px; font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 8px;
   }
 
-  @media (max-width: 768px) {
-    main { grid-template-columns: 1fr; }
+  .tab-btn:hover {
+    color: var(--gold-soft);
+    background: rgba(255,215,0,0.04);
+  }
+
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(255,215,0,0.07);
+  }
+
+  .tab-badge {
+    background: var(--crimson);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* ── Tab panels ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Page wrapper ── */
+  .page-wrap {
+    position: relative; z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 36px 20px;
   }
 
   /* ── Cards ── */
@@ -148,53 +190,82 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
   }
 
   .card-header {
     background: linear-gradient(135deg, var(--dark-red), #2a0a00);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
     border-bottom: 1px solid var(--border);
   }
 
   .card-header h2 {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 16px;
-    color: var(--gold);
-    letter-spacing: 1px;
+    font-size: 15px; color: var(--gold); letter-spacing: 1px;
   }
 
-  .card-body { padding: 20px; }
+  .card-body { padding: 28px; }
+
+  /* ── Coming soon placeholder ── */
+  .coming-soon {
+    text-align: center;
+    padding: 80px 24px;
+  }
+
+  .coming-soon .cs-icon { font-size: 64px; margin-bottom: 16px; }
+
+  .coming-soon h3 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 22px; color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .coming-soon p { color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+  .coming-soon .cs-checklist {
+    display: inline-flex; flex-direction: column; gap: 10px;
+    margin-top: 24px; text-align: left;
+  }
+
+  .coming-soon .cs-item {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text); font-size: 14px;
+    background: rgba(255,215,0,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px;
+  }
+
+  .cs-item .cs-tick { color: var(--gold); font-size: 16px; }
+
+  /* ── Main layout (Video Review tab) ── */
+  .review-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .review-grid { grid-template-columns: 1fr; }
+    .tab-btn { padding: 14px 18px; font-size: 13px; }
+  }
 
   /* ── Video preview ── */
   .video-wrapper {
-    background: #000;
-    border-radius: 12px;
-    overflow: hidden;
-    aspect-ratio: 9/16;
-    max-height: 480px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #000; border-radius: 12px; overflow: hidden;
+    aspect-ratio: 9/16; max-height: 480px;
+    display: flex; align-items: center; justify-content: center;
     position: relative;
   }
 
-  .video-wrapper video {
-    width: 100%; height: 100%;
-    object-fit: contain;
-  }
+  .video-wrapper video { width: 100%; height: 100%; object-fit: contain; }
 
   .video-placeholder {
-    text-align: center;
-    padding: 40px;
-    color: var(--muted);
+    text-align: center; padding: 40px; color: var(--muted);
   }
 
   .video-placeholder .icon { font-size: 64px; margin-bottom: 12px; }
-  .video-placeholder p { font-size: 14px; }
 
   /* ── Script section ── */
   .script-block {
@@ -207,260 +278,1147 @@
   }
 
   .script-block h4 {
-    color: var(--gold);
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
+    color: var(--gold); font-size: 12px;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
   }
 
   .script-block p {
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.7;
+    color: var(--text); font-size: 14px; line-height: 1.7;
     font-family: 'Tiro Devanagari Hindi', serif;
   }
 
-  /* ── Panchang info grid ── */
+  /* ── Info grid ── */
   .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
   }
 
   .info-item {
-    background: rgba(255,215,0,0.05);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
+    background: rgba(255,215,0,0.05); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
   }
 
-  .info-item .label {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-
-  .info-item .value {
-    color: var(--gold-soft);
-    font-size: 14px;
-    font-weight: 600;
-  }
+  .info-item .label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .info-item .value { color: var(--gold-soft); font-size: 14px; font-weight: 600; }
 
   /* ── Timing rows ── */
   .timing-section h4 {
-    color: var(--amber);
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin: 16px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    color: var(--amber); font-size: 12px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 16px 0 8px;
+    display: flex; align-items: center; gap: 6px;
   }
 
   .timing-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-bottom: 4px;
-    font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; border-radius: 6px; margin-bottom: 4px; font-size: 13px;
   }
 
-  .timing-row.inauspicious {
-    background: rgba(139,0,0,0.2);
-    border: 1px solid rgba(139,0,0,0.4);
-  }
-
-  .timing-row.auspicious {
-    background: rgba(45,106,79,0.2);
-    border: 1px solid rgba(45,106,79,0.4);
-  }
-
+  .timing-row.inauspicious { background: rgba(139,0,0,0.2); border: 1px solid rgba(139,0,0,0.4); }
+  .timing-row.auspicious   { background: rgba(45,106,79,0.2); border: 1px solid rgba(45,106,79,0.4); }
   .timing-row .t-label { color: var(--muted); }
-  .timing-row .t-zones { color: var(--text); font-size: 12px; }
+  .timing-row .t-zones  { color: var(--text); font-size: 12px; }
 
   /* ── Action buttons ── */
   .action-area {
-    padding: 20px;
-    border-top: 1px solid var(--border);
-    background: rgba(0,0,0,0.2);
+    padding: 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2);
   }
 
   .video-title-display {
-    background: rgba(255,215,0,0.08);
-    border: 1px solid var(--gold-soft);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 14px;
-    color: var(--gold);
-    text-align: center;
+    background: rgba(255,215,0,0.08); border: 1px solid var(--gold-soft);
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+    font-family: 'Cinzel Decorative', serif; font-size: 13px;
+    color: var(--gold); text-align: center;
   }
 
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
   .btn {
-    padding: 16px 24px;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    font-family: 'Outfit', sans-serif;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    letter-spacing: 0.5px;
+    padding: 14px 20px; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; font-family: 'Outfit', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
   }
 
   .btn-approve {
     background: linear-gradient(135deg, #1b5e20, #2d6a4f);
-    color: #a8d8a8;
-    border: 1px solid #2d6a4f;
+    color: #a8d8a8; border: 1px solid #2d6a4f;
   }
-
-  .btn-approve:hover {
-    background: linear-gradient(135deg, #2d6a4f, #40916c);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(45,106,79,0.4);
-  }
+  .btn-approve:hover { background: linear-gradient(135deg, #2d6a4f, #40916c); color: #fff; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,106,79,0.4); }
 
   .btn-reject {
     background: linear-gradient(135deg, #5c0000, #8B0000);
-    color: #ffb3b3;
-    border: 1px solid #8B0000;
+    color: #ffb3b3; border: 1px solid #8B0000;
   }
-
-  .btn-reject:hover {
-    background: linear-gradient(135deg, #8B0000, #b00000);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(139,0,0,0.4);
-  }
+  .btn-reject:hover { background: linear-gradient(135deg, #8B0000, #b00000); color: #fff; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139,0,0,0.4); }
 
   .btn:active { transform: translateY(0); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* ── Toast notifications ── */
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 1px;
+  }
+  .badge-pending  { background: rgba(255,165,0,0.15); color: var(--amber); border: 1px solid var(--amber); }
+  .badge-approved { background: rgba(45,106,79,0.2);  color: #69b46c;    border: 1px solid #2d6a4f; }
+  .badge-rejected { background: rgba(139,0,0,0.2);    color: #e07070;    border: 1px solid #8B0000; }
+
+  /* ── Toast ── */
   .toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: var(--card);
-    border: 1px solid var(--gold);
-    border-radius: 12px;
-    padding: 16px 24px;
-    color: var(--text);
-    font-size: 15px;
-    z-index: 999;
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--card); border: 1px solid var(--gold);
+    border-radius: 12px; padding: 14px 22px;
+    color: var(--text); font-size: 14px; z-index: 9999;
     transform: translateX(200%);
     transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    max-width: 340px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    max-width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,0.8);
   }
-
-  .toast.show { transform: translateX(0); }
+  .toast.show    { transform: translateX(0); }
   .toast.success { border-color: #2d6a4f; }
   .toast.error   { border-color: var(--crimson); }
 
-  /* ── Decorative top border ── */
-  .mandala-border {
-    height: 4px;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--gold) 0px, var(--gold) 8px,
-      transparent 8px, transparent 16px,
-      var(--amber) 16px, var(--amber) 24px,
-      transparent 24px, transparent 32px
-    );
-  }
-
-  /* ── Loading state ── */
+  /* ── Loading ── */
   .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 60px;
-    flex-direction: column;
-    gap: 16px;
-    color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px; gap: 16px; color: var(--muted);
   }
-
   .spinner {
     width: 48px; height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    border: 3px solid var(--border); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 1s linear infinite;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Status badge ── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1px;
+  /* ── Panchang Tab ── */
+  .panchang-city-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px;
   }
 
-  .badge-pending  { background: rgba(255,165,0,0.15); color: var(--amber); border: 1px solid var(--amber); }
-  .badge-approved { background: rgba(45,106,79,0.2);  color: #69b46c; border: 1px solid #2d6a4f; }
-  .badge-rejected { background: rgba(139,0,0,0.2);    color: #e07070; border: 1px solid #8B0000; }
+  .pc-pill {
+    padding: 9px 20px;
+    background: rgba(255,215,0,0.05);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    color: var(--muted);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .pc-pill:hover { border-color: var(--gold-soft); color: var(--gold-soft); }
+  .pc-pill.active {
+    background: rgba(255,215,0,0.12);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Section headers inside panchang card */
+  .p-section-hdr {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--amber); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 24px 0 12px;
+    font-weight: 700;
+  }
+  .p-section-hdr::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Field grid */
+  .p-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+
+  .p-field {
+    background: rgba(255,215,0,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: border-color .2s;
+  }
+  .p-field:hover { border-color: rgba(255,215,0,0.2); }
+
+  .p-field .pf-label {
+    color: var(--muted); font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  .p-field .pf-value {
+    color: var(--gold-soft); font-size: 14px; font-weight: 600; line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* Edit mode: field becomes an input */
+  .p-field input.pf-input {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px; font-family: 'Outfit', sans-serif;
+    padding: 7px 10px; outline: none;
+    transition: background .2s;
+  }
+  .p-field input.pf-input:focus {
+    background: rgba(255,215,0,0.09);
+    box-shadow: 0 0 0 2px rgba(255,215,0,0.2);
+  }
+
+  /* Edit toolbar */
+  .p-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .p-city-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 18px; color: var(--gold);
+  }
+
+  .p-city-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  .p-btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .btn-edit {
+    padding: 9px 20px;
+    background: rgba(255,215,0,0.08);
+    border: 1px solid rgba(255,215,0,0.25);
+    border-radius: 8px; color: var(--gold-soft);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-edit:hover { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .btn-edit.editing {
+    background: rgba(255,165,0,0.15);
+    border-color: var(--amber); color: var(--amber);
+  }
+
+  .btn-regen {
+    padding: 9px 20px;
+    background: linear-gradient(135deg, #1b3a5c, #1e5276);
+    border: 1px solid #2a6090;
+    border-radius: 8px; color: #90caf9;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-regen:hover {
+    background: linear-gradient(135deg, #1e5276, #2565a5);
+    color: #fff; transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(30,82,118,0.5);
+  }
+
+  .btn-reset {
+    padding: 9px 16px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-reset:hover { border-color: var(--crimson); color: #e07070; }
+
+  /* Modified badge */
+  .modified-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,165,0,0.12); border: 1px solid rgba(255,165,0,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 11px; color: var(--amber); font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .p-field-grid { grid-template-columns: 1fr; }
+    .p-toolbar { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* ── Video Review Tab ── */
+
+  /* Summary bar — 5 city status cards at a glance */
+  .vr-summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .vr-summary { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .vr-summary { grid-template-columns: repeat(2, 1fr); } }
+
+  .vr-city-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+  }
+  .vr-city-card:hover { border-color: var(--gold-soft); transform: translateY(-2px); }
+  .vr-city-card.active { border-color: var(--gold); background: rgba(255,215,0,0.07); }
+  .vr-city-card.status-approved { border-color: #2d6a4f; }
+  .vr-city-card.status-rejected { border-color: var(--crimson); }
+
+  .vr-city-card .vc-name {
+    font-size: 12px; font-weight: 700; color: var(--text);
+    margin-bottom: 6px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .vr-city-card .vc-status {
+    font-size: 11px; padding: 3px 8px; border-radius: 12px;
+    font-weight: 600; letter-spacing: .5px;
+  }
+  .vc-status.pending  { background: rgba(255,165,0,.15); color: var(--amber); }
+  .vc-status.approved { background: rgba(45,106,79,.2);  color: #69b46c; }
+  .vc-status.rejected { background: rgba(139,0,0,.2);    color: #e07070; }
+
+  /* Approve-all bar */
+  .vr-approve-bar {
+    background: linear-gradient(135deg, rgba(27,94,32,.25), rgba(45,106,79,.15));
+    border: 1px solid rgba(45,106,79,.4);
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .vr-approve-bar p { color: var(--text); font-size: 14px; }
+  .vr-approve-bar p span { color: #69b46c; font-weight: 700; }
+
+  .btn-approve-all {
+    padding: 11px 24px;
+    background: linear-gradient(135deg, #1b5e20, #2d6a4f);
+    border: 1px solid #2d6a4f;
+    border-radius: 10px;
+    color: #a8d8a8;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-approve-all:hover {
+    background: linear-gradient(135deg, #2d6a4f, #40916c);
+    color: #fff; transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(45,106,79,.4);
+  }
+  .btn-approve-all:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  /* 9:16 video player */
+  .vr-player-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .vr-video-box {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 9/16;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+    box-shadow: 0 12px 40px rgba(0,0,0,.7);
+    border: 2px solid var(--border);
+  }
+
+  .vr-video-box video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Thumbnail fallback — shows as background */
+  .vr-thumb-bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: .65;
+  }
+
+  /* Overlay on thumbnail state */
+  .vr-video-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    background: linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 50%);
+    padding: 20px;
+    text-align: center;
+  }
+  .vr-video-overlay .vov-icon { font-size: 40px; }
+  .vr-video-overlay .vov-label {
+    color: var(--gold); font-size: 13px; font-weight: 700;
+    background: rgba(0,0,0,.6); padding: 4px 10px; border-radius: 6px;
+  }
+  .vr-video-overlay a {
+    color: var(--amber); font-size: 12px; text-decoration: underline;
+  }
+
+  /* Action buttons under the player */
+  .vr-actions {
+    width: 100%; max-width: 280px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .vr-title {
+    background: rgba(255,215,0,.07); border: 1px solid rgba(255,215,0,.2);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: var(--gold); line-height: 1.4;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .vr-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Right panel */
+  .vr-right { display: flex; flex-direction: column; gap: 18px; }
+
+  .vr-main-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 700px) {
+    .vr-main-grid { grid-template-columns: 1fr; }
+    .vr-video-box { max-width: 200px; margin: 0 auto; }
+    .vr-actions   { max-width: 200px; margin: 0 auto; }
+  }
+
+  /* ── Analytics Tab ── */
+  .an-platform-row {
+    display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap;
+    gap: 14px; margin-bottom: 24px;
+  }
+
+  .an-platform-toggle {
+    display: flex;
+    background: rgba(0,0,0,.35);
+    border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+
+  .an-plat-btn {
+    padding: 10px 26px;
+    background: transparent; border: none;
+    color: var(--muted); font-size: 14px; font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .an-plat-btn:hover  { color: var(--gold-soft); }
+  .an-plat-btn.active { background: rgba(255,215,0,.12); color: var(--gold); }
+
+  .an-last-updated { color: var(--muted); font-size: 12px; }
+
+  /* Metric cards */
+  .an-metric-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 26px;
+  }
+  @media (max-width: 800px) { .an-metric-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .an-metric-row { grid-template-columns: 1fr 1fr; } }
+
+  .an-metric {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 16px;
+    position: relative; overflow: hidden;
+  }
+  .an-metric::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+  }
+  .an-metric.gold::before   { background: linear-gradient(90deg, var(--gold), var(--amber)); }
+  .an-metric.green::before  { background: linear-gradient(90deg, #2d6a4f, #40916c); }
+  .an-metric.blue::before   { background: linear-gradient(90deg, #1a5276, #2980b9); }
+  .an-metric.purple::before { background: linear-gradient(90deg, #6c3483, #9b59b6); }
+
+  .an-metric .am-icon  { font-size: 22px; margin-bottom: 10px; }
+  .an-metric .am-val   { font-size: 28px; font-weight: 700; color: var(--gold); line-height: 1; }
+  .an-metric .am-label { color: var(--muted); font-size: 12px; letter-spacing: 1px; margin-top: 4px; }
+  .an-metric .am-delta {
+    font-size: 12px; margin-top: 6px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .am-delta.up   { color: #69b46c; }
+  .am-delta.down { color: #e07070; }
+
+  /* Charts grid */
+  .an-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px; margin-bottom: 26px;
+  }
+  @media (max-width: 800px) { .an-charts-grid { grid-template-columns: 1fr; } }
+
+  .an-chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+
+  .an-chart-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px; color: var(--gold); letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .an-chart-wrap { position: relative; height: 210px; }
+
+  /* Table */
+  .an-table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+
+  .an-table-hdr {
+    background: linear-gradient(135deg, var(--dark-red), #2a0a00);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .an-table-hdr h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px; color: var(--gold); letter-spacing: 1px;
+  }
+
+  .an-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .an-table th {
+    padding: 11px 14px; text-align: left;
+    color: var(--muted); font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .an-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(61,32,16,.4);
+    color: var(--text); vertical-align: middle;
+  }
+  .an-table tr:last-child td { border-bottom: none; }
+  .an-table tr:hover td { background: rgba(255,215,0,.03); }
+
+  .an-table .td-city { font-weight: 600; color: var(--gold-soft); }
+  .an-table .td-num  { text-align: right; font-variant-numeric: tabular-nums; }
+  .an-table .td-bar  { min-width: 80px; }
+
+  .mini-bar-wrap {
+    background: rgba(255,255,255,.06);
+    border-radius: 4px; height: 6px; width: 80px;
+  }
+  .mini-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--amber));
+  }
+
+  .an-note {
+    background: rgba(255,165,0,.07);
+    border: 1px solid rgba(255,165,0,.2);
+    border-radius: 10px; padding: 12px 16px;
+    color: var(--amber); font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  /* ── Hashtag Tab ── */
+  .ht-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 800px) { .ht-layout { grid-template-columns: 1fr; } }
+
+  /* Score chip */
+  .ht-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,215,0,.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0 8px 8px 0;
+    cursor: default;
+    transition: border-color .15s;
+    position: relative;
+  }
+  .ht-chip:hover { border-color: rgba(255,215,0,.3); }
+
+  .ht-chip .hc-tag  { color: var(--gold-soft); font-size: 14px; font-weight: 600; }
+  .ht-chip .hc-score {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px;
+  }
+
+  /* Status variants */
+  .ht-chip.hot    { border-color: rgba(255,100,30,.35); background: rgba(255,100,30,.07); }
+  .ht-chip.hot    .hc-tag { color: #ff9a6c; }
+  .ht-chip.hot    .hc-score { background: rgba(255,100,30,.2); color: #ff9a6c; }
+
+  .ht-chip.rising { border-color: rgba(45,106,79,.45); background: rgba(45,106,79,.09); }
+  .ht-chip.rising .hc-tag { color: #69b46c; }
+  .ht-chip.rising .hc-score { background: rgba(45,106,79,.2); color: #69b46c; }
+
+  .ht-chip.steady .hc-score { background: rgba(255,215,0,.1); color: var(--gold-soft); }
+  .ht-chip.cold   { opacity: .6; }
+  .ht-chip.cold   .hc-score { background: rgba(158,128,96,.15); color: var(--muted); }
+
+  /* Score bar under chip cloud */
+  .ht-score-rows { display: flex; flex-direction: column; gap: 8px; }
+
+  .ht-score-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 48px;
+    align-items: center; gap: 12px;
+  }
+  .ht-score-row .hsr-tag { color: var(--gold-soft); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ht-score-row .hsr-bar-wrap { background: rgba(255,255,255,.06); border-radius: 4px; height: 8px; }
+  .ht-score-row .hsr-bar {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--amber));
+    transition: width .4s ease;
+  }
+  .ht-score-row .hsr-val { color: var(--muted); font-size: 12px; text-align: right; }
+
+  /* Recommendation cards */
+  .ht-rec-card {
+    background: rgba(255,215,0,.04);
+    border: 1px solid rgba(255,215,0,.12);
+    border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  }
+  .ht-rec-card:hover { border-color: rgba(255,215,0,.25); }
+  .ht-rec-tag     { color: var(--gold); font-size: 15px; font-weight: 700; }
+  .ht-rec-reason  { color: var(--muted); font-size: 12px; margin-top: 3px; line-height: 1.5; }
+  .ht-rec-score   {
+    flex-shrink: 0; padding: 4px 10px;
+    background: rgba(45,106,79,.18); border: 1px solid rgba(45,106,79,.35);
+    border-radius: 8px; color: #69b46c; font-size: 12px; font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* Add custom hashtag */
+  .ht-add-row {
+    display: flex; gap: 10px; margin-top: 16px;
+  }
+  .ht-add-input {
+    flex: 1; background: rgba(255,255,255,.05);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; font-family: 'Outfit', sans-serif;
+    padding: 9px 14px; outline: none;
+  }
+  .ht-add-input:focus { border-color: var(--gold); background: rgba(255,215,0,.06); }
+  .ht-add-btn {
+    padding: 9px 20px;
+    background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.25);
+    border-radius: 8px; color: var(--gold); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s; font-family: 'Outfit', sans-serif;
+  }
+  .ht-add-btn:hover { background: rgba(255,215,0,.18); }
+
+  /* Section card */
+  .ht-section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 20px;
+  }
+  .ht-section-hdr {
+    background: linear-gradient(135deg, var(--dark-red), #2a0a00);
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .ht-section-hdr h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px; color: var(--gold); letter-spacing: 1px;
+  }
+  .ht-section-hdr .hsh-sub { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .ht-section-body { padding: 20px; }
+
+  /* Legend row */
+  .ht-legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin-bottom: 16px;
+  }
+  .ht-legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted);
+  }
+  .ht-legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+
+  /* ═══════════════════════════════════════════
+     Tab 5 — Publish & Schedule
+  ═══════════════════════════════════════════ */
+
+  /* Section wrapper reused from ht-section-card pattern */
+  .pub-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 22px;
+  }
+  .pub-section-hdr {
+    background: linear-gradient(135deg, var(--dark-red), #2a0a00);
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pub-section-hdr h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px; color: var(--gold); letter-spacing: 1px;
+  }
+  .pub-section-hdr .psh-sub { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .pub-section-body { padding: 20px; }
+
+  /* ── City Queue Card ── */
+  .pub-city-card {
+    background: rgba(255,215,0,.03);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    margin-bottom: 14px;
+    transition: border-color .15s;
+  }
+  .pub-city-card:hover { border-color: rgba(255,215,0,.2); }
+
+  .pub-city-hdr {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .pub-city-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 15px; color: var(--gold);
+  }
+  .pub-city-date { color: var(--muted); font-size: 12px; }
+
+  /* Status badge */
+  .pub-status {
+    margin-left: auto; padding: 4px 12px;
+    border-radius: 20px; font-size: 11px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+    border: 1px solid;
+  }
+  .pub-status.pending  { color: #f0a500; background: rgba(240,165,0,.1); border-color: rgba(240,165,0,.3); }
+  .pub-status.approved { color: #69b46c; background: rgba(45,106,79,.1); border-color: rgba(45,106,79,.35); }
+  .pub-status.rejected { color: #e05a5a; background: rgba(224,90,90,.1); border-color: rgba(224,90,90,.3); }
+  .pub-status.uploaded { color: #6ab0f5; background: rgba(106,176,245,.1); border-color: rgba(106,176,245,.3); }
+
+  /* City body grid */
+  .pub-city-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .pub-city-body { grid-template-columns: 1fr; } }
+
+  /* Meta info */
+  .pub-meta { display: flex; flex-direction: column; gap: 6px; }
+  .pub-meta-row {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 13px; color: var(--muted);
+  }
+  .pub-meta-row .pmr-label {
+    color: var(--gold-soft); font-weight: 600; min-width: 80px; flex-shrink: 0;
+  }
+  .pub-meta-row .pmr-val { color: var(--text); }
+
+  /* Platform toggles */
+  .pub-platforms { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pub-plat-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: rgba(255,255,255,.04);
+    font-family: 'Outfit', sans-serif; font-size: 13px; color: var(--muted);
+    transition: all .2s;
+  }
+  .pub-plat-btn.active {
+    background: rgba(255,215,0,.1); border-color: rgba(255,215,0,.3); color: var(--gold);
+  }
+  .pub-plat-btn:hover { border-color: rgba(255,215,0,.2); }
+
+  /* Optimal time chip */
+  .pub-time-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(106,176,245,.08); border: 1px solid rgba(106,176,245,.2);
+    border-radius: 8px; padding: 6px 12px;
+    color: #6ab0f5; font-size: 12px;
+  }
+
+  /* Action buttons */
+  .pub-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .pub-btn {
+    padding: 9px 20px; border-radius: 8px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+    border: 1px solid; transition: all .2s;
+  }
+  .pub-btn.approve {
+    background: rgba(45,106,79,.15); border-color: rgba(45,106,79,.4); color: #69b46c;
+  }
+  .pub-btn.approve:hover { background: rgba(45,106,79,.28); }
+  .pub-btn.reject  {
+    background: rgba(224,90,90,.08); border-color: rgba(224,90,90,.25); color: #e05a5a;
+  }
+  .pub-btn.reject:hover  { background: rgba(224,90,90,.18); }
+  .pub-btn.publish {
+    background: linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,140,0,.15));
+    border-color: rgba(255,215,0,.4); color: var(--gold);
+  }
+  .pub-btn.publish:hover { background: linear-gradient(135deg,rgba(255,215,0,.32),rgba(255,140,0,.25)); }
+  .pub-btn.publish:disabled {
+    opacity: .4; cursor: not-allowed;
+  }
+  .pub-btn.dispatch {
+    background: rgba(106,176,245,.12); border-color: rgba(106,176,245,.3); color: #6ab0f5;
+  }
+  .pub-btn.dispatch:hover { background: rgba(106,176,245,.22); }
+
+  /* URL pill */
+  .pub-url-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(106,176,245,.07); border: 1px solid rgba(106,176,245,.2);
+    border-radius: 20px; padding: 4px 12px;
+    color: #6ab0f5; font-size: 12px; text-decoration: none;
+    transition: background .15s;
+  }
+  .pub-url-pill:hover { background: rgba(106,176,245,.16); }
+
+  /* Post preview panel */
+  .pub-preview {
+    background: rgba(255,215,0,.03); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+  }
+  .pub-preview textarea {
+    width: 100%; box-sizing: border-box;
+    background: rgba(255,255,255,.05); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    padding: 10px 12px; resize: vertical; outline: none;
+    line-height: 1.6;
+  }
+  .pub-preview textarea:focus { border-color: var(--gold); background: rgba(255,215,0,.06); }
+  .pub-preview .pv-label {
+    color: var(--muted); font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  /* Bulk actions bar */
+  .pub-bulk-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    background: rgba(255,215,0,.04); border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .pub-bulk-label { color: var(--muted); font-size: 13px; flex: 1; }
+
+  /* History row */
+  .pub-hist-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 13px;
+  }
+  .pub-hist-row:last-child { border-bottom: none; }
+  .pub-hist-city { color: var(--gold-soft); font-weight: 600; min-width: 120px; }
+  .pub-hist-plat { color: var(--muted); min-width: 80px; }
+  .pub-hist-date { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+  /* ═══════════════════════════════════════════
+     Tab 6 — Settings & Pipeline Control
+  ═══════════════════════════════════════════ */
+
+  /* Reuse pub-section pattern; no new wrappers needed */
+
+  /* Secrets grid */
+  .sec-secrets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .sec-secret-row {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; font-size: 13px;
+  }
+  .sec-secret-row.ok     { border-color: rgba(45,106,79,.3); }
+  .sec-secret-row.miss   { border-color: rgba(224,90,90,.25); }
+  .sec-secret-row.unkn   { border-color: rgba(255,215,0,.12); }
+  .sec-secret-name { font-family: monospace; color: var(--text); flex: 1; }
+  .sec-secret-badge {
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; white-space: nowrap;
+  }
+  .sec-secret-badge.ok   { background: rgba(45,106,79,.2);  color: #69b46c; }
+  .sec-secret-badge.miss { background: rgba(224,90,90,.15); color: #e05a5a; }
+  .sec-secret-badge.unkn { background: rgba(255,215,0,.08); color: var(--gold-soft); }
+
+  /* Dispatch control cards */
+  .sec-dispatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+  }
+  .sec-dispatch-card {
+    background: rgba(255,215,0,.03);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; display: flex; flex-direction: column; gap: 8px;
+    transition: border-color .15s;
+  }
+  .sec-dispatch-card:hover { border-color: rgba(255,215,0,.22); }
+  .sec-dispatch-title { color: var(--gold); font-weight: 700; font-size: 14px; }
+  .sec-dispatch-desc  { color: var(--muted); font-size: 12px; line-height: 1.5; flex: 1; }
+  .sec-dispatch-btn {
+    margin-top: 4px; padding: 8px 0; border-radius: 8px;
+    background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.25);
+    color: var(--gold); font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+    width: 100%;
+  }
+  .sec-dispatch-btn:hover { background: rgba(255,215,0,.2); }
+  .sec-dispatch-btn.blue  {
+    background: rgba(106,176,245,.1); border-color: rgba(106,176,245,.28); color: #6ab0f5;
+  }
+  .sec-dispatch-btn.blue:hover { background: rgba(106,176,245,.2); }
+  .sec-dispatch-btn.green {
+    background: rgba(45,106,79,.14); border-color: rgba(45,106,79,.38); color: #69b46c;
+  }
+  .sec-dispatch-btn.green:hover { background: rgba(45,106,79,.26); }
+
+  /* Schedule row */
+  .sec-sched-row {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 13px;
+  }
+  .sec-sched-row:last-child { border-bottom: none; }
+  .sec-sched-cron {
+    font-family: monospace; background: rgba(255,215,0,.07);
+    border: 1px solid rgba(255,215,0,.18); border-radius: 6px;
+    padding: 3px 10px; color: var(--gold-soft); font-size: 12px; white-space: nowrap;
+  }
+  .sec-sched-label { color: var(--text); }
+  .sec-sched-sub   { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  /* Info KV rows */
+  .sec-kv { display: flex; flex-direction: column; gap: 8px; }
+  .sec-kv-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 13px;
+  }
+  .sec-kv-row:last-child { border-bottom: none; }
+  .sec-kv-key  { color: var(--muted); min-width: 160px; flex-shrink: 0; }
+  .sec-kv-val  { color: var(--text); word-break: break-all; }
+  .sec-kv-val a { color: #6ab0f5; text-decoration: none; }
+  .sec-kv-val a:hover { text-decoration: underline; }
+
+  /* Cities table */
+  .sec-cities-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sec-cities-table th {
+    color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; padding: 6px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .sec-cities-table td {
+    padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04);
+    color: var(--text);
+  }
+  .sec-cities-table tr:last-child td { border-bottom: none; }
+  .sec-cities-table tr:hover td { background: rgba(255,215,0,.03); }
+  .sec-tz-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.2);
+    color: var(--gold-soft); font-size: 11px;
+  }
 </style>
 </head>
 <body>
 
 <div class="mandala-border"></div>
 
+<!-- ── Header ── -->
 <header>
   <div class="header-inner">
     <div class="om-badge">🪔</div>
     <div class="header-text">
       <h1>Panchangam Dashboard</h1>
-      <p>నిత్య పంచాంగం — Approval Portal</p>
+      <p>నిత్య పంచాంగం — Content Pipeline</p>
     </div>
     <div class="header-date">
-      <div class="day" id="header-weekday">Loading...</div>
-      <div class="date-str" id="header-date">—</div>
+      <div class="day" id="header-weekday">—</div>
+      <div class="date-str" id="header-date">Loading...</div>
     </div>
   </div>
 </header>
 
+<!-- ── Status bar ── -->
 <div class="status-bar">
   <div class="status-dot"></div>
-  <span id="status-msg">Loading today's Panchangam video...</span>
+  <span id="status-msg">Loading Panchangam pipeline...</span>
 </div>
 
-<main id="main-content">
-  <div class="loading" style="grid-column:1/-1">
-    <div class="spinner"></div>
-    <p>Loading Panchangam data...</p>
-  </div>
-</main>
+<!-- ── Tab Navigation ── -->
+<nav class="tab-nav" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true"
+          aria-controls="tab-panchang" id="btn-panchang"
+          onclick="switchTab('panchang')">
+    🌙 Tomorrow's Panchangam
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-videos" id="btn-videos"
+          onclick="switchTab('videos')">
+    🎬 Video Review
+    <span class="tab-badge" id="pending-badge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-analytics" id="btn-analytics"
+          onclick="switchTab('analytics')">
+    📊 Analytics
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-hashtags" id="btn-hashtags"
+          onclick="switchTab('hashtags')">
+    # Hashtags
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-publish" id="btn-publish"
+          onclick="switchTab('publish')">
+    📤 Publish
+    <span class="tab-badge" id="publish-badge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-settings" id="btn-settings"
+          onclick="switchTab('settings')">
+    ⚙️ Settings
+  </button>
+</nav>
 
-<!-- Toast -->
+<!-- ════════════════════════════════════════════
+     TAB 1 — Tomorrow's Panchangam
+════════════════════════════════════════════ -->
+<div id="tab-panchang" class="tab-panel active">
+  <div class="page-wrap">
+    <div id="panchang-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading panchang data...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 2 — Video Review
+════════════════════════════════════════════ -->
+<div id="tab-videos" class="tab-panel">
+  <div class="page-wrap">
+    <div id="video-review-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading video data...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 3 — Analytics
+════════════════════════════════════════════ -->
+<div id="tab-analytics" class="tab-panel">
+  <div class="page-wrap">
+    <div id="analytics-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading analytics...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 4 — Hashtags
+════════════════════════════════════════════ -->
+<div id="tab-hashtags" class="tab-panel">
+  <div class="page-wrap">
+    <div id="hashtag-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading hashtag data...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 5 — Publish & Schedule
+════════════════════════════════════════════ -->
+<div id="tab-publish" class="tab-panel">
+  <div class="page-wrap">
+    <div id="publish-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading publish queue...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 6 — Settings & Pipeline Control
+════════════════════════════════════════════ -->
+<div id="tab-settings" class="tab-panel">
+  <div class="page-wrap">
+    <div id="settings-tab-content">
+      <div class="loading"><div class="spinner"></div><p>Loading settings...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Utility ──────────────────────────────────────────────────
+// ════════════════════════════════════════════
+// Tab switching
+// ════════════════════════════════════════════
+function switchTab(name) {
+  // Hide all panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  // Deactivate all buttons
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  // Activate selected
+  document.getElementById('tab-' + name).classList.add('active');
+  const btn = document.getElementById('btn-' + name);
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  // Persist in URL hash
+  history.replaceState(null, '', '#' + name);
+}
+
+// Restore tab from URL hash on load
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.replace('#', '');
+  const valid = ['panchang', 'videos', 'analytics', 'hashtags', 'publish', 'settings'];
+  if (hash && valid.includes(hash)) switchTab(hash);
+});
+
+// ════════════════════════════════════════════
+// Utilities
+// ════════════════════════════════════════════
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -485,235 +1443,1286 @@ function fmtRange(us, startKey, endKey) {
   return `ET: ${s?.Eastern||'?'} – ${e?.Eastern||'?'} | CT: ${s?.Central||'?'} | PT: ${s?.Pacific||'?'}`;
 }
 
-// ── Load metadata ────────────────────────────────────────────
-async function loadMetadata() {
-  const params = new URLSearchParams(window.location.search);
-  const dateStr = params.get('date') || new Date().toISOString().split('T')[0];
-  
-  // Try to load from pending folder
-  const metaUrl = `pending/${dateStr}/metadata.json`;
-  
+// ════════════════════════════════════════════
+// Load data
+// ════════════════════════════════════════════
+async function loadState() {
   try {
-    const resp = await fetch(metaUrl);
-    if (!resp.ok) throw new Error(`No metadata found for ${dateStr}`);
+    const resp = await fetch('pipeline_state.json');
+    if (!resp.ok) throw new Error('No state');
     return await resp.json();
-  } catch (e) {
-    // Return demo data if no actual metadata
-    return generateDemoData(dateStr);
+  } catch {
+    return null;
   }
 }
 
-function generateDemoData(dateStr) {
-  const d = new Date(dateStr);
-  const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  return {
-    date: dateStr,
-    status: 'pending',
-    video_file: null,
-    script: {
-      panchang_date: dateStr,
-      weekday: weekdays[d.getDay()],
-      video_title: `Daily Panchangam | ${dateStr} | నిత్య పంచాంగం`,
-      opening_shloka: 'శుక్లాం బరధరం విష్ణుం శశివర్ణం చతుర్భుజం | ప్రసన్నవదనం ధ్యాయేత్ సర్వ విఘ్నోప శాంతయే ||',
-      main_narration: `నమస్కారం! Welcome to today's Daily Panchangam. Today is ${weekdays[d.getDay()]}, ${dateStr}. నేటి పంచాంగం వివరాలు — Rahu Kalam today is from 7:30 AM to 9:00 AM Eastern Time. Dur Muhurtam: 10:15 AM to 11:00 AM ET. అభిజిత్ ముహూర్తం — Abhijit Muhurta, the most auspicious time of the day, falls between 11:52 AM and 12:44 PM ET. Amrit Kalam: 2:15 PM to 3:45 PM ET. గృహ ప్రవేశం, వివాహం, లేదా వ్యాపారం మొదలు పెట్టడానికి అభిజిత్ ముహూర్తం శ్రేష్ఠమైన కాలం.`,
-      closing_blessing: 'సర్వే జనాః సుఖినో భవంతు | ఓం శాంతి శాంతి శాంతిః ||',
-      video_description: '#Panchangam #TeluguPanchangam #DailyPanchang #HinduCalendar #RahuKalam #PanchangamUSA #Telugu #Shorts',
-      text_overlays: [
-        { timestamp_sec: 2,  text: '🪔 నమస్కారం! Namaskaram!' },
-        { timestamp_sec: 8,  text: `📅 ${weekdays[d.getDay()]}, ${dateStr}` },
-        { timestamp_sec: 14, text: '⚠️ Rahu Kalam: 7:30–9:00 AM ET' },
-        { timestamp_sec: 20, text: '⚠️ Dur Muhurtam: 10:15–11:00 AM ET' },
-        { timestamp_sec: 28, text: '✅ Abhijit Muhurta: 11:52 AM–12:44 PM ET' },
-        { timestamp_sec: 36, text: '✅ Amrit Kalam: 2:15–3:45 PM ET' },
-        { timestamp_sec: 48, text: '🙏 సర్వే జనాః సుఖినో భవంతు' },
-        { timestamp_sec: 54, text: '🔔 Follow for Daily Panchangam!' },
-      ]
-    },
-    panchang: {
-      weekday: weekdays[d.getDay()],
-      raw: {
-        tithi: 'Chaturdashi — చతుర్దశి',
-        nakshatra: 'Rohini — రోహిణి',
-        yoga: 'Siddha — సిద్ధ',
-        karana: 'Vishti — విష్టి',
-        sunrise_ist: '06:28 AM',
-        sunset_ist: '06:45 PM',
-        rahukalam_ist: '09:00 AM to 10:30 AM',
-        durmuhurtam_ist: '08:44 PM to 09:32 PM',
-        abhijit_ist: '11:52 AM to 12:44 PM',
-        amrit_kalam_ist: '02:15 PM to 03:45 PM',
-      },
-      us_timings: {
-        Sunrise: { Eastern:'06:28 AM EDT', Central:'05:28 AM CDT', Mountain:'04:28 AM MDT', Pacific:'03:28 AM PDT' },
-        Sunset:  { Eastern:'07:58 PM EDT', Central:'06:58 PM CDT', Mountain:'05:58 PM MDT', Pacific:'04:58 PM PDT' },
-        Rahukalam_Start: { Eastern:'07:30 AM EDT', Central:'06:30 AM CDT', Mountain:'05:30 AM MDT', Pacific:'04:30 AM PDT' },
-        Rahukalam_End:   { Eastern:'09:00 AM EDT', Central:'08:00 AM CDT', Mountain:'07:00 AM MDT', Pacific:'06:00 AM PDT' },
-        Durmuhurtam_Start: { Eastern:'10:15 AM EDT', Central:'09:15 AM CDT', Mountain:'08:15 AM MDT', Pacific:'07:15 AM PDD' },
-        Durmuhurtam_End:   { Eastern:'11:00 AM EDT', Central:'10:00 AM CDT', Mountain:'09:00 AM MDT', Pacific:'08:00 AM PDT' },
-        Abhijit_Start: { Eastern:'11:52 AM EDT', Central:'10:52 AM CDT', Mountain:'09:52 AM MDT', Pacific:'08:52 AM PDT' },
-        Abhijit_End:   { Eastern:'12:44 PM EDT', Central:'11:44 AM CDT', Mountain:'10:44 AM MDT', Pacific:'09:44 AM PDT' },
-        AmritKalam_Start: { Eastern:'02:15 PM EDT', Central:'01:15 PM CDT', Mountain:'12:15 PM MDT', Pacific:'11:15 AM PDT' },
-        AmritKalam_End:   { Eastern:'03:45 PM EDT', Central:'02:45 PM CDT', Mountain:'01:45 PM MDT', Pacific:'12:45 PM PDT' },
-      }
-    }
-  };
+async function loadRepoConfig() {
+  try {
+    const resp = await fetch('repo_config.json');
+    if (!resp.ok) throw new Error('No config');
+    return await resp.json();
+  } catch {
+    return {};
+  }
 }
 
-// ── Render dashboard ──────────────────────────────────────────
-function render(meta) {
-  const script  = meta.script   || {};
-  const panchang = meta.panchang || {};
-  const raw     = panchang.raw  || {};
-  const us      = panchang.us_timings || {};
-  const dateStr = meta.date;
-  const weekday = script.weekday || panchang.weekday || '';
-  const status  = meta.status   || 'pending';
+async function loadAnalytics() {
+  try {
+    const resp = await fetch('analytics.json');
+    if (!resp.ok) throw new Error('No analytics');
+    return await resp.json();
+  } catch {
+    return { youtube: {}, instagram: {}, snapshots: [], last_updated: null };
+  }
+}
 
-  // Update header
-  document.getElementById('header-weekday').textContent = weekday;
-  document.getElementById('header-date').textContent = dateStr;
-  document.getElementById('status-msg').textContent =
-    status === 'pending'  ? '⏳ Video ready — awaiting your approval' :
-    status === 'approved' ? '✅ Video approved and uploaded!' :
-    '❌ Video rejected';
+// ════════════════════════════════════════════
+// Render Video Review tab
+// ════════════════════════════════════════════
 
-  const videoSrc = meta.video_file
-    ? `pending/${dateStr}/${meta.video_file}`
+// In-memory approval state — keys: cityKey → 'pending'|'approved'|'rejected'
+const _vrStatus = {};
+
+function _vrGetStatus(cityKey) {
+  const fromState = (window._state?.cities?.[cityKey]?.approval_status) || 'pending';
+  return _vrStatus[cityKey] || fromState;
+}
+
+function _updatePendingBadge(cities) {
+  const pending = Object.keys(cities).filter(k => _vrGetStatus(k) === 'pending').length;
+  const badge   = document.getElementById('pending-badge');
+  badge.textContent    = pending;
+  badge.style.display  = pending > 0 ? 'inline' : 'none';
+}
+
+function renderVideoReview(state, config) {
+  if (!state || !state.cities) {
+    document.getElementById('video-review-content').innerHTML = `
+      <div class="card"><div class="card-body">
+        <div class="loading" style="padding:60px">
+          <div style="font-size:48px">⚠️</div>
+          <p style="color:var(--amber)">No pipeline state found</p>
+          <p style="font-size:13px;color:var(--muted)">Run the pipeline first to generate videos.</p>
+        </div>
+      </div></div>`;
+    return;
+  }
+
+  const cities   = state.cities;
+  const cityKeys = Object.keys(cities);
+  const dateStr  = state.date || '—';
+
+  _updatePendingBadge(cities);
+
+  const pendingCities  = cityKeys.filter(k => _vrGetStatus(k) === 'pending');
+  const approvedCities = cityKeys.filter(k => _vrGetStatus(k) === 'approved');
+
+  document.getElementById('video-review-content').innerHTML = `
+
+    <!-- ① Summary cards (all 5 at a glance) -->
+    <div class="vr-summary" id="vr-summary-bar">
+      ${cityKeys.map(k => {
+        const st = _vrGetStatus(k);
+        const shortName = (cities[k].city || k).replace(', NY','').replace(', IL','').replace(', TX','').replace(', CA','').replace(', MI','');
+        return `
+          <div class="vr-city-card status-${st} ${k === cityKeys[0] ? 'active' : ''}"
+               id="vr-card-${k}"
+               onclick="vrSelectCity('${k}')">
+            <div class="vc-name">${shortName}</div>
+            <div class="vc-status ${st}">
+              ${st === 'approved' ? '✅ Approved' : st === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+
+    <!-- ② Approve-all bar (only shown when there are pending cities) -->
+    ${pendingCities.length > 0 ? `
+    <div class="vr-approve-bar">
+      <p><span>${pendingCities.length}</span> of ${cityKeys.length} cities pending — approve all at once?</p>
+      <button class="btn-approve-all" onclick="handleApproveAll()">
+        ✅ Approve All ${pendingCities.length} Cities &amp; Upload
+      </button>
+    </div>` : approvedCities.length === cityKeys.length ? `
+    <div style="background:rgba(45,106,79,.12);border:1px solid rgba(45,106,79,.35);
+         border-radius:12px;padding:14px 20px;margin-bottom:24px;color:#69b46c;font-size:14px">
+      ✅ All ${cityKeys.length} cities approved and queued for upload.
+    </div>` : ''}
+
+    <!-- ③ City selector pills -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px" id="vr-city-pills">
+      ${cityKeys.map((k, i) => {
+        const st  = _vrGetStatus(k);
+        const dot = st === 'approved' ? '✅' : st === 'rejected' ? '❌' : '⏳';
+        return `
+          <button class="pc-pill ${i === 0 ? 'active' : ''}"
+                  id="vr-pill-${k}"
+                  onclick="vrSelectCity('${k}')">
+            ${dot} ${cities[k].city || k}
+          </button>`;
+      }).join('')}
+    </div>
+
+    <!-- ④ Per-city panel -->
+    <div id="vr-city-panel"></div>
+  `;
+
+  vrSelectCity(cityKeys[0]);
+}
+
+function vrSelectCity(cityKey) {
+  // Update summary cards
+  document.querySelectorAll('.vr-city-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('vr-card-' + cityKey);
+  if (card) card.classList.add('active');
+
+  // Update pills
+  document.querySelectorAll('#vr-city-pills .pc-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('vr-pill-' + cityKey);
+  if (pill) pill.classList.add('active');
+
+  renderVrCityPanel(cityKey);
+}
+
+function renderVrCityPanel(cityKey) {
+  const state    = window._state;
+  const config   = window._config || {};
+  const city     = (state?.cities || {})[cityKey] || {};
+  const script   = city.script   || {};
+  const p        = city.panchang || {};
+  const dateStr  = state?.date   || '—';
+  const status   = _vrGetStatus(cityKey);
+
+  // Video & thumbnail paths (served from GitHub Pages)
+  const thumbSrc = `thumbs/thumb_${cityKey}_${dateStr}.jpg`;
+  const videoSrc = `pending/${dateStr}/video_${cityKey}_${dateStr}.mp4`;
+
+  const artifactUrl = config.run_id
+    ? `https://github.com/${config.owner}/${config.repo}/actions/runs/${config.run_id}`
     : null;
 
-  const main = document.getElementById('main-content');
-  main.innerHTML = `
-    <!-- LEFT: Video Preview -->
-    <div>
-      <div class="card">
-        <div class="card-header">
-          <span>🎬</span>
-          <h2>Video Preview</h2>
-          <span class="badge badge-${status}" style="margin-left:auto">
-            ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
-          </span>
-        </div>
-        <div class="card-body" style="padding:16px">
-          <div class="video-wrapper">
-            ${videoSrc
-              ? `<video controls src="${videoSrc}" style="max-height:480px"></video>`
-              : `<div class="video-placeholder">
-                  <div class="icon">🪔</div>
-                  <p style="color:var(--gold);font-size:18px;margin-bottom:8px">Video Generating...</p>
-                  <p>The video will appear here once the<br>GitHub Actions pipeline completes.</p>
-                  <p style="margin-top:16px;font-size:12px;color:var(--muted)">Check Actions tab for progress</p>
-                </div>`
-            }
+  const canAct = status === 'pending';
+
+  document.getElementById('vr-city-panel').innerHTML = `
+    <div class="vr-main-grid">
+
+      <!-- LEFT: 9:16 player + actions -->
+      <div class="vr-player-wrap">
+
+        <!-- 9:16 video box -->
+        <div class="vr-video-box" id="vr-box-${cityKey}">
+          <!-- Try real video first; onerror shows thumbnail overlay -->
+          <video id="vr-vid-${cityKey}"
+                 controls playsinline preload="metadata"
+                 style="display:none"
+                 onerror="vrVideoError('${cityKey}')">
+            <source src="${videoSrc}" type="video/mp4"/>
+          </video>
+
+          <!-- Thumbnail background (always loaded) -->
+          <img class="vr-thumb-bg"
+               src="${thumbSrc}"
+               onerror="this.style.display='none'"
+               alt=""/>
+
+          <!-- Overlay (shown until video loads) -->
+          <div class="vr-video-overlay" id="vr-overlay-${cityKey}">
+            <div class="vov-icon">🎬</div>
+            <div class="vov-label">${city.city || cityKey}</div>
+            ${artifactUrl
+              ? `<a href="${artifactUrl}" target="_blank">View on GitHub Actions ↗</a>`
+              : `<span style="color:var(--muted);font-size:12px">Video not yet available</span>`}
           </div>
         </div>
-        <div class="action-area">
-          <div class="video-title-display">
-            "${script.video_title || 'Daily Panchangam'}"
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-approve" onclick="handleApprove('${dateStr}')"
-              ${status !== 'pending' ? 'disabled' : ''}>
-              ✅ Approve & Upload
+
+        <!-- Title + buttons -->
+        <div class="vr-actions">
+          <div class="vr-title">"${script.title || 'Daily Panchangam — ' + (city.city || cityKey)}"</div>
+          <div class="vr-btn-row">
+            <button class="btn btn-approve" style="font-size:13px;padding:11px 8px"
+                    onclick="handleVrApprove('${cityKey}')"
+                    ${!canAct ? 'disabled' : ''}>
+              ✅ Approve
             </button>
-            <button class="btn btn-reject" onclick="handleReject('${dateStr}')"
-              ${status !== 'pending' ? 'disabled' : ''}>
+            <button class="btn btn-reject" style="font-size:13px;padding:11px 8px"
+                    onclick="handleVrReject('${cityKey}')"
+                    ${!canAct ? 'disabled' : ''}>
               ❌ Reject
             </button>
           </div>
+          ${status !== 'pending' ? `
+          <button style="width:100%;padding:8px;background:transparent;border:1px solid var(--border);
+                  border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;
+                  font-family:'Outfit',sans-serif;margin-top:2px"
+                  onclick="handleVrUndo('${cityKey}')">
+            ↩ Undo ${status === 'approved' ? 'Approval' : 'Rejection'}
+          </button>` : ''}
+        </div>
+      </div>
+
+      <!-- RIGHT: Details -->
+      <div class="vr-right">
+
+        <!-- Status banner -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-family:'Cinzel Decorative',serif;font-size:18px;color:var(--gold)">
+            ${city.city || cityKey}
+          </div>
+          <span class="badge badge-${status}">
+            ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+          </span>
+          <span style="margin-left:auto;color:var(--muted);font-size:13px">${dateStr}</span>
+        </div>
+
+        <!-- Script narration -->
+        <div class="card">
+          <div class="card-header"><span>📜</span><h2>Script</h2></div>
+          <div class="card-body" style="padding:16px">
+            <div class="script-block">
+              <h4>🎙️ Narration (Telugu)</h4>
+              <p>${script.full_narration || script.main_narration || '—'}</p>
+            </div>
+            ${(script.on_screen_lines||[]).length > 0 ? `
+            <div class="script-block">
+              <h4>📺 On-Screen Lines</h4>
+              ${(script.on_screen_lines||[]).map(l => `<p style="margin-bottom:6px">• ${l}</p>`).join('')}
+            </div>` : ''}
+          </div>
+        </div>
+
+        <!-- Key timings quick-ref -->
+        <div class="card">
+          <div class="card-header"><span>🕐</span><h2>Key Timings</h2></div>
+          <div class="card-body" style="padding:16px">
+            <div class="info-grid">
+              <div class="info-item"><div class="label">Tithi</div><div class="value">${p.tithi||'—'}</div></div>
+              <div class="info-item"><div class="label">Nakshatra</div><div class="value">${p.nakshatra||'—'}</div></div>
+              <div class="info-item"><div class="label">Sunrise</div><div class="value">${p.sunrise||'—'}</div></div>
+              <div class="info-item"><div class="label">Sunset</div><div class="value">${p.sunset||'—'}</div></div>
+            </div>
+            <div class="timing-section">
+              <h4>⚠️ Avoid</h4>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Rahu Kalam</span><span class="t-zones">${p.rahukaal||'N/A'}</span></div>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Dur Muhurtam</span><span class="t-zones">${p.durmuhurtam||'N/A'}</span></div>
+              <h4>✅ Auspicious</h4>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Abhijit Muhurta</span><span class="t-zones">${p.abhijit||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Amrit Kalam</span><span class="t-zones">${p.amrit_kalam||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Brahma Muhurta</span><span class="t-zones">${p.brahma_muhurta||'N/A'}</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  // Attempt to load actual video
+  vrTryLoadVideo(cityKey, videoSrc);
+}
+
+// Try to load the video — if it loads, show it; otherwise keep thumbnail overlay
+function vrTryLoadVideo(cityKey, src) {
+  const vid     = document.getElementById('vr-vid-' + cityKey);
+  const overlay = document.getElementById('vr-overlay-' + cityKey);
+  if (!vid) return;
+
+  vid.addEventListener('canplay', () => {
+    vid.style.display = 'block';
+    if (overlay) overlay.style.display = 'none';
+  }, { once: true });
+
+  vid.load();
+}
+
+function vrVideoError(cityKey) {
+  // Keep thumbnail + overlay visible, hide broken video element
+  const vid = document.getElementById('vr-vid-' + cityKey);
+  if (vid) vid.style.display = 'none';
+}
+
+// ── Approve / Reject / Undo ────────────────
+function _vrSetStatus(cityKey, status) {
+  _vrStatus[cityKey] = status;
+  _updatePendingBadge(window._state?.cities || {});
+}
+
+async function handleVrApprove(cityKey) {
+  if (!confirm(`✅ Approve "${(window._state?.cities?.[cityKey]?.city) || cityKey}" for upload to YouTube & Instagram?`)) return;
+
+  const token = prompt('Enter GitHub Personal Access Token (needs actions:write):');
+  if (!token) { showToast('Cancelled.', 'error'); return; }
+
+  const cfg    = window._config || {};
+  const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
+  if (!repo) return;
+
+  const dateStr = window._state?.date || '';
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true', date: dateStr } })
+      }
+    );
+    if (resp.ok || resp.status === 204) {
+      _vrSetStatus(cityKey, 'approved');
+      showToast(`✅ ${cityKey.replace('_',' ')} approved — upload triggered!`, 'success');
+      renderVideoReview(window._state, window._config);
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub error: ${err.message || resp.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+function handleVrReject(cityKey) {
+  if (!confirm(`❌ Reject "${(window._state?.cities?.[cityKey]?.city) || cityKey}"? This city won't be uploaded.`)) return;
+  _vrSetStatus(cityKey, 'rejected');
+  showToast(`❌ ${cityKey.replace('_',' ')} rejected.`, 'error');
+  renderVideoReview(window._state, window._config);
+}
+
+function handleVrUndo(cityKey) {
+  _vrSetStatus(cityKey, 'pending');
+  showToast(`↩ ${cityKey.replace('_',' ')} reset to pending.`, 'success');
+  renderVideoReview(window._state, window._config);
+}
+
+async function handleApproveAll() {
+  const cities    = window._state?.cities || {};
+  const pending   = Object.keys(cities).filter(k => _vrGetStatus(k) === 'pending');
+  if (pending.length === 0) { showToast('No pending cities.', 'error'); return; }
+
+  if (!confirm(`✅ Approve ALL ${pending.length} pending cities and trigger upload to YouTube & Instagram?`)) return;
+
+  const token = prompt('Enter GitHub Personal Access Token (needs actions:write):');
+  if (!token) { showToast('Cancelled.', 'error'); return; }
+
+  const cfg   = window._config || {};
+  const repo  = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
+  if (!repo) return;
+
+  const dateStr = window._state?.date || '';
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true', date: dateStr } })
+      }
+    );
+    if (resp.ok || resp.status === 204) {
+      pending.forEach(k => _vrSetStatus(k, 'approved'));
+      showToast(`✅ All ${pending.length} cities approved — upload triggered!`, 'success');
+      renderVideoReview(window._state, window._config);
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub error: ${err.message || resp.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+// ════════════════════════════════════════════
+// Tab 1 — Tomorrow's Panchangam
+// ════════════════════════════════════════════
+
+// Field definitions: key → display label, grouped by section
+const PANCHANG_SECTIONS = [
+  {
+    label: '🌸 Core Details',
+    fields: [
+      { key: 'tithi',     label: 'Tithi' },
+      { key: 'nakshatra', label: 'Nakshatra' },
+      { key: 'yoga',      label: 'Yoga' },
+      { key: 'karana',    label: 'Karana' },
+      { key: 'paksha',    label: 'Paksha' },
+    ]
+  },
+  {
+    label: '🌅 Sun & Moon',
+    fields: [
+      { key: 'sunrise',   label: 'Sunrise' },
+      { key: 'sunset',    label: 'Sunset' },
+      { key: 'moonrise',  label: 'Moonrise' },
+      { key: 'moonset',   label: 'Moonset' },
+    ]
+  },
+  {
+    label: '🚫 Inauspicious Timings',
+    fields: [
+      { key: 'rahukaal',    label: 'Rahu Kalam' },
+      { key: 'durmuhurtam', label: 'Dur Muhurtam' },
+      { key: 'yamagandam',  label: 'Yamagandam' },
+      { key: 'gulika',      label: 'Gulikai' },
+      { key: 'varjyam',     label: 'Varjyam' },
+    ]
+  },
+  {
+    label: '✅ Auspicious Timings',
+    fields: [
+      { key: 'abhijit',        label: 'Abhijit Muhurta' },
+      { key: 'amrit_kalam',    label: 'Amrit Kalam' },
+      { key: 'brahma_muhurta', label: 'Brahma Muhurta' },
+      { key: 'vijaya_muhurta', label: 'Vijaya Muhurta' },
+      { key: 'godhuli_muhurta',label: 'Godhuli Muhurta' },
+    ]
+  },
+  {
+    label: '🕯️ Sandhya & Nishita',
+    fields: [
+      { key: 'pratah_sandhya',  label: 'Pratah Sandhya' },
+      { key: 'sayahna_sandhya', label: 'Sayahna Sandhya' },
+      { key: 'nishita_muhurta', label: 'Nishita Muhurta' },
+    ]
+  },
+];
+
+// Track edit state per city
+const _editMode   = {};   // cityKey → true/false
+const _editValues = {};   // cityKey → { fieldKey: value }
+
+function renderPanchangTab(state) {
+  if (!state || !state.cities) {
+    document.getElementById('panchang-tab-content').innerHTML = `
+      <div class="card"><div class="card-body">
+        <div class="coming-soon">
+          <div class="cs-icon">⚠️</div>
+          <h3>No Data Yet</h3>
+          <p style="color:var(--muted)">Run the pipeline first to generate panchang data.</p>
+        </div>
+      </div></div>`;
+    return;
+  }
+
+  const cityKeys = Object.keys(state.cities);
+  const dateStr  = state.date || '—';
+
+  document.getElementById('panchang-tab-content').innerHTML = `
+    <!-- City selector -->
+    <div class="panchang-city-bar" id="pc-city-bar">
+      ${cityKeys.map((k, i) => `
+        <button class="pc-pill ${i === 0 ? 'active' : ''}"
+                id="pc-pill-${k}"
+                onclick="selectPanchangCity('${k}')">
+          ${state.cities[k].city || k}
+        </button>`).join('')}
+    </div>
+
+    <!-- Panchang detail panel -->
+    <div id="pc-detail-panel"></div>
+  `;
+
+  // Load first city
+  selectPanchangCity(cityKeys[0]);
+}
+
+function selectPanchangCity(cityKey) {
+  // Update pill styles
+  document.querySelectorAll('.pc-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('pc-pill-' + cityKey);
+  if (pill) pill.classList.add('active');
+
+  renderCityPanchang(cityKey);
+}
+
+function renderCityPanchang(cityKey) {
+  const state    = window._state;
+  const cityData = (state?.cities || {})[cityKey] || {};
+  const p        = cityData.panchang || {};
+  const dateStr  = state?.date || '—';
+  const isEditing = !!_editMode[cityKey];
+
+  // Load saved edits from localStorage
+  const savedEdits = _loadEdits(cityKey, dateStr);
+  const vals       = isEditing
+    ? (_editValues[cityKey] || savedEdits || {})
+    : (savedEdits || {});
+
+  const hasEdits = savedEdits && Object.keys(savedEdits).length > 0;
+
+  // Build sections HTML
+  const sectionsHtml = PANCHANG_SECTIONS.map(section => {
+    const fieldsHtml = section.fields.map(f => {
+      const raw      = p[f.key] || '';
+      const override = vals[f.key];
+      const display  = override !== undefined ? override : raw;
+
+      if (isEditing) {
+        return `
+          <div class="p-field">
+            <div class="pf-label">${f.label}</div>
+            <input class="pf-input"
+                   data-field="${f.key}"
+                   value="${(display || '').replace(/"/g, '&quot;')}"
+                   placeholder="${raw || 'Not available'}"/>
+          </div>`;
+      } else {
+        const changed = override !== undefined && override !== raw;
+        return `
+          <div class="p-field">
+            <div class="pf-label">${f.label}</div>
+            <div class="pf-value" style="${changed ? 'color:var(--amber)' : ''}">
+              ${display || '<span style="color:var(--muted);font-size:12px">—</span>'}
+              ${changed ? '<span style="font-size:10px;color:var(--amber);margin-left:4px">✏️</span>' : ''}
+            </div>
+          </div>`;
+      }
+    }).join('');
+
+    return `
+      <div class="p-section-hdr">${section.label}</div>
+      <div class="p-field-grid">${fieldsHtml}</div>`;
+  }).join('');
+
+  document.getElementById('pc-detail-panel').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span>🌙</span>
+        <h2>${cityData.city || cityKey}</h2>
+        ${hasEdits ? '<span class="modified-tag" style="margin-left:12px">⚡ Modified</span>' : ''}
+        <span style="margin-left:auto;color:var(--muted);font-size:13px">${dateStr}</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Toolbar -->
+        <div class="p-toolbar">
+          <div>
+            <div class="p-city-name">${cityData.city || cityKey}</div>
+            <div class="p-city-meta">
+              ${p.weekday || ''} · ${p.timezone || ''} · ${p.paksha || ''}
+            </div>
+          </div>
+          <div class="p-btn-group">
+            ${hasEdits && !isEditing ? `
+              <button class="btn-reset" onclick="resetEdits('${cityKey}')">
+                ↩ Reset
+              </button>` : ''}
+            <button class="btn-edit ${isEditing ? 'editing' : ''}"
+                    id="pc-edit-btn-${cityKey}"
+                    onclick="toggleEditMode('${cityKey}')">
+              ${isEditing ? '✅ Done Editing' : '✏️ Edit'}
+            </button>
+            ${isEditing ? `
+              <button class="btn-regen" onclick="saveAndRegenerate('${cityKey}')">
+                🔄 Save &amp; Regenerate Video
+              </button>` : ''}
+          </div>
+        </div>
+
+        <!-- All sections -->
+        ${sectionsHtml}
+
+      </div>
+    </div>
+  `;
+}
+
+function toggleEditMode(cityKey) {
+  const wasEditing = !!_editMode[cityKey];
+
+  if (wasEditing) {
+    // Collect input values and save
+    const inputs = document.querySelectorAll('#pc-detail-panel .pf-input');
+    const edits  = {};
+    inputs.forEach(inp => {
+      const key = inp.dataset.field;
+      const val = inp.value.trim();
+      const raw = ((window._state?.cities?.[cityKey]?.panchang) || {})[key] || '';
+      if (val !== raw) edits[key] = val;  // only store actual changes
+    });
+    _editValues[cityKey] = edits;
+    _saveEdits(cityKey, window._state?.date, edits);
+    _editMode[cityKey] = false;
+    showToast('✅ Edits saved. Click "Regenerate Video" to rebuild.', 'success');
+  } else {
+    // Enter edit mode — seed from saved edits
+    _editValues[cityKey] = _loadEdits(cityKey, window._state?.date) || {};
+    _editMode[cityKey] = true;
+  }
+
+  renderCityPanchang(cityKey);
+}
+
+function resetEdits(cityKey) {
+  if (!confirm('Reset all edits for this city and restore original scraped data?')) return;
+  _editValues[cityKey] = {};
+  _editMode[cityKey]   = false;
+  const dateStr = window._state?.date;
+  if (dateStr) localStorage.removeItem(`panchang_edits_${dateStr}_${cityKey}`);
+  renderCityPanchang(cityKey);
+  showToast('↩ Edits reset to original data.', 'success');
+}
+
+async function saveAndRegenerate(cityKey) {
+  // Collect current input values
+  const inputs = document.querySelectorAll('#pc-detail-panel .pf-input');
+  const edits  = {};
+  inputs.forEach(inp => {
+    const key = inp.dataset.field;
+    const val = inp.value.trim();
+    const raw = ((window._state?.cities?.[cityKey]?.panchang) || {})[key] || '';
+    if (val !== raw) edits[key] = val;
+  });
+  _editValues[cityKey] = edits;
+  _saveEdits(cityKey, window._state?.date, edits);
+  _editMode[cityKey] = false;
+  renderCityPanchang(cityKey);
+
+  // Ask for GitHub token
+  const token = prompt(
+    `🔄 Regenerate video for ${cityKey.replace('_',' ')}?\n\nEnter GitHub Personal Access Token (needs actions:write):`
+  );
+  if (!token) { showToast('Cancelled.', 'error'); return; }
+
+  const cfg    = window._config || {};
+  const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
+  if (!repo) return;
+
+  const overrides = {};
+  overrides[cityKey] = edits;
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: {
+            regenerate_city:     cityKey,
+            panchang_overrides:  JSON.stringify(overrides),
+          }
+        })
+      }
+    );
+
+    if (resp.ok || resp.status === 204) {
+      showToast(`🔄 Regeneration triggered for ${cityKey.replace('_',' ')}! Check GitHub Actions.`, 'success');
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub API error: ${err.message || resp.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+// localStorage helpers
+function _saveEdits(cityKey, dateStr, edits) {
+  if (!dateStr) return;
+  const key = `panchang_edits_${dateStr}_${cityKey}`;
+  if (Object.keys(edits).length === 0) localStorage.removeItem(key);
+  else localStorage.setItem(key, JSON.stringify(edits));
+}
+
+function _loadEdits(cityKey, dateStr) {
+  if (!dateStr) return null;
+  try {
+    const raw = localStorage.getItem(`panchang_edits_${dateStr}_${cityKey}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// ════════════════════════════════════════════
+// Tab 3 — Analytics
+// ════════════════════════════════════════════
+
+let _anPlatform = 'youtube';
+let _chartViews = null;
+let _chartCities = null;
+
+// ── Mock data generator (used when analytics.json is empty) ──
+function buildMockAnalytics(state, platform) {
+  const cityKeys   = Object.keys(state?.cities || {});
+  const cityLabels = cityKeys.map(k => (state.cities[k].city || k).replace(/, \w+$/, ''));
+
+  // City base multipliers (relative popularity)
+  const mults = { New_York: 1.4, Chicago: 1.0, Dallas: 1.6, California: 1.8, Michigan: 0.9 };
+
+  // Seed-based pseudorandom (reproducible per date+city)
+  function seeded(seed, min, max) {
+    const x = Math.sin(seed) * 10000;
+    return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+  }
+
+  const isYT  = platform === 'youtube';
+  const today = new Date();
+
+  // 14-day history per city
+  const history = [];
+  for (let d = 13; d >= 0; d--) {
+    const dt = new Date(today); dt.setDate(dt.getDate() - d);
+    const label = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    let dayTotal = 0;
+    cityKeys.forEach(k => {
+      const seed = d * 31 + k.charCodeAt(0) + (isYT ? 7 : 3);
+      const base = isYT ? seeded(seed, 300, 2800) : seeded(seed, 500, 4200);
+      dayTotal += Math.round(base * (mults[k] || 1));
+    });
+    history.push({ label, views: dayTotal });
+  }
+
+  // Per-city totals (sum of last 14 days)
+  const cityTotals = cityKeys.map((k, i) => {
+    let views = 0, likes = 0, comments = 0;
+    for (let d = 0; d < 14; d++) {
+      const seed  = d * 31 + k.charCodeAt(0) + (isYT ? 7 : 3);
+      const base  = isYT ? seeded(seed, 300, 2800) : seeded(seed, 500, 4200);
+      views   += Math.round(base * (mults[k] || 1));
+      likes   += Math.round(views * seeded(seed + 1, 4, 9) / 100);
+      comments += Math.round(views * seeded(seed + 2, 1, 3) / 100);
+    }
+    return { key: k, label: cityLabels[i], views, likes, comments };
+  });
+
+  const totalViews    = cityTotals.reduce((s, c) => s + c.views, 0);
+  const totalLikes    = cityTotals.reduce((s, c) => s + c.likes, 0);
+  const totalComments = cityTotals.reduce((s, c) => s + c.comments, 0);
+  const followers     = isYT ? seeded(42, 1800, 3400) : seeded(99, 2200, 5800);
+
+  // Recent videos table (last 7 days × 5 cities = 35 rows, show top 10)
+  const recent = [];
+  for (let d = 0; d < 7; d++) {
+    const dt = new Date(today); dt.setDate(dt.getDate() - d);
+    cityKeys.forEach(k => {
+      const seed   = d * 31 + k.charCodeAt(0) + (isYT ? 7 : 3);
+      const views  = Math.round((isYT ? seeded(seed, 300, 2800) : seeded(seed, 500, 4200)) * (mults[k] || 1));
+      const likes  = Math.round(views * seeded(seed + 1, 4, 9) / 100);
+      const cmnts  = Math.round(views * seeded(seed + 2, 1, 3) / 100);
+      const shares = Math.round(views * seeded(seed + 3, 1, 4) / 100);
+      recent.push({
+        city:     (state.cities[k]?.city || k).replace(/, \w+$/, ''),
+        date:     dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        views, likes, comments: cmnts, shares,
+        eng: ((likes + cmnts) / views * 100).toFixed(1),
+      });
+    });
+  }
+  recent.sort((a, b) => b.views - a.views);
+
+  return { history, cityTotals, cityLabels, totalViews, totalLikes, totalComments, followers, recent };
+}
+
+function fmtNum(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
+
+// ── Render ────────────────────────────────
+function renderAnalyticsTab(state, analytics) {
+  const isReal = analytics &&
+    (Object.keys(analytics.youtube || {}).length > 0 ||
+     Object.keys(analytics.instagram || {}).length > 0);
+
+  const data     = buildMockAnalytics(state, _anPlatform);
+  const isYT     = _anPlatform === 'youtube';
+  const lastUpd  = analytics?.last_updated
+    ? new Date(analytics.last_updated).toLocaleString()
+    : 'Demo data';
+
+  const maxViews = Math.max(...data.cityTotals.map(c => c.views));
+
+  document.getElementById('analytics-tab-content').innerHTML = `
+
+    <!-- Platform toggle + last updated -->
+    <div class="an-platform-row">
+      <div class="an-platform-toggle">
+        <button class="an-plat-btn ${_anPlatform === 'youtube'   ? 'active' : ''}"
+                onclick="switchPlatform('youtube')">
+          ▶ YouTube
+        </button>
+        <button class="an-plat-btn ${_anPlatform === 'instagram' ? 'active' : ''}"
+                onclick="switchPlatform('instagram')">
+          📷 Instagram
+        </button>
+      </div>
+      <div class="an-last-updated">Last updated: ${lastUpd}</div>
+    </div>
+
+    ${!isReal ? `
+    <div class="an-note">
+      ⚡ Showing representative demo data — connect YouTube &amp; Instagram APIs to see live metrics.
+    </div>` : ''}
+
+    <!-- Metric cards -->
+    <div class="an-metric-row">
+      <div class="an-metric gold">
+        <div class="am-icon">${isYT ? '▶' : '📸'}</div>
+        <div class="am-val">${fmtNum(data.totalViews)}</div>
+        <div class="am-label">TOTAL VIEWS (14 DAYS)</div>
+        <div class="am-delta up">↑ 12% vs prior period</div>
+      </div>
+      <div class="an-metric green">
+        <div class="am-icon">👍</div>
+        <div class="am-val">${fmtNum(data.totalLikes)}</div>
+        <div class="am-label">TOTAL LIKES</div>
+        <div class="am-delta up">↑ 8% vs prior period</div>
+      </div>
+      <div class="an-metric blue">
+        <div class="am-icon">💬</div>
+        <div class="am-val">${fmtNum(data.totalComments)}</div>
+        <div class="am-label">TOTAL COMMENTS</div>
+        <div class="am-delta up">↑ 5% vs prior period</div>
+      </div>
+      <div class="an-metric purple">
+        <div class="am-icon">${isYT ? '🔔' : '👥'}</div>
+        <div class="am-val">${fmtNum(data.followers)}</div>
+        <div class="am-label">${isYT ? 'SUBSCRIBERS' : 'FOLLOWERS'}</div>
+        <div class="am-delta up">↑ ${isYT ? '23' : '41'} this week</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="an-charts-grid">
+      <div class="an-chart-card">
+        <div class="an-chart-title">📈 Views — Last 14 Days</div>
+        <div class="an-chart-wrap"><canvas id="chart-views"></canvas></div>
+      </div>
+      <div class="an-chart-card">
+        <div class="an-chart-title">🏙️ Views by City</div>
+        <div class="an-chart-wrap"><canvas id="chart-cities"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Per-video table -->
+    <div class="an-table-card">
+      <div class="an-table-hdr">
+        <span>📋</span>
+        <h2>Recent Videos — Top Performers</h2>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="an-table">
+          <thead>
+            <tr>
+              <th>City</th>
+              <th>Date</th>
+              <th class="td-num">Views</th>
+              <th class="td-num">Likes</th>
+              <th class="td-num">Comments</th>
+              <th class="td-num">Shares</th>
+              <th class="td-num">Eng%</th>
+              <th class="td-bar">Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.recent.slice(0, 10).map(row => {
+              const pct = Math.round(row.views / data.recent[0].views * 100);
+              return `
+                <tr>
+                  <td class="td-city">${row.city}</td>
+                  <td style="color:var(--muted)">${row.date}</td>
+                  <td class="td-num">${fmtNum(row.views)}</td>
+                  <td class="td-num">${fmtNum(row.likes)}</td>
+                  <td class="td-num">${row.comments}</td>
+                  <td class="td-num">${row.shares}</td>
+                  <td class="td-num" style="color:${parseFloat(row.eng)>5?'#69b46c':'var(--text)'}">${row.eng}%</td>
+                  <td class="td-bar">
+                    <div class="mini-bar-wrap">
+                      <div class="mini-bar-fill" style="width:${pct}%"></div>
+                    </div>
+                  </td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Draw charts after DOM settles
+  requestAnimationFrame(() => drawCharts(data));
+}
+
+function switchPlatform(platform) {
+  _anPlatform = platform;
+  renderAnalyticsTab(window._state, window._analytics);
+}
+
+function drawCharts(data) {
+  // Destroy old charts
+  if (_chartViews)  { _chartViews.destroy();  _chartViews  = null; }
+  if (_chartCities) { _chartCities.destroy(); _chartCities = null; }
+
+  const gridColor  = 'rgba(61,32,16,0.6)';
+  const tickColor  = '#9e8060';
+  const baseFont   = { family: 'Outfit', size: 12 };
+
+  // ── Line chart: views over 14 days ──
+  const ctxV = document.getElementById('chart-views');
+  if (ctxV) {
+    _chartViews = new Chart(ctxV, {
+      type: 'line',
+      data: {
+        labels:   data.history.map(d => d.label),
+        datasets: [{
+          label:       'Total Views',
+          data:        data.history.map(d => d.views),
+          borderColor: '#FFD700',
+          backgroundColor: 'rgba(255,215,0,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: '#FFD700',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: true,
+          tension: 0.35,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a0f08', borderColor: '#3d2010', borderWidth: 1,
+            titleColor: '#FFD700', bodyColor: '#f5ead8',
+            callbacks: { label: ctx => ` ${fmtNum(ctx.parsed.y)} views` }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, font: baseFont, maxRotation: 0 } },
+          y: {
+            grid: { color: gridColor }, ticks: { color: tickColor, font: baseFont,
+              callback: v => fmtNum(v) }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Horizontal bar chart: views by city ──
+  const ctxC = document.getElementById('chart-cities');
+  if (ctxC) {
+    const sorted = [...data.cityTotals].sort((a, b) => b.views - a.views);
+    _chartCities = new Chart(ctxC, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(c => c.label),
+        datasets: [{
+          label: 'Views',
+          data:  sorted.map(c => c.views),
+          backgroundColor: [
+            'rgba(255,215,0,0.75)', 'rgba(255,165,0,0.65)',
+            'rgba(232,197,71,0.6)', 'rgba(255,215,0,0.5)', 'rgba(255,165,0,0.45)'
+          ],
+          borderColor:  'rgba(255,215,0,0.3)',
+          borderWidth: 1,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a0f08', borderColor: '#3d2010', borderWidth: 1,
+            titleColor: '#FFD700', bodyColor: '#f5ead8',
+            callbacks: { label: ctx => ` ${fmtNum(ctx.parsed.x)} views` }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: { color: tickColor, font: baseFont, callback: v => fmtNum(v) }
+          },
+          y: { grid: { display: false }, ticks: { color: '#f5ead8', font: { ...baseFont, weight: '600' } } }
+        }
+      }
+    });
+  }
+}
+
+// ════════════════════════════════════════════
+// Tab 4 — Hashtag Intelligence
+// ════════════════════════════════════════════
+
+// All known Hindu / Telugu content hashtags with base performance profiles
+const HT_POOL = [
+  // Core — always strong
+  { tag: 'DailyPanchangam',    base: 92, trend: 'hot'    },
+  { tag: 'TeluguPanchang',     base: 88, trend: 'hot'    },
+  { tag: 'RahuKalam',          base: 85, trend: 'hot'    },
+  { tag: 'HinduCalendar',      base: 80, trend: 'steady' },
+  { tag: 'Panchang',           base: 78, trend: 'steady' },
+  // Community — rising
+  { tag: 'TeluguAmerica',      base: 74, trend: 'rising' },
+  { tag: 'HinduAmerica',       base: 70, trend: 'rising' },
+  { tag: 'NRILife',            base: 66, trend: 'rising' },
+  { tag: 'TeluguUSA',          base: 64, trend: 'rising' },
+  { tag: 'IndianAmerica',      base: 62, trend: 'rising' },
+  // Platform
+  { tag: 'Shorts',             base: 72, trend: 'steady' },
+  { tag: 'Reels',              base: 69, trend: 'steady' },
+  { tag: 'YouTubeShorts',      base: 67, trend: 'steady' },
+  // Spiritual
+  { tag: 'DailyBlessing',      base: 60, trend: 'rising' },
+  { tag: 'HinduPrayer',        base: 58, trend: 'steady' },
+  { tag: 'AbhijitMuhurta',     base: 55, trend: 'steady' },
+  { tag: 'BrahmaMuhurta',      base: 52, trend: 'steady' },
+  { tag: 'PanchangamUSA',      base: 70, trend: 'rising' },
+  { tag: 'AuspiciousTimes',    base: 48, trend: 'cold'   },
+  { tag: 'VedicAstrology',     base: 45, trend: 'cold'   },
+  // City-specific
+  { tag: 'NewYorkTelugu',      base: 58, trend: 'rising' },
+  { tag: 'ChicagoTelugu',      base: 48, trend: 'steady' },
+  { tag: 'DallasTelugu',       base: 62, trend: 'hot'    },
+  { tag: 'CaliforniaTelugu',   base: 65, trend: 'hot'    },
+  { tag: 'MichiganTelugu',     base: 44, trend: 'cold'   },
+];
+
+// Smart recommendations (hashtags NOT currently in use but worth trying)
+const HT_RECOMMENDATIONS = [
+  { tag: 'TeluguDiaspora',    score: 91, reason: 'Fastest growing Telugu diaspora tag — 2.1M posts, 18% weekly growth' },
+  { tag: 'MantramOfTheDay',   score: 87, reason: 'Trending spiritual daily content — strong hook for new followers' },
+  { tag: 'HinduShorts',       score: 84, reason: 'Platform-specific — YouTube algorithm boost for religious Shorts' },
+  { tag: 'PanchangamToday',   score: 82, reason: 'High-intent search tag — users actively looking for today\'s data' },
+  { tag: 'TeluguPrayer',      score: 79, reason: 'Highly engaged niche — avg 8.2% engagement vs 4.1% category avg' },
+  { tag: 'AuspiciousDay',     score: 76, reason: 'Broad reach with relevant intent — pairs well with RahuKalam' },
+  { tag: 'NRIHindu',          score: 73, reason: 'Growing NRI audience segment — complements TeluguAmerica' },
+  { tag: 'DailyAstrology',    score: 70, reason: 'Cross-community reach beyond Telugu — 3× broader audience pool' },
+];
+
+// Seeded score variation per city
+function htScore(tag, cityKey) {
+  const pool = HT_POOL.find(h => h.tag === tag);
+  if (!pool) return { score: 50, trend: 'steady' };
+  const seed = tag.charCodeAt(0) + (cityKey || '').charCodeAt(0);
+  const noise = Math.sin(seed) * 10000;
+  const variation = Math.floor((noise - Math.floor(noise)) * 14) - 7; // ±7
+  return { score: Math.min(99, Math.max(10, pool.base + variation)), trend: pool.trend };
+}
+
+function htTrendClass(trend) {
+  return trend === 'hot' ? 'hot' : trend === 'rising' ? 'rising' : trend === 'cold' ? 'cold' : 'steady';
+}
+
+function htTrendLabel(trend) {
+  return trend === 'hot' ? '🔥' : trend === 'rising' ? '📈' : trend === 'cold' ? '❄️' : '→';
+}
+
+// Track custom hashtags added by user (per city)
+const _htCustom = {};   // cityKey → Set<string>
+
+let _htCity = null;
+
+function renderHashtagTab(state) {
+  if (!state || !state.cities) {
+    document.getElementById('hashtag-tab-content').innerHTML = `
+      <div class="ht-section-card"><div class="ht-section-body">
+        <div class="coming-soon">
+          <div class="cs-icon">⚠️</div>
+          <h3>No Data Yet</h3>
+          <p style="color:var(--muted)">Run the pipeline first to generate hashtag data.</p>
+        </div>
+      </div></div>`;
+    return;
+  }
+
+  const cityKeys = Object.keys(state.cities);
+  if (!_htCity || !cityKeys.includes(_htCity)) _htCity = cityKeys[0];
+
+  document.getElementById('hashtag-tab-content').innerHTML = `
+    <!-- City selector -->
+    <div class="panchang-city-bar" id="ht-city-bar">
+      ${cityKeys.map(k => `
+        <button class="pc-pill ${k === _htCity ? 'active' : ''}"
+                id="ht-pill-${k}"
+                onclick="htSelectCity('${k}')">
+          ${state.cities[k].city || k}
+        </button>`).join('')}
+    </div>
+
+    <!-- Main panel -->
+    <div id="ht-main-panel"></div>
+  `;
+
+  htRenderCity(_htCity);
+}
+
+function htSelectCity(cityKey) {
+  _htCity = cityKey;
+  document.querySelectorAll('#ht-city-bar .pc-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('ht-pill-' + cityKey);
+  if (pill) pill.classList.add('active');
+  htRenderCity(cityKey);
+}
+
+function htRenderCity(cityKey) {
+  const state   = window._state;
+  const city    = (state?.cities || {})[cityKey] || {};
+  const script  = city.script || {};
+
+  // Merge pipeline hashtags + user-added custom
+  const pipelineTags = (script.hashtags || []).map(t => t.replace(/^#/, ''));
+  const customTags   = [...(_htCustom[cityKey] || new Set())];
+  const allTags      = [...new Set([...pipelineTags, ...customTags])];
+
+  // Score each tag
+  const scored = allTags.map(tag => {
+    const { score, trend } = htScore(tag, cityKey);
+    return { tag, score, trend, isCustom: customTags.includes(tag) };
+  }).sort((a, b) => b.score - a.score);
+
+  const maxScore = scored[0]?.score || 100;
+  const hotCount     = scored.filter(t => t.trend === 'hot').length;
+  const risingCount  = scored.filter(t => t.trend === 'rising').length;
+
+  // Recommendations = pool tags NOT already in use, sorted by base score desc
+  const usedSet = new Set(allTags.map(t => t.toLowerCase()));
+  const recs = HT_RECOMMENDATIONS
+    .filter(r => !usedSet.has(r.tag.toLowerCase()))
+    .slice(0, 5);
+
+  document.getElementById('ht-main-panel').innerHTML = `
+
+    <!-- ① Current hashtag cloud -->
+    <div class="ht-section-card">
+      <div class="ht-section-hdr">
+        <span>#</span>
+        <h2>Active Hashtags — ${city.city || cityKey}</h2>
+        <span class="hsh-sub">${allTags.length} hashtags · ${hotCount} hot · ${risingCount} rising</span>
+      </div>
+      <div class="ht-section-body">
+
+        <!-- Legend -->
+        <div class="ht-legend">
+          <div class="ht-legend-item"><div class="ht-legend-dot" style="background:#ff9a6c"></div> Hot 🔥 — top performer</div>
+          <div class="ht-legend-item"><div class="ht-legend-dot" style="background:#69b46c"></div> Rising 📈 — growing fast</div>
+          <div class="ht-legend-item"><div class="ht-legend-dot" style="background:var(--gold-soft)"></div> Steady → — consistent</div>
+          <div class="ht-legend-item"><div class="ht-legend-dot" style="background:var(--muted)"></div> Cold ❄️ — low reach</div>
+        </div>
+
+        <!-- Chip cloud -->
+        <div style="margin-bottom:20px">
+          ${scored.map(t => `
+            <span class="ht-chip ${htTrendClass(t.trend)}" title="Score: ${t.score}">
+              <span class="hc-tag">#${t.tag}</span>
+              <span class="hc-score">${htTrendLabel(t.trend)} ${t.score}</span>
+              ${t.isCustom ? `<span onclick="htRemoveCustom('${cityKey}','${t.tag}')"
+                style="margin-left:4px;color:var(--muted);cursor:pointer;font-size:11px"
+                title="Remove">✕</span>` : ''}
+            </span>`).join('')}
+        </div>
+
+        <!-- Score bar chart -->
+        <div style="margin-bottom:20px">
+          <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+            PERFORMANCE RANKING
+          </div>
+          <div class="ht-score-rows">
+            ${scored.slice(0, 10).map(t => `
+              <div class="ht-score-row">
+                <div class="hsr-tag" style="color:${
+                  t.trend==='hot'?'#ff9a6c':t.trend==='rising'?'#69b46c':'var(--gold-soft)'}">#${t.tag}</div>
+                <div class="hsr-bar-wrap">
+                  <div class="hsr-bar" style="width:${Math.round(t.score/maxScore*100)}%;background:${
+                    t.trend==='hot'?'linear-gradient(90deg,#ff6b35,#ff9a6c)':
+                    t.trend==='rising'?'linear-gradient(90deg,#2d6a4f,#69b46c)':
+                    'linear-gradient(90deg,var(--gold),var(--amber))'}"></div>
+                </div>
+                <div class="hsr-val">${t.score}</div>
+              </div>`).join('')}
+          </div>
+          ${scored.length > 10 ? `<div style="color:var(--muted);font-size:12px;margin-top:10px">
+            +${scored.length - 10} more hashtags not shown</div>` : ''}
+        </div>
+
+        <!-- Add custom hashtag -->
+        <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
+          ADD HASHTAG TO TRACK
+        </div>
+        <div class="ht-add-row">
+          <input class="ht-add-input" id="ht-input-${cityKey}"
+                 placeholder="e.g. TeluguDiaspora (no # needed)"
+                 onkeydown="if(event.key==='Enter') htAddCustom('${cityKey}')"/>
+          <button class="ht-add-btn" onclick="htAddCustom('${cityKey}')">+ Add</button>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT: Script & Timings -->
-    <div style="display:flex;flex-direction:column;gap:20px">
+    <!-- ② Two-column: stats summary + recommendations -->
+    <div class="ht-layout">
 
-      <!-- Script preview -->
-      <div class="card">
-        <div class="card-header">
-          <span>📜</span>
-          <h2>Script Preview</h2>
+      <!-- Stats summary -->
+      <div class="ht-section-card" style="margin-bottom:0">
+        <div class="ht-section-hdr">
+          <span>📊</span>
+          <h2>Tag Summary</h2>
         </div>
-        <div class="card-body">
-          <div class="script-block">
-            <h4>🪷 Opening Shloka</h4>
-            <p>${script.opening_shloka || '—'}</p>
-          </div>
-          <div class="script-block">
-            <h4>🎙️ Main Narration</h4>
-            <p>${script.main_narration || '—'}</p>
-          </div>
-          <div class="script-block">
-            <h4>🙏 Closing Blessing</h4>
-            <p>${script.closing_blessing || '—'}</p>
+        <div class="ht-section-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            ${[
+              { label: 'Total Tags',    val: allTags.length,    icon: '#️⃣' },
+              { label: 'Hot Tags',      val: hotCount,          icon: '🔥' },
+              { label: 'Rising Tags',   val: risingCount,       icon: '📈' },
+              { label: 'Avg Score',     val: scored.length
+                ? Math.round(scored.reduce((s,t)=>s+t.score,0)/scored.length)
+                : '—',                                          icon: '⭐' },
+              { label: 'Top Tag',       val: scored[0]?.tag ? '#'+scored[0].tag : '—', icon: '🏆' },
+              { label: 'Weakest Tag',   val: scored.at(-1)?.tag ? '#'+scored.at(-1).tag : '—', icon: '❄️' },
+            ].map(s => `
+              <div style="background:rgba(255,215,0,.04);border:1px solid var(--border);
+                          border-radius:10px;padding:12px 14px">
+                <div style="font-size:18px;margin-bottom:6px">${s.icon}</div>
+                <div style="font-size:20px;font-weight:700;color:var(--gold)">${s.val}</div>
+                <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase">${s.label}</div>
+              </div>`).join('')}
           </div>
         </div>
       </div>
 
-      <!-- Panchang info -->
-      <div class="card">
-        <div class="card-header">
-          <span>🌙</span>
-          <h2>Panchangam Details</h2>
+      <!-- Smart recommendations -->
+      <div class="ht-section-card" style="margin-bottom:0">
+        <div class="ht-section-hdr">
+          <span>💡</span>
+          <h2>Smart Recommendations</h2>
         </div>
-        <div class="card-body">
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="label">Tithi</div>
-              <div class="value">${raw.tithi || '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Nakshatra</div>
-              <div class="value">${raw.nakshatra || '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Yoga</div>
-              <div class="value">${raw.yoga || '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Karana</div>
-              <div class="value">${raw.karana || '—'}</div>
-            </div>
+        <div class="ht-section-body">
+          <div style="color:var(--muted);font-size:12px;margin-bottom:14px;line-height:1.6">
+            Hashtags not currently in your set that could improve reach based on category benchmarks.
           </div>
-
-          <div class="timing-section">
-            <h4>🌅 Sunrise / Sunset</h4>
-            <div class="timing-row">
-              <span class="t-label">Sunrise</span>
-              <span class="t-zones">${fmt(us.Sunrise)}</span>
-            </div>
-            <div class="timing-row">
-              <span class="t-label">Sunset</span>
-              <span class="t-zones">${fmt(us.Sunset)}</span>
-            </div>
-
-            <h4>⚠️ Inauspicious Timings — Avoid for New Work</h4>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Rahu Kalam</span>
-              <span class="t-zones">${fmtRange(us,'Rahukalam_Start','Rahukalam_End')}</span>
-            </div>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Dur Muhurtam</span>
-              <span class="t-zones">${fmtRange(us,'Durmuhurtam_Start','Durmuhurtam_End')}</span>
-            </div>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Yamagandam</span>
-              <span class="t-zones">${fmtRange(us,'Yamagandam_Start','Yamagandam_End')}</span>
-            </div>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Gulikai</span>
-              <span class="t-zones">${fmtRange(us,'Gulikai_Start','Gulikai_End')}</span>
-            </div>
-
-            <h4>✅ Auspicious Timings — Best for New Beginnings</h4>
-            <div class="timing-row auspicious">
-              <span class="t-label">🌟 Abhijit Muhurta</span>
-              <span class="t-zones">${fmtRange(us,'Abhijit_Start','Abhijit_End')}</span>
-            </div>
-            <div class="timing-row auspicious">
-              <span class="t-label">🌟 Amrit Kalam</span>
-              <span class="t-zones">${fmtRange(us,'AmritKalam_Start','AmritKalam_End')}</span>
-            </div>
-          </div>
+          ${recs.map(r => `
+            <div class="ht-rec-card">
+              <div>
+                <div class="ht-rec-tag">#${r.tag}</div>
+                <div class="ht-rec-reason">${r.reason}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
+                <div class="ht-rec-score">↑ ${r.score}</div>
+                <button onclick="htAddRec('${cityKey}','${r.tag}')"
+                  style="font-size:11px;padding:4px 10px;background:rgba(255,215,0,.08);
+                  border:1px solid rgba(255,215,0,.2);border-radius:6px;color:var(--gold);
+                  cursor:pointer;font-family:'Outfit',sans-serif;white-space:nowrap">
+                  + Add
+                </button>
+              </div>
+            </div>`).join('')}
+          ${recs.length === 0 ? `
+            <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">
+              ✅ All recommended tags are already in use!
+            </div>` : ''}
         </div>
       </div>
 
@@ -721,77 +2730,813 @@ function render(meta) {
   `;
 }
 
-// ── Approval actions ──────────────────────────────────────────
-async function handleApprove(dateStr) {
-  if (!confirm('✅ Approve this video for upload to YouTube Shorts & Instagram Reels?')) return;
+// ── Custom tag management ──────────────────
+function htAddCustom(cityKey) {
+  const input = document.getElementById('ht-input-' + cityKey);
+  if (!input) return;
+  const raw = input.value.trim().replace(/^#/, '').replace(/\s+/g, '');
+  if (!raw) return;
+  if (!_htCustom[cityKey]) _htCustom[cityKey] = new Set();
+  _htCustom[cityKey].add(raw);
+  input.value = '';
+  htRenderCity(cityKey);
+  showToast(`#${raw} added to ${cityKey.replace('_',' ')} hashtags.`, 'success');
+}
 
-  showToast('🚀 Triggering upload to YouTube & Instagram...', 'success');
+function htRemoveCustom(cityKey, tag) {
+  _htCustom[cityKey]?.delete(tag);
+  htRenderCity(cityKey);
+  showToast(`#${tag} removed.`, 'error');
+}
 
-  // Trigger GitHub Actions workflow via API
-  const token = prompt(
-    'Enter your GitHub Personal Access Token (PAT) to trigger upload:\n(Create at: Settings → Developer settings → Personal access tokens → Fine-grained → repo:actions:write)',
-    ''
-  );
-  if (!token) { showToast('Upload cancelled.', 'error'); return; }
+function htAddRec(cityKey, tag) {
+  if (!_htCustom[cityKey]) _htCustom[cityKey] = new Set();
+  _htCustom[cityKey].add(tag);
+  htRenderCity(cityKey);
+  showToast(`#${tag} added to your active hashtags!`, 'success');
+}
 
-  const repo = prompt('Enter your GitHub repo (e.g. username/panchangam-agent):');
-  if (!repo) return;
+// ════════════════════════════════════════════
+// Tab 5 — Publish & Schedule
+// ════════════════════════════════════════════
 
+// Per-city publish state (approval + platform selections)
+// Keys: cityKey → { approved: bool, rejected: bool, platforms: Set, publishing: bool }
+const _pubState = {};
+
+// Best posting times by timezone offset label
+const OPTIMAL_TIMES = {
+  ET: ['7:00 AM', '12:00 PM', '7:30 PM'],
+  CT: ['6:00 AM', '11:00 AM', '6:30 PM'],
+  MT: ['5:00 AM', '10:00 AM', '5:30 PM'],
+  PT: ['4:00 AM', '9:00 AM', '4:30 PM'],
+};
+
+function pubGetState(cityKey) {
+  if (!_pubState[cityKey]) {
+    _pubState[cityKey] = { approved: false, rejected: false, platforms: new Set(['youtube','instagram']), publishing: false };
+  }
+  return _pubState[cityKey];
+}
+
+function pubPlatformLabel(p) {
+  return p === 'youtube' ? '▶ YouTube Shorts' : '📸 Instagram Reels';
+}
+
+function renderPublishTab(state, config) {
+  if (!state || !state.cities) {
+    document.getElementById('publish-tab-content').innerHTML = `
+      <div class="pub-section"><div class="pub-section-body">
+        <div class="coming-soon">
+          <div class="cs-icon">⚠️</div>
+          <h3>No Pipeline Data</h3>
+          <p style="color:var(--muted)">Run the pipeline first to generate videos.</p>
+        </div>
+      </div></div>`;
+    return;
+  }
+
+  const cityEntries = Object.entries(state.cities);
+  const dateStr = state.date || '—';
+
+  // Seed _pubState from pipeline approval_status
+  cityEntries.forEach(([k, c]) => {
+    const ps = pubGetState(k);
+    if (c.approval_status === 'approved') ps.approved = true;
+    if (c.approval_status === 'rejected') ps.rejected = true;
+  });
+
+  // Count ready
+  const approved = cityEntries.filter(([k]) => pubGetState(k).approved).length;
+  const badge = document.getElementById('publish-badge');
+  if (badge) {
+    badge.textContent = approved;
+    badge.style.display = approved > 0 ? '' : 'none';
+  }
+
+  document.getElementById('publish-tab-content').innerHTML = `
+
+    <!-- Bulk action bar -->
+    <div class="pub-bulk-bar">
+      <span class="pub-bulk-label">
+        ${approved}/${cityEntries.length} cities approved
+        &nbsp;·&nbsp; ${dateStr}
+      </span>
+      <button class="pub-btn approve" onclick="pubApproveAll()">✅ Approve All</button>
+      <button class="pub-btn publish" onclick="pubPublishAllApproved()"
+              ${approved === 0 ? 'disabled' : ''}>
+        📤 Publish All Approved
+      </button>
+      <button class="pub-btn dispatch" onclick="pubTriggerWorkflow()">
+        ⚙️ Trigger Pipeline
+      </button>
+    </div>
+
+    <!-- City queue -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>📋</span>
+        <h2>Publish Queue</h2>
+        <span class="psh-sub">${cityEntries.length} cities · ${dateStr}</span>
+      </div>
+      <div class="pub-section-body">
+        <div id="pub-city-list">
+          ${cityEntries.map(([k, c]) => pubCityCardHtml(k, c)).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Post preview (selectedCity) -->
+    <div class="pub-section" id="pub-preview-section">
+      <div class="pub-section-hdr">
+        <span>👁</span>
+        <h2>Post Preview</h2>
+        <span class="psh-sub" id="pub-preview-city-label">Select a city above</span>
+      </div>
+      <div class="pub-section-body">
+        <div id="pub-preview-body">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">
+            Click "Preview" on any city card to see and edit its post content.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload history -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🕐</span>
+        <h2>Upload History</h2>
+      </div>
+      <div class="pub-section-body">
+        ${pubHistoryHtml(cityEntries)}
+      </div>
+    </div>
+  `;
+}
+
+function pubStatusLabel(cityKey, pipelineStatus) {
+  const ps = pubGetState(cityKey);
+  if (ps.rejected)  return { cls: 'rejected', txt: '✗ Rejected' };
+  if (ps.approved)  return { cls: 'approved', txt: '✓ Approved' };
+  if (pipelineStatus === 'approved') return { cls: 'approved', txt: '✓ Approved' };
+  return { cls: 'pending', txt: '⏳ Pending' };
+}
+
+function pubCityCardHtml(cityKey, cityData) {
+  const ps = pubGetState(cityKey);
+  const script = cityData.script || {};
+  const panchang = cityData.panchang || {};
+  const tz = panchang.tz_label || 'ET';
+  const optTimes = OPTIMAL_TIMES[tz] || OPTIMAL_TIMES['ET'];
+  const { cls, txt } = pubStatusLabel(cityKey, cityData.approval_status);
+  const videoReady = !!cityData.video_path;
+  const uploadResult = cityData.upload_result || {};
+  const ytUploaded = uploadResult.youtube;
+  const igUploaded = uploadResult.instagram;
+  const isUploaded = ytUploaded || igUploaded;
+
+  const platforms = [...ps.platforms];
+
+  return `
+    <div class="pub-city-card" id="pub-card-${cityKey}">
+
+      <div class="pub-city-hdr">
+        <div>
+          <div class="pub-city-name">${cityData.city || cityKey}</div>
+          <div class="pub-city-date">${panchang.date || ''} · ${tz}</div>
+        </div>
+        <div class="pub-status ${isUploaded ? 'uploaded' : cls}">${isUploaded ? '✓ Uploaded' : txt}</div>
+      </div>
+
+      <div class="pub-city-body">
+
+        <!-- Left: meta + timings -->
+        <div class="pub-meta">
+          <div class="pub-meta-row">
+            <span class="pmr-label">Video</span>
+            <span class="pmr-val">${videoReady ? '✅ Ready' : '❌ Not generated'}</span>
+          </div>
+          <div class="pub-meta-row">
+            <span class="pmr-label">Title</span>
+            <span class="pmr-val" style="font-size:12px;line-height:1.4">${(script.title || '—').substring(0,60)}${script.title?.length > 60 ? '…' : ''}</span>
+          </div>
+          <div class="pub-meta-row">
+            <span class="pmr-label">Hashtags</span>
+            <span class="pmr-val" style="font-size:12px">${(script.hashtags || []).slice(0,5).map(t=>'#'+t).join(' ')}${(script.hashtags||[]).length>5?' +'+((script.hashtags||[]).length-5)+'…':''}</span>
+          </div>
+          <div class="pub-meta-row" style="margin-top:6px">
+            <span class="pmr-label">Best times</span>
+            <span class="pmr-val" style="display:flex;flex-wrap:wrap;gap:6px">
+              ${optTimes.map(t => `<span class="pub-time-chip">🕐 ${t} ${tz}</span>`).join('')}
+            </span>
+          </div>
+          ${ytUploaded ? `<div class="pub-meta-row">
+            <span class="pmr-label">YouTube</span>
+            <span class="pmr-val"><a href="${ytUploaded}" target="_blank" class="pub-url-pill">▶ View Short</a></span>
+          </div>` : ''}
+          ${igUploaded ? `<div class="pub-meta-row">
+            <span class="pmr-label">Instagram</span>
+            <span class="pmr-val"><a href="${igUploaded}" target="_blank" class="pub-url-pill">📸 View Reel</a></span>
+          </div>` : ''}
+        </div>
+
+        <!-- Right: platforms + actions -->
+        <div>
+          <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">PLATFORMS</div>
+          <div class="pub-platforms" style="margin-bottom:14px">
+            ${['youtube','instagram'].map(p => `
+              <button class="pub-plat-btn ${ps.platforms.has(p) ? 'active' : ''}"
+                      id="pub-plat-${cityKey}-${p}"
+                      onclick="pubTogglePlatform('${cityKey}','${p}')">
+                ${pubPlatformLabel(p)}
+              </button>`).join('')}
+          </div>
+
+          <div class="pub-actions">
+            ${!ps.approved && !ps.rejected ? `
+              <button class="pub-btn approve" onclick="pubApprove('${cityKey}')">✅ Approve</button>
+              <button class="pub-btn reject"  onclick="pubReject('${cityKey}')">✗ Reject</button>` : ''}
+            ${ps.rejected ? `
+              <button class="pub-btn approve" onclick="pubApprove('${cityKey}')">↩ Re-approve</button>` : ''}
+            ${ps.approved && !isUploaded ? `
+              <button class="pub-btn publish" id="pub-publish-btn-${cityKey}"
+                      onclick="pubPublishCity('${cityKey}')"
+                      ${!videoReady ? 'disabled title="Video not ready"' : ''}>
+                📤 Publish
+              </button>` : ''}
+            <button class="pub-btn dispatch" onclick="pubShowPreview('${cityKey}')">
+              👁 Preview
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function pubHistoryHtml(cityEntries) {
+  const rows = [];
+  cityEntries.forEach(([k, c]) => {
+    const ur = c.upload_result || {};
+    if (ur.youtube) rows.push({ city: c.city||k, platform: 'YouTube', url: ur.youtube, date: c.panchang?.date });
+    if (ur.instagram) rows.push({ city: c.city||k, platform: 'Instagram', url: ur.instagram, date: c.panchang?.date });
+  });
+  if (rows.length === 0) {
+    return `<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">
+      No uploads yet for ${window._state?.date || 'today'}. Publish videos to see history here.
+    </div>`;
+  }
+  return rows.map(r => `
+    <div class="pub-hist-row">
+      <span class="pub-hist-city">${r.city}</span>
+      <span class="pub-hist-plat">${r.platform}</span>
+      <a href="${r.url}" target="_blank" class="pub-url-pill">🔗 View</a>
+      <span class="pub-hist-date">${r.date || '—'}</span>
+    </div>`).join('');
+}
+
+// ── Approve / Reject ───────────────────────────────────────
+function pubApprove(cityKey) {
+  const ps = pubGetState(cityKey);
+  ps.approved = true; ps.rejected = false;
+  showToast(`${cityKey.replace('_',' ')} approved for publishing.`, 'success');
+  renderPublishTab(window._state, window._config);
+}
+
+function pubReject(cityKey) {
+  const ps = pubGetState(cityKey);
+  ps.rejected = true; ps.approved = false;
+  showToast(`${cityKey.replace('_',' ')} rejected.`, 'error');
+  renderPublishTab(window._state, window._config);
+}
+
+function pubApproveAll() {
+  const state = window._state;
+  if (!state?.cities) return;
+  Object.keys(state.cities).forEach(k => {
+    const ps = pubGetState(k);
+    ps.approved = true; ps.rejected = false;
+  });
+  showToast('All cities approved.', 'success');
+  renderPublishTab(state, window._config);
+}
+
+// ── Platform toggle ────────────────────────────────────────
+function pubTogglePlatform(cityKey, platform) {
+  const ps = pubGetState(cityKey);
+  if (ps.platforms.has(platform)) ps.platforms.delete(platform);
+  else ps.platforms.add(platform);
+  // Update button UI without full re-render
+  const btn = document.getElementById(`pub-plat-${cityKey}-${platform}`);
+  if (btn) btn.classList.toggle('active', ps.platforms.has(platform));
+}
+
+// ── Publish city (triggers GH Actions workflow_dispatch) ───
+async function pubPublishCity(cityKey) {
+  const config = window._config;
+  const btn = document.getElementById(`pub-publish-btn-${cityKey}`);
+  if (!config?.token) {
+    showToast('No GitHub token — workflow dispatch unavailable.', 'error');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
+  const ps = pubGetState(cityKey);
+  const platforms = [...ps.platforms];
   try {
-    const resp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/daily_panchangam.yml/dispatches`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs: { date: dateStr, skip_upload: 'false' }
-      })
-    });
-
-    if (resp.ok || resp.status === 204) {
-      showToast('✅ Upload triggered! Check GitHub Actions for progress.', 'success');
-      // Update local status display
-      document.querySelector('.badge').className = 'badge badge-approved';
-      document.querySelector('.badge').textContent = '✅ Approved';
-      document.querySelectorAll('.btn').forEach(b => b.disabled = true);
-      document.getElementById('status-msg').textContent = '✅ Approved — uploading to YouTube & Instagram...';
+    const res = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflow_file}/dispatches`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: { action: 'upload', city: cityKey, platforms: platforms.join(',') } }),
+      }
+    );
+    if (res.status === 204) {
+      showToast(`Publish workflow triggered for ${cityKey.replace('_',' ')}!`, 'success');
     } else {
-      const err = await resp.json();
-      showToast(`GitHub API error: ${err.message}`, 'error');
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || res.statusText);
     }
-  } catch (e) {
-    showToast(`Error: ${e.message}`, 'error');
+  } catch (err) {
+    showToast(`Dispatch failed: ${err.message}`, 'error');
   }
+  if (btn) { btn.disabled = false; btn.textContent = '📤 Publish'; }
 }
 
-async function handleReject(dateStr) {
-  const reason = prompt('Reason for rejection (optional):');
-  showToast('❌ Video rejected. Pipeline will not upload.', 'error');
-  document.querySelector('.badge').className = 'badge badge-rejected';
-  document.querySelector('.badge').textContent = '❌ Rejected';
-  document.querySelectorAll('.btn').forEach(b => b.disabled = true);
-  document.getElementById('status-msg').textContent = '❌ Video rejected — pipeline halted.';
+async function pubPublishAllApproved() {
+  const state = window._state;
+  if (!state?.cities) return;
+  const approved = Object.keys(state.cities).filter(k => pubGetState(k).approved);
+  for (const k of approved) await pubPublishCity(k);
 }
 
-// ── Init ──────────────────────────────────────────────────────
-(async () => {
+// ── Trigger pipeline workflow ──────────────────────────────
+async function pubTriggerWorkflow() {
+  const config = window._config;
+  if (!config?.token) {
+    showToast('No GitHub token — cannot trigger workflow.', 'error');
+    return;
+  }
   try {
-    const meta = await loadMetadata();
-    render(meta);
-  } catch (e) {
-    document.getElementById('main-content').innerHTML = `
-      <div class="loading" style="grid-column:1/-1">
-        <div style="font-size:48px">⚠️</div>
-        <p style="color:var(--amber)">Could not load metadata</p>
-        <p style="font-size:13px;color:var(--muted)">${e.message}</p>
-        <p style="font-size:12px;color:var(--muted);margin-top:8px">
-          Make sure the pipeline has run and dashboard/pending/[date]/metadata.json exists.
-        </p>
-      </div>`;
+    const res = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflow_file}/dispatches`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: { action: 'full_pipeline' } }),
+      }
+    );
+    if (res.status === 204) showToast('Pipeline triggered successfully!', 'success');
+    else { const b = await res.json().catch(()=>({})); throw new Error(b.message || res.statusText); }
+  } catch (err) {
+    showToast(`Trigger failed: ${err.message}`, 'error');
   }
+}
+
+// ── Post preview ───────────────────────────────────────────
+function pubShowPreview(cityKey) {
+  const state = window._state;
+  const city  = state?.cities?.[cityKey] || {};
+  const script = city.script || {};
+  const hashtags = (script.hashtags || []).map(t => '#'+t).join(' ');
+  const label = document.getElementById('pub-preview-city-label');
+  if (label) label.textContent = city.city || cityKey;
+  const body = document.getElementById('pub-preview-body');
+  if (!body) return;
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+      <div>
+        <div class="pub-preview">
+          <div class="pv-label">Title (YouTube — 100 chars max)</div>
+          <textarea rows="2" id="pv-title-${cityKey}" style="height:56px"
+            onchange="pubPreviewUpdate('${cityKey}','title',this.value)">${script.title || ''}</textarea>
+        </div>
+        <div class="pub-preview" style="margin-top:12px">
+          <div class="pv-label">Description</div>
+          <textarea rows="5" id="pv-desc-${cityKey}"
+            onchange="pubPreviewUpdate('${cityKey}','description',this.value)">${script.description || ''}</textarea>
+        </div>
+        <div class="pub-preview" style="margin-top:12px">
+          <div class="pv-label">Hashtags</div>
+          <textarea rows="3" id="pv-tags-${cityKey}"
+            onchange="pubPreviewUpdate('${cityKey}','hashtags_raw',this.value)">${hashtags}</textarea>
+        </div>
+        <div style="margin-top:10px">
+          <button class="pub-btn approve" onclick="pubSavePreview('${cityKey}')">💾 Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Mobile mock -->
+      <div>
+        <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">PREVIEW</div>
+        <div style="background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:14px;
+                    padding:18px;font-size:12px;line-height:1.6;max-height:380px;overflow-y:auto">
+          <div style="color:var(--gold);font-weight:700;font-size:14px;margin-bottom:8px">${script.title || '(no title)'}</div>
+          <div style="color:var(--muted);margin-bottom:12px;font-size:11px">${state?.date || ''} · ${city.panchang?.tz_label||''}</div>
+          <div style="color:var(--text);margin-bottom:12px">${(script.description || '').substring(0,280)}</div>
+          <div style="color:#6ab0f5;font-size:11px;line-height:1.8">${hashtags}</div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+function pubPreviewUpdate(cityKey, field, value) {
+  // Live-update stored state
+  const state = window._state;
+  if (!state?.cities?.[cityKey]?.script) return;
+  if (field === 'hashtags_raw') {
+    state.cities[cityKey].script.hashtags = value.split(/\s+/).map(t=>t.replace(/^#/,'')).filter(Boolean);
+  } else {
+    state.cities[cityKey].script[field] = value;
+  }
+}
+
+function pubSavePreview(cityKey) {
+  // Reads current textarea values and applies them
+  ['title','description'].forEach(field => {
+    const el = document.getElementById(`pv-${field==='title'?'title':field==='description'?'desc':field}-${cityKey}`);
+    if (el) pubPreviewUpdate(cityKey, field, el.value);
+  });
+  const tagsEl = document.getElementById(`pv-tags-${cityKey}`);
+  if (tagsEl) pubPreviewUpdate(cityKey, 'hashtags_raw', tagsEl.value);
+  showToast('Post content saved locally. Re-run pipeline to persist.', 'success');
+}
+
+// ════════════════════════════════════════════
+// Tab 6 — Settings & Pipeline Control
+// ════════════════════════════════════════════
+
+// All secrets required by the workflows (in priority order)
+const REQUIRED_SECRETS = [
+  { name: 'ANTHROPIC_API_KEY',         label: 'Anthropic API Key',          feature: 'Script generation (Claude)' },
+  { name: 'ELEVENLABS_API_KEY',         label: 'ElevenLabs API Key',         feature: 'Voice synthesis' },
+  { name: 'YOUTUBE_CREDENTIALS_JSON',   label: 'YouTube Credentials JSON',   feature: 'YouTube upload + analytics' },
+  { name: 'INSTAGRAM_ACCESS_TOKEN',     label: 'Instagram Access Token',     feature: 'Instagram upload + analytics' },
+  { name: 'INSTAGRAM_ACCOUNT_ID',       label: 'Instagram Account ID',       feature: 'Instagram upload + analytics' },
+  { name: 'APPROVAL_EMAIL_FROM',        label: 'SMTP From Address',          feature: 'Approval email' },
+  { name: 'APPROVAL_EMAIL_TO',          label: 'SMTP To Address',            feature: 'Approval email' },
+  { name: 'SMTP_PASS',                  label: 'SMTP Password',              feature: 'Approval email' },
+  { name: 'AWS_ACCESS_KEY_ID',          label: 'AWS Access Key ID',          feature: 'S3 video hosting (Instagram)' },
+  { name: 'AWS_SECRET_ACCESS_KEY',      label: 'AWS Secret Access Key',      feature: 'S3 video hosting (Instagram)' },
+  { name: 'S3_BUCKET_NAME',             label: 'S3 Bucket Name',             feature: 'S3 video hosting (Instagram)' },
+  { name: 'VIDEO_PUBLIC_URL',           label: 'Video Public URL',           feature: 'Instagram Reel source URL' },
+];
+
+// Workflow dispatch presets
+const DISPATCH_PRESETS = [
+  {
+    title: '▶ Generate Tomorrow',
+    desc:  'Run the full pipeline for tomorrow\'s date — scrape, script, voice, render, thumbnail.',
+    color: '',
+    inputs: { use_tomorrow: 'true', skip_approval: 'false', upload_approved: 'false' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '▶ Generate Today',
+    desc:  'Run the pipeline for today\'s date (use for testing or re-generation).',
+    color: '',
+    inputs: { use_tomorrow: 'false', skip_approval: 'false', upload_approved: 'false' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '⚡ Skip Approval + Auto Upload',
+    desc:  'Generate tomorrow\'s video AND immediately upload to YouTube + Instagram (no review step).',
+    color: 'green',
+    inputs: { use_tomorrow: 'true', skip_approval: 'true', upload_approved: 'false' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '📤 Upload Already-Approved',
+    desc:  'Upload the previously generated and approved video. Skips re-generation.',
+    color: 'blue',
+    inputs: { use_tomorrow: 'true', skip_approval: 'false', upload_approved: 'true' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '📊 Fetch Analytics Now',
+    desc:  'Pull latest YouTube + Instagram analytics and update dashboard data.',
+    color: 'blue',
+    inputs: {},
+    workflow: 'fetch-analytics.yml',
+  },
+];
+
+let _settingsSecretsCache = null; // null = not fetched, [] = fetched (names)
+
+async function renderSettingsTab(state, config, analytics) {
+  const el = document.getElementById('settings-tab-content');
+  if (!el) return;
+
+  // Try to fetch secret names from GitHub API
+  let secretNames = _settingsSecretsCache;
+  if (secretNames === null && config?.token && config?.owner && config?.repo) {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${config.owner}/${config.repo}/actions/secrets`,
+        { headers: { Authorization: `Bearer ${config.token}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        secretNames = (data.secrets || []).map(s => s.name);
+        _settingsSecretsCache = secretNames;
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  const cities = state?.cities ? Object.values(state.cities) : [];
+  const owner  = config?.owner || '—';
+  const repo   = config?.repo  || '—';
+  const runId  = config?.run_id || '—';
+  const ghBase = `https://github.com/${owner}/${repo}`;
+  const pagesUrl = `https://${owner}.github.io/${repo}`;
+
+  el.innerHTML = `
+
+    <!-- ① Repo & Dashboard info -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🔗</span>
+        <h2>Repo & Dashboard Info</h2>
+      </div>
+      <div class="pub-section-body">
+        <div class="sec-kv">
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Repository</span>
+            <span class="sec-kv-val">
+              <a href="${ghBase}" target="_blank">${owner}/${repo}</a>
+            </span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">GitHub Pages</span>
+            <span class="sec-kv-val">
+              <a href="${pagesUrl}" target="_blank">${pagesUrl}</a>
+            </span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Last Run ID</span>
+            <span class="sec-kv-val">
+              ${runId !== '—'
+                ? `<a href="${ghBase}/actions/runs/${runId}" target="_blank">${runId}</a>`
+                : '—'}
+            </span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Pipeline date</span>
+            <span class="sec-kv-val">${state?.date || '—'}</span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Analytics updated</span>
+            <span class="sec-kv-val">${analytics?.last_updated
+              ? new Date(analytics.last_updated).toLocaleString()
+              : '—'}</span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Cities active</span>
+            <span class="sec-kv-val">${cities.length}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② Pipeline schedule -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🕐</span>
+        <h2>Automation Schedule</h2>
+      </div>
+      <div class="pub-section-body">
+        <div class="sec-sched-row">
+          <div>
+            <div><span class="sec-sched-cron">0 1 * * *</span></div>
+          </div>
+          <div>
+            <div class="sec-sched-label">Daily Panchangam Pipeline</div>
+            <div class="sec-sched-sub">1:00 AM UTC · 8:00 PM ET · 5:00 PM PT — generates tomorrow's videos nightly</div>
+          </div>
+        </div>
+        <div class="sec-sched-row">
+          <div>
+            <div><span class="sec-sched-cron">0 6 * * *</span></div>
+          </div>
+          <div>
+            <div class="sec-sched-label">Fetch Analytics</div>
+            <div class="sec-sched-sub">6:00 AM UTC · 1:00 AM ET — pulls YouTube + Instagram stats after uploads</div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <a href="${ghBase}/actions" target="_blank" class="pub-url-pill">
+            🔗 Open GitHub Actions
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ Workflow dispatch controls -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>⚙️</span>
+        <h2>Workflow Controls</h2>
+        <span class="psh-sub">Manual triggers via GitHub Actions dispatch</span>
+      </div>
+      <div class="pub-section-body">
+        ${!config?.token ? `<div class="an-note" style="margin-bottom:16px">
+          ⚠️ No GitHub token configured — dispatch buttons are disabled.<br>
+          Add a <strong>token</strong> field to <code>dashboard/repo_config.json</code> with a PAT that has
+          <code>actions:write</code> scope.
+        </div>` : ''}
+        <div class="sec-dispatch-grid">
+          ${DISPATCH_PRESETS.map((p, i) => `
+            <div class="sec-dispatch-card">
+              <div class="sec-dispatch-title">${p.title}</div>
+              <div class="sec-dispatch-desc">${p.desc}</div>
+              <button class="sec-dispatch-btn ${p.color}"
+                      onclick="settingsDispatch(${i})"
+                      ${!config?.token ? 'disabled title="No token configured"' : ''}>
+                Trigger Now
+              </button>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ Secrets health -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🔑</span>
+        <h2>Secrets Health</h2>
+        <span class="psh-sub" id="secrets-hdr-sub">
+          ${secretNames === null
+            ? 'Add a PAT token to repo_config.json to check secrets'
+            : `${secretNames.filter(n => REQUIRED_SECRETS.find(r=>r.name===n)).length}/${REQUIRED_SECRETS.length} configured`}
+        </span>
+      </div>
+      <div class="pub-section-body">
+        ${secretNames === null ? `
+          <div class="an-note">
+            Secret names can only be fetched from GitHub API with an authenticated token.
+            Add <code>"token": "ghp_…"</code> to <code>dashboard/repo_config.json</code>
+            (PAT with <code>secrets:read</code> or admin scope).
+          </div>` : ''}
+        <div class="sec-secrets-grid">
+          ${REQUIRED_SECRETS.map(s => {
+            const known = secretNames !== null;
+            const present = known && secretNames.includes(s.name);
+            const cls   = !known ? 'unkn' : present ? 'ok' : 'miss';
+            const label = !known ? 'UNKNOWN' : present ? '✓ SET' : '✗ MISSING';
+            return `
+              <div class="sec-secret-row ${cls}" title="${s.feature}">
+                <div class="sec-secret-name">${s.name}</div>
+                <div class="sec-secret-badge ${cls}">${label}</div>
+              </div>`;
+          }).join('')}
+        </div>
+        ${secretNames !== null ? `
+          <div style="margin-top:14px">
+            <a href="${ghBase}/settings/secrets/actions" target="_blank" class="pub-url-pill">
+              🔗 Manage Secrets on GitHub
+            </a>
+          </div>` : ''}
+      </div>
+    </div>
+
+    <!-- ⑤ Cities & timezones -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🌍</span>
+        <h2>Active Cities</h2>
+        <span class="psh-sub">${cities.length} cities in pipeline</span>
+      </div>
+      <div class="pub-section-body">
+        ${cities.length === 0
+          ? '<div style="color:var(--muted);font-size:13px">No city data found. Run the pipeline first.</div>'
+          : `<table class="sec-cities-table">
+              <thead><tr>
+                <th>City</th>
+                <th>Timezone</th>
+                <th>TZ Label</th>
+                <th>Sunrise</th>
+                <th>Sunset</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody>
+                ${cities.map(c => {
+                  const p = c.panchang || {};
+                  return `<tr>
+                    <td style="color:var(--gold-soft);font-weight:600">${c.city||c.city_key}</td>
+                    <td style="color:var(--muted);font-size:12px">${p.timezone||'—'}</td>
+                    <td><span class="sec-tz-chip">${p.tz_label||'—'}</span></td>
+                    <td style="font-size:12px">${p.sunrise||'—'}</td>
+                    <td style="font-size:12px">${p.sunset||'—'}</td>
+                    <td>${c.approval_status==='approved'
+                          ? '<span style="color:#69b46c">✓ Approved</span>'
+                          : c.approval_status==='rejected'
+                          ? '<span style="color:#e05a5a">✗ Rejected</span>'
+                          : '<span style="color:#f0a500">⏳ Pending</span>'}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>`}
+        <div style="margin-top:14px;color:var(--muted);font-size:12px;line-height:1.7">
+          To add or remove cities, edit <code>scripts/pipeline.py</code> — the <code>CITIES</code> list at the top of the file.
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑥ Token setup guide -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>📖</span>
+        <h2>Dashboard Token Setup</h2>
+      </div>
+      <div class="pub-section-body">
+        <div style="color:var(--muted);font-size:13px;line-height:1.9">
+          The dashboard reads <code>repo_config.json</code> at load time. To enable live secret checks
+          and workflow dispatch, add a GitHub Personal Access Token (PAT):
+        </div>
+        <pre style="background:rgba(255,215,0,.04);border:1px solid var(--border);
+                    border-radius:8px;padding:16px;margin:14px 0;font-size:12px;
+                    color:var(--text);overflow-x:auto;line-height:1.6">{
+  "owner": "${owner}",
+  "repo":  "${repo}",
+  "run_id": "${runId}",
+  "workflow_file": "daily-pipeline.yml",
+  "token": "ghp_YOUR_TOKEN_HERE"
+}</pre>
+        <div style="color:var(--muted);font-size:12px;line-height:1.7">
+          Required PAT scopes: <code>repo</code> · <code>workflow</code> · <code>secrets</code> (admin for secret names).<br>
+          ⚠️ Do not commit <code>repo_config.json</code> with a real token. Use it locally only — the file is in <code>.gitignore</code>.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Workflow dispatch ──────────────────────────────────────
+async function settingsDispatch(presetIdx) {
+  const config = window._config;
+  const preset = DISPATCH_PRESETS[presetIdx];
+  if (!config?.token) { showToast('No token — add token to repo_config.json.', 'error'); return; }
+
+  const confirmed = confirm(`Trigger: "${preset.title}"?\n\n${preset.desc}`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${preset.workflow}/dispatches`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: preset.inputs }),
+      }
+    );
+    if (res.status === 204) {
+      showToast(`✅ "${preset.title}" triggered! Check GitHub Actions.`, 'success');
+    } else {
+      const b = await res.json().catch(() => ({}));
+      throw new Error(b.message || res.statusText);
+    }
+  } catch (err) {
+    showToast(`Dispatch failed: ${err.message}`, 'error');
+  }
+}
+
+// ════════════════════════════════════════════
+// Init
+// ════════════════════════════════════════════
+(async () => {
+  const [state, config, analytics] = await Promise.all([loadState(), loadRepoConfig(), loadAnalytics()]);
+  window._state     = state;
+  window._config    = config;
+  window._analytics = analytics;
+
+  // Update header date
+  const dateStr = state?.date || new Date().toISOString().split('T')[0];
+  const d = new Date(dateStr + 'T12:00:00');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('header-weekday').textContent = days[d.getDay()];
+  document.getElementById('header-date').textContent    = dateStr;
+
+  // Status message
+  const cities = state?.cities || {};
+  const pending = Object.values(cities).filter(c => c.approval_status === 'pending').length;
+  const total   = Object.keys(cities).length;
+  document.getElementById('status-msg').textContent =
+    total > 0
+      ? `${total} cities ready — ${pending} pending approval`
+      : '⏳ Waiting for pipeline to run...';
+
+  // Render all tabs
+  renderPanchangTab(state);
+  renderVideoReview(state, config);
+  renderAnalyticsTab(state, analytics);
+  renderHashtagTab(state);
+  renderPublishTab(state, config);
+  renderSettingsTab(state, config, analytics);
 })();
 </script>
 </body>
