@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>🪔 Panchangam Video — Approval Dashboard</title>
+<title>🪔 Panchangam Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Tiro+Devanagari+Hindi:ital@0;1&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet"/>
 <style>
   :root {
@@ -17,6 +17,7 @@
     --border:    #3d2010;
     --text:      #f5ead8;
     --muted:     #9e8060;
+    --green:     #2d6a4f;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,33 +38,44 @@
     pointer-events: none;
   }
 
+  /* ── Mandala border ── */
+  .mandala-border {
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--gold) 0px, var(--gold) 8px,
+      transparent 8px, transparent 16px,
+      var(--amber) 16px, var(--amber) 24px,
+      transparent 24px, transparent 32px
+    );
+  }
+
   /* ── Header ── */
   header {
     position: relative; z-index: 1;
     background: linear-gradient(135deg, var(--dark-red) 0%, #2d0a00 50%, #1a0800 100%);
     border-bottom: 2px solid var(--gold);
-    padding: 0;
     overflow: hidden;
   }
 
   .header-inner {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: auto;
-    padding: 32px 24px 24px;
+    padding: 28px 24px 20px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
   }
 
   .om-badge {
-    width: 72px; height: 72px;
+    width: 68px; height: 68px;
     background: radial-gradient(circle, var(--gold) 0%, var(--amber) 60%, transparent 100%);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 44px;
+    font-size: 40px;
     flex-shrink: 0;
-    box-shadow: 0 0 32px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1);
     animation: pulse-gold 3s ease-in-out infinite;
+    box-shadow: 0 0 32px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1);
   }
 
   @keyframes pulse-gold {
@@ -73,7 +85,7 @@
 
   .header-text h1 {
     font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(22px, 4vw, 36px);
+    font-size: clamp(20px, 3.5vw, 32px);
     color: var(--gold);
     letter-spacing: 2px;
     text-shadow: 0 2px 12px rgba(255,215,0,0.4);
@@ -81,65 +93,94 @@
 
   .header-text p {
     color: var(--amber);
-    font-size: 15px;
+    font-size: 14px;
     margin-top: 4px;
     letter-spacing: 1px;
     font-family: 'Tiro Devanagari Hindi', serif;
   }
 
-  .header-date {
-    margin-left: auto;
-    text-align: right;
-  }
-
+  .header-date { margin-left: auto; text-align: right; flex-shrink: 0; }
   .header-date .day {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 28px;
-    color: var(--gold);
+    font-size: 26px; color: var(--gold);
   }
-
-  .header-date .date-str {
-    color: var(--muted);
-    font-size: 14px;
-  }
+  .header-date .date-str { color: var(--muted); font-size: 13px; }
 
   /* ── Status bar ── */
   .status-bar {
-    background: rgba(255,215,0,0.08);
+    background: rgba(255,215,0,0.07);
     border-bottom: 1px solid var(--border);
     padding: 10px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--muted);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 14px; color: var(--muted);
     position: relative; z-index: 1;
   }
 
   .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--gold);
-    animation: blink 2s step-start infinite;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold); animation: blink 2s step-start infinite;
   }
 
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* ── Main layout ── */
-  main {
-    position: relative; z-index: 1;
-    max-width: 1100px;
-    margin: 40px auto;
-    padding: 0 20px;
-    display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: 28px;
-    align-items: start;
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #110802;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 16px 28px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    color: var(--muted);
+    font-size: 14px; font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 8px;
   }
 
-  @media (max-width: 768px) {
-    main { grid-template-columns: 1fr; }
+  .tab-btn:hover {
+    color: var(--gold-soft);
+    background: rgba(255,215,0,0.04);
+  }
+
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+    background: rgba(255,215,0,0.07);
+  }
+
+  .tab-badge {
+    background: var(--crimson);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* ── Tab panels ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Page wrapper ── */
+  .page-wrap {
+    position: relative; z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 36px 20px;
   }
 
   /* ── Cards ── */
@@ -148,53 +189,82 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
   }
 
   .card-header {
     background: linear-gradient(135deg, var(--dark-red), #2a0a00);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
     border-bottom: 1px solid var(--border);
   }
 
   .card-header h2 {
     font-family: 'Cinzel Decorative', serif;
-    font-size: 16px;
-    color: var(--gold);
-    letter-spacing: 1px;
+    font-size: 15px; color: var(--gold); letter-spacing: 1px;
   }
 
-  .card-body { padding: 20px; }
+  .card-body { padding: 28px; }
+
+  /* ── Coming soon placeholder ── */
+  .coming-soon {
+    text-align: center;
+    padding: 80px 24px;
+  }
+
+  .coming-soon .cs-icon { font-size: 64px; margin-bottom: 16px; }
+
+  .coming-soon h3 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 22px; color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .coming-soon p { color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+  .coming-soon .cs-checklist {
+    display: inline-flex; flex-direction: column; gap: 10px;
+    margin-top: 24px; text-align: left;
+  }
+
+  .coming-soon .cs-item {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text); font-size: 14px;
+    background: rgba(255,215,0,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px;
+  }
+
+  .cs-item .cs-tick { color: var(--gold); font-size: 16px; }
+
+  /* ── Main layout (Video Review tab) ── */
+  .review-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .review-grid { grid-template-columns: 1fr; }
+    .tab-btn { padding: 14px 18px; font-size: 13px; }
+  }
 
   /* ── Video preview ── */
   .video-wrapper {
-    background: #000;
-    border-radius: 12px;
-    overflow: hidden;
-    aspect-ratio: 9/16;
-    max-height: 480px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #000; border-radius: 12px; overflow: hidden;
+    aspect-ratio: 9/16; max-height: 480px;
+    display: flex; align-items: center; justify-content: center;
     position: relative;
   }
 
-  .video-wrapper video {
-    width: 100%; height: 100%;
-    object-fit: contain;
-  }
+  .video-wrapper video { width: 100%; height: 100%; object-fit: contain; }
 
   .video-placeholder {
-    text-align: center;
-    padding: 40px;
-    color: var(--muted);
+    text-align: center; padding: 40px; color: var(--muted);
   }
 
   .video-placeholder .icon { font-size: 64px; margin-bottom: 12px; }
-  .video-placeholder p { font-size: 14px; }
 
   /* ── Script section ── */
   .script-block {
@@ -207,260 +277,298 @@
   }
 
   .script-block h4 {
-    color: var(--gold);
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
+    color: var(--gold); font-size: 12px;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;
   }
 
   .script-block p {
-    color: var(--text);
-    font-size: 14px;
-    line-height: 1.7;
+    color: var(--text); font-size: 14px; line-height: 1.7;
     font-family: 'Tiro Devanagari Hindi', serif;
   }
 
-  /* ── Panchang info grid ── */
+  /* ── Info grid ── */
   .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
   }
 
   .info-item {
-    background: rgba(255,215,0,0.05);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
+    background: rgba(255,215,0,0.05); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
   }
 
-  .info-item .label {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-
-  .info-item .value {
-    color: var(--gold-soft);
-    font-size: 14px;
-    font-weight: 600;
-  }
+  .info-item .label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .info-item .value { color: var(--gold-soft); font-size: 14px; font-weight: 600; }
 
   /* ── Timing rows ── */
   .timing-section h4 {
-    color: var(--amber);
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin: 16px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    color: var(--amber); font-size: 12px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 16px 0 8px;
+    display: flex; align-items: center; gap: 6px;
   }
 
   .timing-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-bottom: 4px;
-    font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; border-radius: 6px; margin-bottom: 4px; font-size: 13px;
   }
 
-  .timing-row.inauspicious {
-    background: rgba(139,0,0,0.2);
-    border: 1px solid rgba(139,0,0,0.4);
-  }
-
-  .timing-row.auspicious {
-    background: rgba(45,106,79,0.2);
-    border: 1px solid rgba(45,106,79,0.4);
-  }
-
+  .timing-row.inauspicious { background: rgba(139,0,0,0.2); border: 1px solid rgba(139,0,0,0.4); }
+  .timing-row.auspicious   { background: rgba(45,106,79,0.2); border: 1px solid rgba(45,106,79,0.4); }
   .timing-row .t-label { color: var(--muted); }
-  .timing-row .t-zones { color: var(--text); font-size: 12px; }
+  .timing-row .t-zones  { color: var(--text); font-size: 12px; }
 
   /* ── Action buttons ── */
   .action-area {
-    padding: 20px;
-    border-top: 1px solid var(--border);
-    background: rgba(0,0,0,0.2);
+    padding: 20px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2);
   }
 
   .video-title-display {
-    background: rgba(255,215,0,0.08);
-    border: 1px solid var(--gold-soft);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 14px;
-    color: var(--gold);
-    text-align: center;
+    background: rgba(255,215,0,0.08); border: 1px solid var(--gold-soft);
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+    font-family: 'Cinzel Decorative', serif; font-size: 13px;
+    color: var(--gold); text-align: center;
   }
 
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
   .btn {
-    padding: 16px 24px;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    font-family: 'Outfit', sans-serif;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    letter-spacing: 0.5px;
+    padding: 14px 20px; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; font-family: 'Outfit', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
   }
 
   .btn-approve {
     background: linear-gradient(135deg, #1b5e20, #2d6a4f);
-    color: #a8d8a8;
-    border: 1px solid #2d6a4f;
+    color: #a8d8a8; border: 1px solid #2d6a4f;
   }
-
-  .btn-approve:hover {
-    background: linear-gradient(135deg, #2d6a4f, #40916c);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(45,106,79,0.4);
-  }
+  .btn-approve:hover { background: linear-gradient(135deg, #2d6a4f, #40916c); color: #fff; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,106,79,0.4); }
 
   .btn-reject {
     background: linear-gradient(135deg, #5c0000, #8B0000);
-    color: #ffb3b3;
-    border: 1px solid #8B0000;
+    color: #ffb3b3; border: 1px solid #8B0000;
   }
-
-  .btn-reject:hover {
-    background: linear-gradient(135deg, #8B0000, #b00000);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(139,0,0,0.4);
-  }
+  .btn-reject:hover { background: linear-gradient(135deg, #8B0000, #b00000); color: #fff; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139,0,0,0.4); }
 
   .btn:active { transform: translateY(0); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* ── Toast notifications ── */
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 1px;
+  }
+  .badge-pending  { background: rgba(255,165,0,0.15); color: var(--amber); border: 1px solid var(--amber); }
+  .badge-approved { background: rgba(45,106,79,0.2);  color: #69b46c;    border: 1px solid #2d6a4f; }
+  .badge-rejected { background: rgba(139,0,0,0.2);    color: #e07070;    border: 1px solid #8B0000; }
+
+  /* ── Toast ── */
   .toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: var(--card);
-    border: 1px solid var(--gold);
-    border-radius: 12px;
-    padding: 16px 24px;
-    color: var(--text);
-    font-size: 15px;
-    z-index: 999;
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--card); border: 1px solid var(--gold);
+    border-radius: 12px; padding: 14px 22px;
+    color: var(--text); font-size: 14px; z-index: 9999;
     transform: translateX(200%);
     transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    max-width: 340px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    max-width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,0.8);
   }
-
-  .toast.show { transform: translateX(0); }
+  .toast.show    { transform: translateX(0); }
   .toast.success { border-color: #2d6a4f; }
   .toast.error   { border-color: var(--crimson); }
 
-  /* ── Decorative top border ── */
-  .mandala-border {
-    height: 4px;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--gold) 0px, var(--gold) 8px,
-      transparent 8px, transparent 16px,
-      var(--amber) 16px, var(--amber) 24px,
-      transparent 24px, transparent 32px
-    );
-  }
-
-  /* ── Loading state ── */
+  /* ── Loading ── */
   .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 60px;
-    flex-direction: column;
-    gap: 16px;
-    color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px; gap: 16px; color: var(--muted);
   }
-
   .spinner {
     width: 48px; height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    border: 3px solid var(--border); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 1s linear infinite;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Status badge ── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
-
-  .badge-pending  { background: rgba(255,165,0,0.15); color: var(--amber); border: 1px solid var(--amber); }
-  .badge-approved { background: rgba(45,106,79,0.2);  color: #69b46c; border: 1px solid #2d6a4f; }
-  .badge-rejected { background: rgba(139,0,0,0.2);    color: #e07070; border: 1px solid #8B0000; }
 </style>
 </head>
 <body>
 
 <div class="mandala-border"></div>
 
+<!-- ── Header ── -->
 <header>
   <div class="header-inner">
     <div class="om-badge">🪔</div>
     <div class="header-text">
       <h1>Panchangam Dashboard</h1>
-      <p>నిత్య పంచాంగం — Approval Portal</p>
+      <p>నిత్య పంచాంగం — Content Pipeline</p>
     </div>
     <div class="header-date">
-      <div class="day" id="header-weekday">Loading...</div>
-      <div class="date-str" id="header-date">—</div>
+      <div class="day" id="header-weekday">—</div>
+      <div class="date-str" id="header-date">Loading...</div>
     </div>
   </div>
 </header>
 
+<!-- ── Status bar ── -->
 <div class="status-bar">
   <div class="status-dot"></div>
-  <span id="status-msg">Loading today's Panchangam video...</span>
+  <span id="status-msg">Loading Panchangam pipeline...</span>
 </div>
 
-<main id="main-content">
-  <div class="loading" style="grid-column:1/-1">
-    <div class="spinner"></div>
-    <p>Loading Panchangam data...</p>
-  </div>
-</main>
+<!-- ── Tab Navigation ── -->
+<nav class="tab-nav" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true"
+          aria-controls="tab-panchang" id="btn-panchang"
+          onclick="switchTab('panchang')">
+    🌙 Tomorrow's Panchangam
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-videos" id="btn-videos"
+          onclick="switchTab('videos')">
+    🎬 Video Review
+    <span class="tab-badge" id="pending-badge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-analytics" id="btn-analytics"
+          onclick="switchTab('analytics')">
+    📊 Analytics
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-hashtags" id="btn-hashtags"
+          onclick="switchTab('hashtags')">
+    # Hashtags
+  </button>
+</nav>
 
-<!-- Toast -->
+<!-- ════════════════════════════════════════════
+     TAB 1 — Tomorrow's Panchangam
+════════════════════════════════════════════ -->
+<div id="tab-panchang" class="tab-panel active">
+  <div class="page-wrap">
+    <div class="card">
+      <div class="card-header">
+        <span>🌙</span>
+        <h2>Tomorrow's Panchangam</h2>
+      </div>
+      <div class="card-body">
+        <div class="coming-soon">
+          <div class="cs-icon">🌙</div>
+          <h3>Tomorrow's Panchangam</h3>
+          <p>Full editable panchang data for all 5 cities.<br>Coming up next.</p>
+          <div class="cs-checklist">
+            <div class="cs-item"><span class="cs-tick">◻</span> City selector — New York · Chicago · Dallas · California · Michigan</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> All timing fields displayed per city</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Edit mode — toggle any field to input</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Save &amp; Regenerate Video button</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 2 — Video Review
+════════════════════════════════════════════ -->
+<div id="tab-videos" class="tab-panel">
+  <div class="page-wrap">
+    <div id="video-review-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading video data...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 3 — Analytics
+════════════════════════════════════════════ -->
+<div id="tab-analytics" class="tab-panel">
+  <div class="page-wrap">
+    <div class="card">
+      <div class="card-header">
+        <span>📊</span>
+        <h2>Analytics</h2>
+      </div>
+      <div class="card-body">
+        <div class="coming-soon">
+          <div class="cs-icon">📊</div>
+          <h3>Analytics</h3>
+          <p>YouTube + Instagram performance charts.<br>Coming up next.</p>
+          <div class="cs-checklist">
+            <div class="cs-item"><span class="cs-tick">◻</span> YouTube &amp; Instagram platform toggle</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Metric cards — Views, Likes, Comments, Followers</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Line chart — views over last 7 days</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Bar chart — performance by city</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Table — per-video breakdown</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TAB 4 — Hashtags
+════════════════════════════════════════════ -->
+<div id="tab-hashtags" class="tab-panel">
+  <div class="page-wrap">
+    <div class="card">
+      <div class="card-header">
+        <span>#</span>
+        <h2>Hashtag Intelligence</h2>
+      </div>
+      <div class="card-body">
+        <div class="coming-soon">
+          <div class="cs-icon">#️⃣</div>
+          <h3>Hashtag Intelligence</h3>
+          <p>Performance tracking + smart recommendations.<br>Coming up next.</p>
+          <div class="cs-checklist">
+            <div class="cs-item"><span class="cs-tick">◻</span> Current hashtags per city from pipeline state</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Performance score per hashtag</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Hot 🔥 &amp; Rising 📈 badges</div>
+            <div class="cs-item"><span class="cs-tick">◻</span> Smart recommendations based on top performers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Utility ──────────────────────────────────────────────────
+// ════════════════════════════════════════════
+// Tab switching
+// ════════════════════════════════════════════
+function switchTab(name) {
+  // Hide all panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  // Deactivate all buttons
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  // Activate selected
+  document.getElementById('tab-' + name).classList.add('active');
+  const btn = document.getElementById('btn-' + name);
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  // Persist in URL hash
+  history.replaceState(null, '', '#' + name);
+}
+
+// Restore tab from URL hash on load
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.replace('#', '');
+  const valid = ['panchang', 'videos', 'analytics', 'hashtags'];
+  if (hash && valid.includes(hash)) switchTab(hash);
+});
+
+// ════════════════════════════════════════════
+// Utilities
+// ════════════════════════════════════════════
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -485,313 +593,292 @@ function fmtRange(us, startKey, endKey) {
   return `ET: ${s?.Eastern||'?'} – ${e?.Eastern||'?'} | CT: ${s?.Central||'?'} | PT: ${s?.Pacific||'?'}`;
 }
 
-// ── Load metadata ────────────────────────────────────────────
-async function loadMetadata() {
-  const params = new URLSearchParams(window.location.search);
-  const dateStr = params.get('date') || new Date().toISOString().split('T')[0];
-  
-  // Try to load from pending folder
-  const metaUrl = `pending/${dateStr}/metadata.json`;
-  
+// ════════════════════════════════════════════
+// Load data
+// ════════════════════════════════════════════
+async function loadState() {
   try {
-    const resp = await fetch(metaUrl);
-    if (!resp.ok) throw new Error(`No metadata found for ${dateStr}`);
+    const resp = await fetch('pipeline_state.json');
+    if (!resp.ok) throw new Error('No state');
     return await resp.json();
-  } catch (e) {
-    // Return demo data if no actual metadata
-    return generateDemoData(dateStr);
+  } catch {
+    return null;
   }
 }
 
-function generateDemoData(dateStr) {
-  const d = new Date(dateStr);
-  const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  return {
-    date: dateStr,
-    status: 'pending',
-    video_file: null,
-    script: {
-      panchang_date: dateStr,
-      weekday: weekdays[d.getDay()],
-      video_title: `Daily Panchangam | ${dateStr} | నిత్య పంచాంగం`,
-      opening_shloka: 'శుక్లాం బరధరం విష్ణుం శశివర్ణం చతుర్భుజం | ప్రసన్నవదనం ధ్యాయేత్ సర్వ విఘ్నోప శాంతయే ||',
-      main_narration: `నమస్కారం! Welcome to today's Daily Panchangam. Today is ${weekdays[d.getDay()]}, ${dateStr}. నేటి పంచాంగం వివరాలు — Rahu Kalam today is from 7:30 AM to 9:00 AM Eastern Time. Dur Muhurtam: 10:15 AM to 11:00 AM ET. అభిజిత్ ముహూర్తం — Abhijit Muhurta, the most auspicious time of the day, falls between 11:52 AM and 12:44 PM ET. Amrit Kalam: 2:15 PM to 3:45 PM ET. గృహ ప్రవేశం, వివాహం, లేదా వ్యాపారం మొదలు పెట్టడానికి అభిజిత్ ముహూర్తం శ్రేష్ఠమైన కాలం.`,
-      closing_blessing: 'సర్వే జనాః సుఖినో భవంతు | ఓం శాంతి శాంతి శాంతిః ||',
-      video_description: '#Panchangam #TeluguPanchangam #DailyPanchang #HinduCalendar #RahuKalam #PanchangamUSA #Telugu #Shorts',
-      text_overlays: [
-        { timestamp_sec: 2,  text: '🪔 నమస్కారం! Namaskaram!' },
-        { timestamp_sec: 8,  text: `📅 ${weekdays[d.getDay()]}, ${dateStr}` },
-        { timestamp_sec: 14, text: '⚠️ Rahu Kalam: 7:30–9:00 AM ET' },
-        { timestamp_sec: 20, text: '⚠️ Dur Muhurtam: 10:15–11:00 AM ET' },
-        { timestamp_sec: 28, text: '✅ Abhijit Muhurta: 11:52 AM–12:44 PM ET' },
-        { timestamp_sec: 36, text: '✅ Amrit Kalam: 2:15–3:45 PM ET' },
-        { timestamp_sec: 48, text: '🙏 సర్వే జనాః సుఖినో భవంతు' },
-        { timestamp_sec: 54, text: '🔔 Follow for Daily Panchangam!' },
-      ]
-    },
-    panchang: {
-      weekday: weekdays[d.getDay()],
-      raw: {
-        tithi: 'Chaturdashi — చతుర్దశి',
-        nakshatra: 'Rohini — రోహిణి',
-        yoga: 'Siddha — సిద్ధ',
-        karana: 'Vishti — విష్టి',
-        sunrise_ist: '06:28 AM',
-        sunset_ist: '06:45 PM',
-        rahukalam_ist: '09:00 AM to 10:30 AM',
-        durmuhurtam_ist: '08:44 PM to 09:32 PM',
-        abhijit_ist: '11:52 AM to 12:44 PM',
-        amrit_kalam_ist: '02:15 PM to 03:45 PM',
-      },
-      us_timings: {
-        Sunrise: { Eastern:'06:28 AM EDT', Central:'05:28 AM CDT', Mountain:'04:28 AM MDT', Pacific:'03:28 AM PDT' },
-        Sunset:  { Eastern:'07:58 PM EDT', Central:'06:58 PM CDT', Mountain:'05:58 PM MDT', Pacific:'04:58 PM PDT' },
-        Rahukalam_Start: { Eastern:'07:30 AM EDT', Central:'06:30 AM CDT', Mountain:'05:30 AM MDT', Pacific:'04:30 AM PDT' },
-        Rahukalam_End:   { Eastern:'09:00 AM EDT', Central:'08:00 AM CDT', Mountain:'07:00 AM MDT', Pacific:'06:00 AM PDT' },
-        Durmuhurtam_Start: { Eastern:'10:15 AM EDT', Central:'09:15 AM CDT', Mountain:'08:15 AM MDT', Pacific:'07:15 AM PDD' },
-        Durmuhurtam_End:   { Eastern:'11:00 AM EDT', Central:'10:00 AM CDT', Mountain:'09:00 AM MDT', Pacific:'08:00 AM PDT' },
-        Abhijit_Start: { Eastern:'11:52 AM EDT', Central:'10:52 AM CDT', Mountain:'09:52 AM MDT', Pacific:'08:52 AM PDT' },
-        Abhijit_End:   { Eastern:'12:44 PM EDT', Central:'11:44 AM CDT', Mountain:'10:44 AM MDT', Pacific:'09:44 AM PDT' },
-        AmritKalam_Start: { Eastern:'02:15 PM EDT', Central:'01:15 PM CDT', Mountain:'12:15 PM MDT', Pacific:'11:15 AM PDT' },
-        AmritKalam_End:   { Eastern:'03:45 PM EDT', Central:'02:45 PM CDT', Mountain:'01:45 PM MDT', Pacific:'12:45 PM PDT' },
-      }
-    }
-  };
+async function loadRepoConfig() {
+  try {
+    const resp = await fetch('repo_config.json');
+    if (!resp.ok) throw new Error('No config');
+    return await resp.json();
+  } catch {
+    return {};
+  }
 }
 
-// ── Render dashboard ──────────────────────────────────────────
-function render(meta) {
-  const script  = meta.script   || {};
-  const panchang = meta.panchang || {};
-  const raw     = panchang.raw  || {};
-  const us      = panchang.us_timings || {};
-  const dateStr = meta.date;
-  const weekday = script.weekday || panchang.weekday || '';
-  const status  = meta.status   || 'pending';
-
-  // Update header
-  document.getElementById('header-weekday').textContent = weekday;
-  document.getElementById('header-date').textContent = dateStr;
-  document.getElementById('status-msg').textContent =
-    status === 'pending'  ? '⏳ Video ready — awaiting your approval' :
-    status === 'approved' ? '✅ Video approved and uploaded!' :
-    '❌ Video rejected';
-
-  const videoSrc = meta.video_file
-    ? `pending/${dateStr}/${meta.video_file}`
-    : null;
-
-  const main = document.getElementById('main-content');
-  main.innerHTML = `
-    <!-- LEFT: Video Preview -->
-    <div>
+// ════════════════════════════════════════════
+// Render Video Review tab
+// ════════════════════════════════════════════
+function renderVideoReview(state, config) {
+  if (!state) {
+    document.getElementById('video-review-content').innerHTML = `
       <div class="card">
-        <div class="card-header">
-          <span>🎬</span>
-          <h2>Video Preview</h2>
-          <span class="badge badge-${status}" style="margin-left:auto">
-            ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
-          </span>
-        </div>
-        <div class="card-body" style="padding:16px">
-          <div class="video-wrapper">
-            ${videoSrc
-              ? `<video controls src="${videoSrc}" style="max-height:480px"></video>`
-              : `<div class="video-placeholder">
-                  <div class="icon">🪔</div>
-                  <p style="color:var(--gold);font-size:18px;margin-bottom:8px">Video Generating...</p>
-                  <p>The video will appear here once the<br>GitHub Actions pipeline completes.</p>
-                  <p style="margin-top:16px;font-size:12px;color:var(--muted)">Check Actions tab for progress</p>
-                </div>`
-            }
+        <div class="card-body">
+          <div class="loading" style="padding:60px">
+            <div style="font-size:48px">⚠️</div>
+            <p style="color:var(--amber)">No pipeline state found</p>
+            <p style="font-size:13px;color:var(--muted)">Run the pipeline first to generate videos.</p>
           </div>
         </div>
-        <div class="action-area">
-          <div class="video-title-display">
-            "${script.video_title || 'Daily Panchangam'}"
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-approve" onclick="handleApprove('${dateStr}')"
-              ${status !== 'pending' ? 'disabled' : ''}>
-              ✅ Approve & Upload
-            </button>
-            <button class="btn btn-reject" onclick="handleReject('${dateStr}')"
-              ${status !== 'pending' ? 'disabled' : ''}>
-              ❌ Reject
-            </button>
-          </div>
-        </div>
-      </div>
+      </div>`;
+    return;
+  }
+
+  const dateStr  = state.date || '—';
+  const cities   = state.cities || {};
+  const cityKeys = Object.keys(cities);
+
+  // Count pending
+  const pendingCount = cityKeys.filter(k => cities[k].approval_status === 'pending').length;
+  const badge = document.getElementById('pending-badge');
+  if (pendingCount > 0) {
+    badge.textContent = pendingCount;
+    badge.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Pick first city by default
+  const firstCity = cityKeys[0] || '';
+
+  document.getElementById('video-review-content').innerHTML = `
+    <!-- City pills -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px" id="city-pills">
+      ${cityKeys.map((k, i) => {
+        const c = cities[k];
+        const st = c.approval_status || 'pending';
+        const dot = st === 'approved' ? '✅' : st === 'rejected' ? '❌' : '⏳';
+        return `<button class="city-pill-btn ${i === 0 ? 'active' : ''}"
+          style="padding:9px 20px;background:rgba(255,215,0,${i===0?'0.12':'0.05'});
+          border:1px solid ${i===0?'var(--gold)':'var(--border)'};
+          border-radius:24px;color:${i===0?'var(--gold)':'var(--muted)'};
+          font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+          font-family:'Outfit',sans-serif;"
+          onclick="selectCity('${k}', this)">
+          ${dot} ${c.city || k}
+        </button>`;
+      }).join('')}
     </div>
 
-    <!-- RIGHT: Script & Timings -->
-    <div style="display:flex;flex-direction:column;gap:20px">
+    <!-- Review panel (rendered per city) -->
+    <div id="city-review-panel"></div>
+  `;
 
-      <!-- Script preview -->
-      <div class="card">
-        <div class="card-header">
-          <span>📜</span>
-          <h2>Script Preview</h2>
-        </div>
-        <div class="card-body">
-          <div class="script-block">
-            <h4>🪷 Opening Shloka</h4>
-            <p>${script.opening_shloka || '—'}</p>
+  // Render first city
+  renderCityPanel(firstCity, state, config);
+}
+
+function selectCity(cityKey, btn) {
+  document.querySelectorAll('.city-pill-btn').forEach(b => {
+    b.style.background = 'rgba(255,215,0,0.05)';
+    b.style.borderColor = 'var(--border)';
+    b.style.color = 'var(--muted)';
+    b.classList.remove('active');
+  });
+  btn.style.background = 'rgba(255,215,0,0.12)';
+  btn.style.borderColor = 'var(--gold)';
+  btn.style.color = 'var(--gold)';
+  btn.classList.add('active');
+  renderCityPanel(cityKey, window._state, window._config);
+}
+
+function renderCityPanel(cityKey, state, config) {
+  const city   = (state.cities || {})[cityKey] || {};
+  const script  = city.script   || {};
+  const panchang = city.panchang || {};
+  const raw     = panchang;
+  const dateStr = state.date || '—';
+  const status  = city.approval_status || 'pending';
+
+  // Video URL: try pending folder, else artifact
+  const videoSrc = null; // will be loaded from pending/{date}/video_{city}_{date}.mp4
+
+  const artifactUrl = config.run_id
+    ? `https://github.com/${config.owner}/${config.repo}/actions/runs/${config.run_id}`
+    : null;
+
+  document.getElementById('city-review-panel').innerHTML = `
+    <div class="review-grid">
+
+      <!-- LEFT: Video -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <span>🎬</span>
+            <h2>${city.city || cityKey}</h2>
+            <span class="badge badge-${status}" style="margin-left:auto">
+              ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+            </span>
           </div>
-          <div class="script-block">
-            <h4>🎙️ Main Narration</h4>
-            <p>${script.main_narration || '—'}</p>
-          </div>
-          <div class="script-block">
-            <h4>🙏 Closing Blessing</h4>
-            <p>${script.closing_blessing || '—'}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panchang info -->
-      <div class="card">
-        <div class="card-header">
-          <span>🌙</span>
-          <h2>Panchangam Details</h2>
-        </div>
-        <div class="card-body">
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="label">Tithi</div>
-              <div class="value">${raw.tithi || '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Nakshatra</div>
-              <div class="value">${raw.nakshatra || '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Yoga</div>
-              <div class="value">${raw.yoga || '—'}</div>
-            </div>
-            <div class="info-item">
-              <div class="label">Karana</div>
-              <div class="value">${raw.karana || '—'}</div>
+          <div class="card-body" style="padding:16px">
+            <div class="video-wrapper">
+              <div class="video-placeholder">
+                <div class="icon">🪔</div>
+                <p style="color:var(--gold);font-size:16px;margin-bottom:8px">Video in Artifacts</p>
+                <p style="font-size:13px">
+                  ${artifactUrl
+                    ? `<a href="${artifactUrl}" target="_blank"
+                        style="color:var(--amber);text-decoration:underline">
+                        View on GitHub Actions ↗
+                      </a>`
+                    : 'Run the pipeline to generate videos.'}
+                </p>
+                <p style="margin-top:12px;font-size:12px;color:var(--muted)">
+                  ${raw.tithi ? `Tithi: ${raw.tithi}` : ''}
+                </p>
+              </div>
             </div>
           </div>
-
-          <div class="timing-section">
-            <h4>🌅 Sunrise / Sunset</h4>
-            <div class="timing-row">
-              <span class="t-label">Sunrise</span>
-              <span class="t-zones">${fmt(us.Sunrise)}</span>
+          <div class="action-area">
+            <div class="video-title-display">
+              "${script.title || 'Daily Panchangam — ' + (city.city || cityKey)}"
             </div>
-            <div class="timing-row">
-              <span class="t-label">Sunset</span>
-              <span class="t-zones">${fmt(us.Sunset)}</span>
-            </div>
-
-            <h4>⚠️ Inauspicious Timings — Avoid for New Work</h4>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Rahu Kalam</span>
-              <span class="t-zones">${fmtRange(us,'Rahukalam_Start','Rahukalam_End')}</span>
-            </div>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Dur Muhurtam</span>
-              <span class="t-zones">${fmtRange(us,'Durmuhurtam_Start','Durmuhurtam_End')}</span>
-            </div>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Yamagandam</span>
-              <span class="t-zones">${fmtRange(us,'Yamagandam_Start','Yamagandam_End')}</span>
-            </div>
-            <div class="timing-row inauspicious">
-              <span class="t-label">🚫 Gulikai</span>
-              <span class="t-zones">${fmtRange(us,'Gulikai_Start','Gulikai_End')}</span>
-            </div>
-
-            <h4>✅ Auspicious Timings — Best for New Beginnings</h4>
-            <div class="timing-row auspicious">
-              <span class="t-label">🌟 Abhijit Muhurta</span>
-              <span class="t-zones">${fmtRange(us,'Abhijit_Start','Abhijit_End')}</span>
-            </div>
-            <div class="timing-row auspicious">
-              <span class="t-label">🌟 Amrit Kalam</span>
-              <span class="t-zones">${fmtRange(us,'AmritKalam_Start','AmritKalam_End')}</span>
+            <div class="btn-row">
+              <button class="btn btn-approve" onclick="handleApprove('${cityKey}', '${dateStr}')"
+                ${status !== 'pending' ? 'disabled' : ''}>
+                ✅ Approve &amp; Upload
+              </button>
+              <button class="btn btn-reject" onclick="handleReject('${cityKey}')"
+                ${status !== 'pending' ? 'disabled' : ''}>
+                ❌ Reject
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- RIGHT: Panchang + Script -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Script preview -->
+        <div class="card">
+          <div class="card-header"><span>📜</span><h2>Script Preview</h2></div>
+          <div class="card-body">
+            <div class="script-block">
+              <h4>🎙️ Narration</h4>
+              <p>${script.full_narration || script.main_narration || '—'}</p>
+            </div>
+            ${(script.hashtags||[]).length > 0 ? `
+            <div class="script-block">
+              <h4># Hashtags</h4>
+              <p style="line-height:2">${(script.hashtags||[]).map(h=>`<span style="color:var(--amber)">#${h}</span>`).join(' ')}</p>
+            </div>` : ''}
+          </div>
+        </div>
+
+        <!-- Panchang details -->
+        <div class="card">
+          <div class="card-header"><span>🌙</span><h2>Panchangam Details</h2></div>
+          <div class="card-body">
+            <div class="info-grid">
+              <div class="info-item"><div class="label">Tithi</div><div class="value">${raw.tithi||'—'}</div></div>
+              <div class="info-item"><div class="label">Nakshatra</div><div class="value">${raw.nakshatra||'—'}</div></div>
+              <div class="info-item"><div class="label">Yoga</div><div class="value">${raw.yoga||'—'}</div></div>
+              <div class="info-item"><div class="label">Karana</div><div class="value">${raw.karana||'—'}</div></div>
+              <div class="info-item"><div class="label">Paksha</div><div class="value">${raw.paksha||'—'}</div></div>
+              <div class="info-item"><div class="label">Sunrise</div><div class="value">${raw.sunrise||'—'}</div></div>
+            </div>
+            <div class="timing-section">
+              <h4>⚠️ Inauspicious</h4>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Rahu Kalam</span><span class="t-zones">${raw.rahukaal||'N/A'}</span></div>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Dur Muhurtam</span><span class="t-zones">${raw.durmuhurtam||'N/A'}</span></div>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Yamagandam</span><span class="t-zones">${raw.yamagandam||'N/A'}</span></div>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Gulikai</span><span class="t-zones">${raw.gulika||'N/A'}</span></div>
+              <h4>✅ Auspicious</h4>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Abhijit Muhurta</span><span class="t-zones">${raw.abhijit||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Amrit Kalam</span><span class="t-zones">${raw.amrit_kalam||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Brahma Muhurta</span><span class="t-zones">${raw.brahma_muhurta||'N/A'}</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   `;
 }
 
-// ── Approval actions ──────────────────────────────────────────
-async function handleApprove(dateStr) {
-  if (!confirm('✅ Approve this video for upload to YouTube Shorts & Instagram Reels?')) return;
+// ════════════════════════════════════════════
+// Approval actions
+// ════════════════════════════════════════════
+async function handleApprove(cityKey, dateStr) {
+  if (!confirm(`✅ Approve ${cityKey.replace('_',' ')} video for upload?`)) return;
 
-  showToast('🚀 Triggering upload to YouTube & Instagram...', 'success');
-
-  // Trigger GitHub Actions workflow via API
-  const token = prompt(
-    'Enter your GitHub Personal Access Token (PAT) to trigger upload:\n(Create at: Settings → Developer settings → Personal access tokens → Fine-grained → repo:actions:write)',
-    ''
-  );
+  const token = prompt('Enter GitHub Personal Access Token (needs repo + actions:write):');
   if (!token) { showToast('Upload cancelled.', 'error'); return; }
 
-  const repo = prompt('Enter your GitHub repo (e.g. username/panchangam-agent):');
+  const cfg = window._config || {};
+  const repo = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter GitHub repo (user/repo):');
   if (!repo) return;
 
   try {
-    const resp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/daily_panchangam.yml/dispatches`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs: { date: dateStr, skip_upload: 'false' }
-      })
-    });
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file||'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ref: 'main', inputs: { date: dateStr, upload_approved: 'true' } })
+      }
+    );
 
     if (resp.ok || resp.status === 204) {
-      showToast('✅ Upload triggered! Check GitHub Actions for progress.', 'success');
-      // Update local status display
-      document.querySelector('.badge').className = 'badge badge-approved';
-      document.querySelector('.badge').textContent = '✅ Approved';
-      document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+      showToast('✅ Upload triggered! Check GitHub Actions.', 'success');
       document.getElementById('status-msg').textContent = '✅ Approved — uploading to YouTube & Instagram...';
+      // Refresh UI
+      renderVideoReview(window._state, window._config);
     } else {
-      const err = await resp.json();
-      showToast(`GitHub API error: ${err.message}`, 'error');
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub API error: ${err.message || resp.status}`, 'error');
     }
   } catch (e) {
     showToast(`Error: ${e.message}`, 'error');
   }
 }
 
-async function handleReject(dateStr) {
-  const reason = prompt('Reason for rejection (optional):');
-  showToast('❌ Video rejected. Pipeline will not upload.', 'error');
-  document.querySelector('.badge').className = 'badge badge-rejected';
-  document.querySelector('.badge').textContent = '❌ Rejected';
-  document.querySelectorAll('.btn').forEach(b => b.disabled = true);
-  document.getElementById('status-msg').textContent = '❌ Video rejected — pipeline halted.';
+function handleReject(cityKey) {
+  if (!confirm(`❌ Reject ${cityKey.replace('_',' ')} video?`)) return;
+  showToast(`❌ ${cityKey.replace('_',' ')} rejected.`, 'error');
 }
 
-// ── Init ──────────────────────────────────────────────────────
+// ════════════════════════════════════════════
+// Init
+// ════════════════════════════════════════════
 (async () => {
-  try {
-    const meta = await loadMetadata();
-    render(meta);
-  } catch (e) {
-    document.getElementById('main-content').innerHTML = `
-      <div class="loading" style="grid-column:1/-1">
-        <div style="font-size:48px">⚠️</div>
-        <p style="color:var(--amber)">Could not load metadata</p>
-        <p style="font-size:13px;color:var(--muted)">${e.message}</p>
-        <p style="font-size:12px;color:var(--muted);margin-top:8px">
-          Make sure the pipeline has run and dashboard/pending/[date]/metadata.json exists.
-        </p>
-      </div>`;
-  }
+  const [state, config] = await Promise.all([loadState(), loadRepoConfig()]);
+  window._state  = state;
+  window._config = config;
+
+  // Update header date
+  const dateStr = state?.date || new Date().toISOString().split('T')[0];
+  const d = new Date(dateStr + 'T12:00:00');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('header-weekday').textContent = days[d.getDay()];
+  document.getElementById('header-date').textContent    = dateStr;
+
+  // Status message
+  const cities = state?.cities || {};
+  const pending = Object.values(cities).filter(c => c.approval_status === 'pending').length;
+  const total   = Object.keys(cities).length;
+  document.getElementById('status-msg').textContent =
+    total > 0
+      ? `${total} cities ready — ${pending} pending approval`
+      : '⏳ Waiting for pipeline to run...';
+
+  // Render video review tab (pre-load so badge shows)
+  renderVideoReview(state, config);
 })();
 </script>
 </body>
