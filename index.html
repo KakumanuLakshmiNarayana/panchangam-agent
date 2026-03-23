@@ -1685,7 +1685,7 @@ function renderVideoReview(state, config) {
         <div class="loading" style="padding:60px">
           <div style="font-size:48px">⚠️</div>
           <p style="color:var(--amber)">No pipeline state found</p>
-          <p style="font-size:13px;color:var(--muted)">Run the pipeline first to generate videos.</p>
+          <p style="font-size:13px;color:var(--muted)">Run the pipeline first to scrape data. Videos are generated after you approve.</p>
         </div>
       </div></div>`;
     return;
@@ -1930,7 +1930,7 @@ function _vrSetStatus(cityKey, status) {
 }
 
 async function handleVrApprove(cityKey) {
-  if (!confirm(`✅ Approve "${(window._state?.cities?.[cityKey]?.city) || cityKey}" for upload to YouTube & Instagram?`)) return;
+  if (!confirm(`✅ Approve "${(window._state?.cities?.[cityKey]?.city) || cityKey}"?\n\nThis will render the video and upload to YouTube & Instagram.`)) return;
 
   const token = _getGhToken();
   if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
@@ -1985,7 +1985,7 @@ async function handleApproveAll() {
   const pending   = Object.keys(cities).filter(k => _vrGetStatus(k) === 'pending');
   if (pending.length === 0) { showToast('No pending cities.', 'error'); return; }
 
-  if (!confirm(`✅ Approve ALL ${pending.length} pending cities and trigger upload to YouTube & Instagram?`)) return;
+  if (!confirm(`✅ Approve ALL ${pending.length} pending cities?\n\nThis will render the videos and upload to YouTube & Instagram.`)) return;
 
   const token = _getGhToken();
   if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
@@ -2300,7 +2300,7 @@ async function saveAndRegenerate(cityKey) {
     );
 
     if (resp.ok || resp.status === 204) {
-      showToast(`🔄 Regeneration triggered for ${cityKey.replace('_',' ')}! Check GitHub Actions.`, 'success');
+      showToast(`🔄 Data re-scrape triggered for ${cityKey.replace('_',' ')} with your edits! Check GitHub Actions.`, 'success');
     } else {
       const err = await resp.json().catch(() => ({}));
       showToast(`GitHub API error: ${err.message || resp.status}`, 'error');
@@ -2986,7 +2986,7 @@ function renderPublishTab(state, config) {
         <div class="coming-soon">
           <div class="cs-icon">⚠️</div>
           <h3>No Pipeline Data</h3>
-          <p style="color:var(--muted)">Run the pipeline first to generate videos.</p>
+          <p style="color:var(--muted)">Run the pipeline to scrape data, then approve in the dashboard to generate and upload videos.</p>
         </div>
       </div></div>`;
     return;
