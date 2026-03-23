@@ -957,6 +957,180 @@
   .ht-legend-dot {
     width: 10px; height: 10px; border-radius: 50%;
   }
+
+  /* ═══════════════════════════════════════════
+     Tab 5 — Publish & Schedule
+  ═══════════════════════════════════════════ */
+
+  /* Section wrapper reused from ht-section-card pattern */
+  .pub-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; margin-bottom: 22px;
+  }
+  .pub-section-hdr {
+    background: linear-gradient(135deg, var(--dark-red), #2a0a00);
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pub-section-hdr h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px; color: var(--gold); letter-spacing: 1px;
+  }
+  .pub-section-hdr .psh-sub { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .pub-section-body { padding: 20px; }
+
+  /* ── City Queue Card ── */
+  .pub-city-card {
+    background: rgba(255,215,0,.03);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    margin-bottom: 14px;
+    transition: border-color .15s;
+  }
+  .pub-city-card:hover { border-color: rgba(255,215,0,.2); }
+
+  .pub-city-hdr {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .pub-city-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 15px; color: var(--gold);
+  }
+  .pub-city-date { color: var(--muted); font-size: 12px; }
+
+  /* Status badge */
+  .pub-status {
+    margin-left: auto; padding: 4px 12px;
+    border-radius: 20px; font-size: 11px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+    border: 1px solid;
+  }
+  .pub-status.pending  { color: #f0a500; background: rgba(240,165,0,.1); border-color: rgba(240,165,0,.3); }
+  .pub-status.approved { color: #69b46c; background: rgba(45,106,79,.1); border-color: rgba(45,106,79,.35); }
+  .pub-status.rejected { color: #e05a5a; background: rgba(224,90,90,.1); border-color: rgba(224,90,90,.3); }
+  .pub-status.uploaded { color: #6ab0f5; background: rgba(106,176,245,.1); border-color: rgba(106,176,245,.3); }
+
+  /* City body grid */
+  .pub-city-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .pub-city-body { grid-template-columns: 1fr; } }
+
+  /* Meta info */
+  .pub-meta { display: flex; flex-direction: column; gap: 6px; }
+  .pub-meta-row {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 13px; color: var(--muted);
+  }
+  .pub-meta-row .pmr-label {
+    color: var(--gold-soft); font-weight: 600; min-width: 80px; flex-shrink: 0;
+  }
+  .pub-meta-row .pmr-val { color: var(--text); }
+
+  /* Platform toggles */
+  .pub-platforms { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pub-plat-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: rgba(255,255,255,.04);
+    font-family: 'Outfit', sans-serif; font-size: 13px; color: var(--muted);
+    transition: all .2s;
+  }
+  .pub-plat-btn.active {
+    background: rgba(255,215,0,.1); border-color: rgba(255,215,0,.3); color: var(--gold);
+  }
+  .pub-plat-btn:hover { border-color: rgba(255,215,0,.2); }
+
+  /* Optimal time chip */
+  .pub-time-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(106,176,245,.08); border: 1px solid rgba(106,176,245,.2);
+    border-radius: 8px; padding: 6px 12px;
+    color: #6ab0f5; font-size: 12px;
+  }
+
+  /* Action buttons */
+  .pub-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .pub-btn {
+    padding: 9px 20px; border-radius: 8px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+    border: 1px solid; transition: all .2s;
+  }
+  .pub-btn.approve {
+    background: rgba(45,106,79,.15); border-color: rgba(45,106,79,.4); color: #69b46c;
+  }
+  .pub-btn.approve:hover { background: rgba(45,106,79,.28); }
+  .pub-btn.reject  {
+    background: rgba(224,90,90,.08); border-color: rgba(224,90,90,.25); color: #e05a5a;
+  }
+  .pub-btn.reject:hover  { background: rgba(224,90,90,.18); }
+  .pub-btn.publish {
+    background: linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,140,0,.15));
+    border-color: rgba(255,215,0,.4); color: var(--gold);
+  }
+  .pub-btn.publish:hover { background: linear-gradient(135deg,rgba(255,215,0,.32),rgba(255,140,0,.25)); }
+  .pub-btn.publish:disabled {
+    opacity: .4; cursor: not-allowed;
+  }
+  .pub-btn.dispatch {
+    background: rgba(106,176,245,.12); border-color: rgba(106,176,245,.3); color: #6ab0f5;
+  }
+  .pub-btn.dispatch:hover { background: rgba(106,176,245,.22); }
+
+  /* URL pill */
+  .pub-url-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(106,176,245,.07); border: 1px solid rgba(106,176,245,.2);
+    border-radius: 20px; padding: 4px 12px;
+    color: #6ab0f5; font-size: 12px; text-decoration: none;
+    transition: background .15s;
+  }
+  .pub-url-pill:hover { background: rgba(106,176,245,.16); }
+
+  /* Post preview panel */
+  .pub-preview {
+    background: rgba(255,215,0,.03); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+  }
+  .pub-preview textarea {
+    width: 100%; box-sizing: border-box;
+    background: rgba(255,255,255,.05); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    padding: 10px 12px; resize: vertical; outline: none;
+    line-height: 1.6;
+  }
+  .pub-preview textarea:focus { border-color: var(--gold); background: rgba(255,215,0,.06); }
+  .pub-preview .pv-label {
+    color: var(--muted); font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  /* Bulk actions bar */
+  .pub-bulk-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    background: rgba(255,215,0,.04); border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .pub-bulk-label { color: var(--muted); font-size: 13px; flex: 1; }
+
+  /* History row */
+  .pub-hist-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 13px;
+  }
+  .pub-hist-row:last-child { border-bottom: none; }
+  .pub-hist-city { color: var(--gold-soft); font-weight: 600; min-width: 120px; }
+  .pub-hist-plat { color: var(--muted); min-width: 80px; }
+  .pub-hist-date { color: var(--muted); font-size: 12px; margin-left: auto; }
 </style>
 </head>
 <body>
@@ -1006,6 +1180,12 @@
           aria-controls="tab-hashtags" id="btn-hashtags"
           onclick="switchTab('hashtags')">
     # Hashtags
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-publish" id="btn-publish"
+          onclick="switchTab('publish')">
+    📤 Publish
+    <span class="tab-badge" id="publish-badge" style="display:none">0</span>
   </button>
 </nav>
 
@@ -1065,6 +1245,20 @@
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════
+     TAB 5 — Publish & Schedule
+════════════════════════════════════════════ -->
+<div id="tab-publish" class="tab-panel">
+  <div class="page-wrap">
+    <div id="publish-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading publish queue...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
@@ -1092,7 +1286,7 @@ function switchTab(name) {
 // Restore tab from URL hash on load
 window.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash.replace('#', '');
-  const valid = ['panchang', 'videos', 'analytics', 'hashtags'];
+  const valid = ['panchang', 'videos', 'analytics', 'hashtags', 'publish'];
   if (hash && valid.includes(hash)) switchTab(hash);
 });
 
@@ -2437,6 +2631,417 @@ function htAddRec(cityKey, tag) {
 }
 
 // ════════════════════════════════════════════
+// Tab 5 — Publish & Schedule
+// ════════════════════════════════════════════
+
+// Per-city publish state (approval + platform selections)
+// Keys: cityKey → { approved: bool, rejected: bool, platforms: Set, publishing: bool }
+const _pubState = {};
+
+// Best posting times by timezone offset label
+const OPTIMAL_TIMES = {
+  ET: ['7:00 AM', '12:00 PM', '7:30 PM'],
+  CT: ['6:00 AM', '11:00 AM', '6:30 PM'],
+  MT: ['5:00 AM', '10:00 AM', '5:30 PM'],
+  PT: ['4:00 AM', '9:00 AM', '4:30 PM'],
+};
+
+function pubGetState(cityKey) {
+  if (!_pubState[cityKey]) {
+    _pubState[cityKey] = { approved: false, rejected: false, platforms: new Set(['youtube','instagram']), publishing: false };
+  }
+  return _pubState[cityKey];
+}
+
+function pubPlatformLabel(p) {
+  return p === 'youtube' ? '▶ YouTube Shorts' : '📸 Instagram Reels';
+}
+
+function renderPublishTab(state, config) {
+  if (!state || !state.cities) {
+    document.getElementById('publish-tab-content').innerHTML = `
+      <div class="pub-section"><div class="pub-section-body">
+        <div class="coming-soon">
+          <div class="cs-icon">⚠️</div>
+          <h3>No Pipeline Data</h3>
+          <p style="color:var(--muted)">Run the pipeline first to generate videos.</p>
+        </div>
+      </div></div>`;
+    return;
+  }
+
+  const cityEntries = Object.entries(state.cities);
+  const dateStr = state.date || '—';
+
+  // Seed _pubState from pipeline approval_status
+  cityEntries.forEach(([k, c]) => {
+    const ps = pubGetState(k);
+    if (c.approval_status === 'approved') ps.approved = true;
+    if (c.approval_status === 'rejected') ps.rejected = true;
+  });
+
+  // Count ready
+  const approved = cityEntries.filter(([k]) => pubGetState(k).approved).length;
+  const badge = document.getElementById('publish-badge');
+  if (badge) {
+    badge.textContent = approved;
+    badge.style.display = approved > 0 ? '' : 'none';
+  }
+
+  document.getElementById('publish-tab-content').innerHTML = `
+
+    <!-- Bulk action bar -->
+    <div class="pub-bulk-bar">
+      <span class="pub-bulk-label">
+        ${approved}/${cityEntries.length} cities approved
+        &nbsp;·&nbsp; ${dateStr}
+      </span>
+      <button class="pub-btn approve" onclick="pubApproveAll()">✅ Approve All</button>
+      <button class="pub-btn publish" onclick="pubPublishAllApproved()"
+              ${approved === 0 ? 'disabled' : ''}>
+        📤 Publish All Approved
+      </button>
+      <button class="pub-btn dispatch" onclick="pubTriggerWorkflow()">
+        ⚙️ Trigger Pipeline
+      </button>
+    </div>
+
+    <!-- City queue -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>📋</span>
+        <h2>Publish Queue</h2>
+        <span class="psh-sub">${cityEntries.length} cities · ${dateStr}</span>
+      </div>
+      <div class="pub-section-body">
+        <div id="pub-city-list">
+          ${cityEntries.map(([k, c]) => pubCityCardHtml(k, c)).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Post preview (selectedCity) -->
+    <div class="pub-section" id="pub-preview-section">
+      <div class="pub-section-hdr">
+        <span>👁</span>
+        <h2>Post Preview</h2>
+        <span class="psh-sub" id="pub-preview-city-label">Select a city above</span>
+      </div>
+      <div class="pub-section-body">
+        <div id="pub-preview-body">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:30px">
+            Click "Preview" on any city card to see and edit its post content.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload history -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🕐</span>
+        <h2>Upload History</h2>
+      </div>
+      <div class="pub-section-body">
+        ${pubHistoryHtml(cityEntries)}
+      </div>
+    </div>
+  `;
+}
+
+function pubStatusLabel(cityKey, pipelineStatus) {
+  const ps = pubGetState(cityKey);
+  if (ps.rejected)  return { cls: 'rejected', txt: '✗ Rejected' };
+  if (ps.approved)  return { cls: 'approved', txt: '✓ Approved' };
+  if (pipelineStatus === 'approved') return { cls: 'approved', txt: '✓ Approved' };
+  return { cls: 'pending', txt: '⏳ Pending' };
+}
+
+function pubCityCardHtml(cityKey, cityData) {
+  const ps = pubGetState(cityKey);
+  const script = cityData.script || {};
+  const panchang = cityData.panchang || {};
+  const tz = panchang.tz_label || 'ET';
+  const optTimes = OPTIMAL_TIMES[tz] || OPTIMAL_TIMES['ET'];
+  const { cls, txt } = pubStatusLabel(cityKey, cityData.approval_status);
+  const videoReady = !!cityData.video_path;
+  const uploadResult = cityData.upload_result || {};
+  const ytUploaded = uploadResult.youtube;
+  const igUploaded = uploadResult.instagram;
+  const isUploaded = ytUploaded || igUploaded;
+
+  const platforms = [...ps.platforms];
+
+  return `
+    <div class="pub-city-card" id="pub-card-${cityKey}">
+
+      <div class="pub-city-hdr">
+        <div>
+          <div class="pub-city-name">${cityData.city || cityKey}</div>
+          <div class="pub-city-date">${panchang.date || ''} · ${tz}</div>
+        </div>
+        <div class="pub-status ${isUploaded ? 'uploaded' : cls}">${isUploaded ? '✓ Uploaded' : txt}</div>
+      </div>
+
+      <div class="pub-city-body">
+
+        <!-- Left: meta + timings -->
+        <div class="pub-meta">
+          <div class="pub-meta-row">
+            <span class="pmr-label">Video</span>
+            <span class="pmr-val">${videoReady ? '✅ Ready' : '❌ Not generated'}</span>
+          </div>
+          <div class="pub-meta-row">
+            <span class="pmr-label">Title</span>
+            <span class="pmr-val" style="font-size:12px;line-height:1.4">${(script.title || '—').substring(0,60)}${script.title?.length > 60 ? '…' : ''}</span>
+          </div>
+          <div class="pub-meta-row">
+            <span class="pmr-label">Hashtags</span>
+            <span class="pmr-val" style="font-size:12px">${(script.hashtags || []).slice(0,5).map(t=>'#'+t).join(' ')}${(script.hashtags||[]).length>5?' +'+((script.hashtags||[]).length-5)+'…':''}</span>
+          </div>
+          <div class="pub-meta-row" style="margin-top:6px">
+            <span class="pmr-label">Best times</span>
+            <span class="pmr-val" style="display:flex;flex-wrap:wrap;gap:6px">
+              ${optTimes.map(t => `<span class="pub-time-chip">🕐 ${t} ${tz}</span>`).join('')}
+            </span>
+          </div>
+          ${ytUploaded ? `<div class="pub-meta-row">
+            <span class="pmr-label">YouTube</span>
+            <span class="pmr-val"><a href="${ytUploaded}" target="_blank" class="pub-url-pill">▶ View Short</a></span>
+          </div>` : ''}
+          ${igUploaded ? `<div class="pub-meta-row">
+            <span class="pmr-label">Instagram</span>
+            <span class="pmr-val"><a href="${igUploaded}" target="_blank" class="pub-url-pill">📸 View Reel</a></span>
+          </div>` : ''}
+        </div>
+
+        <!-- Right: platforms + actions -->
+        <div>
+          <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">PLATFORMS</div>
+          <div class="pub-platforms" style="margin-bottom:14px">
+            ${['youtube','instagram'].map(p => `
+              <button class="pub-plat-btn ${ps.platforms.has(p) ? 'active' : ''}"
+                      id="pub-plat-${cityKey}-${p}"
+                      onclick="pubTogglePlatform('${cityKey}','${p}')">
+                ${pubPlatformLabel(p)}
+              </button>`).join('')}
+          </div>
+
+          <div class="pub-actions">
+            ${!ps.approved && !ps.rejected ? `
+              <button class="pub-btn approve" onclick="pubApprove('${cityKey}')">✅ Approve</button>
+              <button class="pub-btn reject"  onclick="pubReject('${cityKey}')">✗ Reject</button>` : ''}
+            ${ps.rejected ? `
+              <button class="pub-btn approve" onclick="pubApprove('${cityKey}')">↩ Re-approve</button>` : ''}
+            ${ps.approved && !isUploaded ? `
+              <button class="pub-btn publish" id="pub-publish-btn-${cityKey}"
+                      onclick="pubPublishCity('${cityKey}')"
+                      ${!videoReady ? 'disabled title="Video not ready"' : ''}>
+                📤 Publish
+              </button>` : ''}
+            <button class="pub-btn dispatch" onclick="pubShowPreview('${cityKey}')">
+              👁 Preview
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function pubHistoryHtml(cityEntries) {
+  const rows = [];
+  cityEntries.forEach(([k, c]) => {
+    const ur = c.upload_result || {};
+    if (ur.youtube) rows.push({ city: c.city||k, platform: 'YouTube', url: ur.youtube, date: c.panchang?.date });
+    if (ur.instagram) rows.push({ city: c.city||k, platform: 'Instagram', url: ur.instagram, date: c.panchang?.date });
+  });
+  if (rows.length === 0) {
+    return `<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">
+      No uploads yet for ${window._state?.date || 'today'}. Publish videos to see history here.
+    </div>`;
+  }
+  return rows.map(r => `
+    <div class="pub-hist-row">
+      <span class="pub-hist-city">${r.city}</span>
+      <span class="pub-hist-plat">${r.platform}</span>
+      <a href="${r.url}" target="_blank" class="pub-url-pill">🔗 View</a>
+      <span class="pub-hist-date">${r.date || '—'}</span>
+    </div>`).join('');
+}
+
+// ── Approve / Reject ───────────────────────────────────────
+function pubApprove(cityKey) {
+  const ps = pubGetState(cityKey);
+  ps.approved = true; ps.rejected = false;
+  showToast(`${cityKey.replace('_',' ')} approved for publishing.`, 'success');
+  renderPublishTab(window._state, window._config);
+}
+
+function pubReject(cityKey) {
+  const ps = pubGetState(cityKey);
+  ps.rejected = true; ps.approved = false;
+  showToast(`${cityKey.replace('_',' ')} rejected.`, 'error');
+  renderPublishTab(window._state, window._config);
+}
+
+function pubApproveAll() {
+  const state = window._state;
+  if (!state?.cities) return;
+  Object.keys(state.cities).forEach(k => {
+    const ps = pubGetState(k);
+    ps.approved = true; ps.rejected = false;
+  });
+  showToast('All cities approved.', 'success');
+  renderPublishTab(state, window._config);
+}
+
+// ── Platform toggle ────────────────────────────────────────
+function pubTogglePlatform(cityKey, platform) {
+  const ps = pubGetState(cityKey);
+  if (ps.platforms.has(platform)) ps.platforms.delete(platform);
+  else ps.platforms.add(platform);
+  // Update button UI without full re-render
+  const btn = document.getElementById(`pub-plat-${cityKey}-${platform}`);
+  if (btn) btn.classList.toggle('active', ps.platforms.has(platform));
+}
+
+// ── Publish city (triggers GH Actions workflow_dispatch) ───
+async function pubPublishCity(cityKey) {
+  const config = window._config;
+  const btn = document.getElementById(`pub-publish-btn-${cityKey}`);
+  if (!config?.token) {
+    showToast('No GitHub token — workflow dispatch unavailable.', 'error');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Publishing…'; }
+  const ps = pubGetState(cityKey);
+  const platforms = [...ps.platforms];
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflow_file}/dispatches`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: { action: 'upload', city: cityKey, platforms: platforms.join(',') } }),
+      }
+    );
+    if (res.status === 204) {
+      showToast(`Publish workflow triggered for ${cityKey.replace('_',' ')}!`, 'success');
+    } else {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || res.statusText);
+    }
+  } catch (err) {
+    showToast(`Dispatch failed: ${err.message}`, 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '📤 Publish'; }
+}
+
+async function pubPublishAllApproved() {
+  const state = window._state;
+  if (!state?.cities) return;
+  const approved = Object.keys(state.cities).filter(k => pubGetState(k).approved);
+  for (const k of approved) await pubPublishCity(k);
+}
+
+// ── Trigger pipeline workflow ──────────────────────────────
+async function pubTriggerWorkflow() {
+  const config = window._config;
+  if (!config?.token) {
+    showToast('No GitHub token — cannot trigger workflow.', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflow_file}/dispatches`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: { action: 'full_pipeline' } }),
+      }
+    );
+    if (res.status === 204) showToast('Pipeline triggered successfully!', 'success');
+    else { const b = await res.json().catch(()=>({})); throw new Error(b.message || res.statusText); }
+  } catch (err) {
+    showToast(`Trigger failed: ${err.message}`, 'error');
+  }
+}
+
+// ── Post preview ───────────────────────────────────────────
+function pubShowPreview(cityKey) {
+  const state = window._state;
+  const city  = state?.cities?.[cityKey] || {};
+  const script = city.script || {};
+  const hashtags = (script.hashtags || []).map(t => '#'+t).join(' ');
+  const label = document.getElementById('pub-preview-city-label');
+  if (label) label.textContent = city.city || cityKey;
+  const body = document.getElementById('pub-preview-body');
+  if (!body) return;
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+      <div>
+        <div class="pub-preview">
+          <div class="pv-label">Title (YouTube — 100 chars max)</div>
+          <textarea rows="2" id="pv-title-${cityKey}" style="height:56px"
+            onchange="pubPreviewUpdate('${cityKey}','title',this.value)">${script.title || ''}</textarea>
+        </div>
+        <div class="pub-preview" style="margin-top:12px">
+          <div class="pv-label">Description</div>
+          <textarea rows="5" id="pv-desc-${cityKey}"
+            onchange="pubPreviewUpdate('${cityKey}','description',this.value)">${script.description || ''}</textarea>
+        </div>
+        <div class="pub-preview" style="margin-top:12px">
+          <div class="pv-label">Hashtags</div>
+          <textarea rows="3" id="pv-tags-${cityKey}"
+            onchange="pubPreviewUpdate('${cityKey}','hashtags_raw',this.value)">${hashtags}</textarea>
+        </div>
+        <div style="margin-top:10px">
+          <button class="pub-btn approve" onclick="pubSavePreview('${cityKey}')">💾 Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Mobile mock -->
+      <div>
+        <div style="color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">PREVIEW</div>
+        <div style="background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:14px;
+                    padding:18px;font-size:12px;line-height:1.6;max-height:380px;overflow-y:auto">
+          <div style="color:var(--gold);font-weight:700;font-size:14px;margin-bottom:8px">${script.title || '(no title)'}</div>
+          <div style="color:var(--muted);margin-bottom:12px;font-size:11px">${state?.date || ''} · ${city.panchang?.tz_label||''}</div>
+          <div style="color:var(--text);margin-bottom:12px">${(script.description || '').substring(0,280)}</div>
+          <div style="color:#6ab0f5;font-size:11px;line-height:1.8">${hashtags}</div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+function pubPreviewUpdate(cityKey, field, value) {
+  // Live-update stored state
+  const state = window._state;
+  if (!state?.cities?.[cityKey]?.script) return;
+  if (field === 'hashtags_raw') {
+    state.cities[cityKey].script.hashtags = value.split(/\s+/).map(t=>t.replace(/^#/,'')).filter(Boolean);
+  } else {
+    state.cities[cityKey].script[field] = value;
+  }
+}
+
+function pubSavePreview(cityKey) {
+  // Reads current textarea values and applies them
+  ['title','description'].forEach(field => {
+    const el = document.getElementById(`pv-${field==='title'?'title':field==='description'?'desc':field}-${cityKey}`);
+    if (el) pubPreviewUpdate(cityKey, field, el.value);
+  });
+  const tagsEl = document.getElementById(`pv-tags-${cityKey}`);
+  if (tagsEl) pubPreviewUpdate(cityKey, 'hashtags_raw', tagsEl.value);
+  showToast('Post content saved locally. Re-run pipeline to persist.', 'success');
+}
+
+// ════════════════════════════════════════════
 // Init
 // ════════════════════════════════════════════
 (async () => {
@@ -2466,6 +3071,7 @@ function htAddRec(cityKey, tag) {
   renderVideoReview(state, config);
   renderAnalyticsTab(state, analytics);
   renderHashtagTab(state);
+  renderPublishTab(state, config);
 })();
 </script>
 </body>
