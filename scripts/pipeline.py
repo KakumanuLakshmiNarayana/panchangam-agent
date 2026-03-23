@@ -40,12 +40,22 @@ def process_city(city_key, today, date_str, driver):
     print(f"\n  🏙️  Processing {scraper.CITIES[city_key]['display']}...")
     panchang = scraper.run(today, city_key, driver=driver)
 
+    # Validate scraper returned real data (guards against CSS changes on drikpanchang)
+    required = ["tithi", "nakshatra", "rahukaal"]
+    empty = [f for f in required if not panchang.get(f) or panchang.get(f) == "N/A"]
+    if empty:
+        raise ValueError(f"Scraper returned empty/N/A for required fields: {empty}. "
+                         "Drikpanchang HTML may have changed.")
+
     script = generate_video_script(panchang)
     print(f"     Title: {script.get('title','')[:60]}")
 
     audio_path = str(OUTPUT_DIR / f"voice_{city_key}_{date_str}.mp3")
     try:
-        generate_voiceover(script, audio_path)
+        result = generate_voiceover(script, audio_path)
+        if not result:
+            print(f"     ⚠️  All TTS methods failed — no audio file generated")
+            audio_path = ""
     except Exception as e:
         print(f"     ⚠️  Voice failed: {e}")
         audio_path = ""
@@ -167,6 +177,11 @@ def run_pipeline(skip_approval=False, use_tomorrow=False):
                     "city": scraper.CITIES[city_key]["display"],
                     "error": str(e)
                 }
+            # Save after each city so a mid-run cancel doesn't lose completed work
+            save_state({
+                "date": date_str, "cities": all_cities,
+                "approval_status": "approved" if skip_approval else "pending",
+            })
     finally:
         driver.quit()
 
