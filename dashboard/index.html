@@ -387,6 +387,152 @@
     border-radius: 50%; animation: spin 1s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Panchang Tab ── */
+  .panchang-city-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px;
+  }
+
+  .pc-pill {
+    padding: 9px 20px;
+    background: rgba(255,215,0,0.05);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    color: var(--muted);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .pc-pill:hover { border-color: var(--gold-soft); color: var(--gold-soft); }
+  .pc-pill.active {
+    background: rgba(255,215,0,0.12);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Section headers inside panchang card */
+  .p-section-hdr {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--amber); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 24px 0 12px;
+    font-weight: 700;
+  }
+  .p-section-hdr::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Field grid */
+  .p-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+
+  .p-field {
+    background: rgba(255,215,0,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: border-color .2s;
+  }
+  .p-field:hover { border-color: rgba(255,215,0,0.2); }
+
+  .p-field .pf-label {
+    color: var(--muted); font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  .p-field .pf-value {
+    color: var(--gold-soft); font-size: 14px; font-weight: 600; line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* Edit mode: field becomes an input */
+  .p-field input.pf-input {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px; font-family: 'Outfit', sans-serif;
+    padding: 7px 10px; outline: none;
+    transition: background .2s;
+  }
+  .p-field input.pf-input:focus {
+    background: rgba(255,215,0,0.09);
+    box-shadow: 0 0 0 2px rgba(255,215,0,0.2);
+  }
+
+  /* Edit toolbar */
+  .p-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .p-city-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 18px; color: var(--gold);
+  }
+
+  .p-city-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  .p-btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .btn-edit {
+    padding: 9px 20px;
+    background: rgba(255,215,0,0.08);
+    border: 1px solid rgba(255,215,0,0.25);
+    border-radius: 8px; color: var(--gold-soft);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-edit:hover { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .btn-edit.editing {
+    background: rgba(255,165,0,0.15);
+    border-color: var(--amber); color: var(--amber);
+  }
+
+  .btn-regen {
+    padding: 9px 20px;
+    background: linear-gradient(135deg, #1b3a5c, #1e5276);
+    border: 1px solid #2a6090;
+    border-radius: 8px; color: #90caf9;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-regen:hover {
+    background: linear-gradient(135deg, #1e5276, #2565a5);
+    color: #fff; transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(30,82,118,0.5);
+  }
+
+  .btn-reset {
+    padding: 9px 16px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .btn-reset:hover { border-color: var(--crimson); color: #e07070; }
+
+  /* Modified badge */
+  .modified-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,165,0,0.12); border: 1px solid rgba(255,165,0,0.3);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 11px; color: var(--amber); font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .p-field-grid { grid-template-columns: 1fr; }
+    .p-toolbar { flex-direction: column; align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
@@ -444,23 +590,10 @@
 ════════════════════════════════════════════ -->
 <div id="tab-panchang" class="tab-panel active">
   <div class="page-wrap">
-    <div class="card">
-      <div class="card-header">
-        <span>🌙</span>
-        <h2>Tomorrow's Panchangam</h2>
-      </div>
-      <div class="card-body">
-        <div class="coming-soon">
-          <div class="cs-icon">🌙</div>
-          <h3>Tomorrow's Panchangam</h3>
-          <p>Full editable panchang data for all 5 cities.<br>Coming up next.</p>
-          <div class="cs-checklist">
-            <div class="cs-item"><span class="cs-tick">◻</span> City selector — New York · Chicago · Dallas · California · Michigan</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> All timing fields displayed per city</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> Edit mode — toggle any field to input</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> Save &amp; Regenerate Video button</div>
-          </div>
-        </div>
+    <div id="panchang-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading panchang data...</p>
       </div>
     </div>
   </div>
@@ -808,6 +941,312 @@ function renderCityPanel(cityKey, state, config) {
 }
 
 // ════════════════════════════════════════════
+// Tab 1 — Tomorrow's Panchangam
+// ════════════════════════════════════════════
+
+// Field definitions: key → display label, grouped by section
+const PANCHANG_SECTIONS = [
+  {
+    label: '🌸 Core Details',
+    fields: [
+      { key: 'tithi',     label: 'Tithi' },
+      { key: 'nakshatra', label: 'Nakshatra' },
+      { key: 'yoga',      label: 'Yoga' },
+      { key: 'karana',    label: 'Karana' },
+      { key: 'paksha',    label: 'Paksha' },
+    ]
+  },
+  {
+    label: '🌅 Sun & Moon',
+    fields: [
+      { key: 'sunrise',   label: 'Sunrise' },
+      { key: 'sunset',    label: 'Sunset' },
+      { key: 'moonrise',  label: 'Moonrise' },
+      { key: 'moonset',   label: 'Moonset' },
+    ]
+  },
+  {
+    label: '🚫 Inauspicious Timings',
+    fields: [
+      { key: 'rahukaal',    label: 'Rahu Kalam' },
+      { key: 'durmuhurtam', label: 'Dur Muhurtam' },
+      { key: 'yamagandam',  label: 'Yamagandam' },
+      { key: 'gulika',      label: 'Gulikai' },
+      { key: 'varjyam',     label: 'Varjyam' },
+    ]
+  },
+  {
+    label: '✅ Auspicious Timings',
+    fields: [
+      { key: 'abhijit',        label: 'Abhijit Muhurta' },
+      { key: 'amrit_kalam',    label: 'Amrit Kalam' },
+      { key: 'brahma_muhurta', label: 'Brahma Muhurta' },
+      { key: 'vijaya_muhurta', label: 'Vijaya Muhurta' },
+      { key: 'godhuli_muhurta',label: 'Godhuli Muhurta' },
+    ]
+  },
+  {
+    label: '🕯️ Sandhya & Nishita',
+    fields: [
+      { key: 'pratah_sandhya',  label: 'Pratah Sandhya' },
+      { key: 'sayahna_sandhya', label: 'Sayahna Sandhya' },
+      { key: 'nishita_muhurta', label: 'Nishita Muhurta' },
+    ]
+  },
+];
+
+// Track edit state per city
+const _editMode   = {};   // cityKey → true/false
+const _editValues = {};   // cityKey → { fieldKey: value }
+
+function renderPanchangTab(state) {
+  if (!state || !state.cities) {
+    document.getElementById('panchang-tab-content').innerHTML = `
+      <div class="card"><div class="card-body">
+        <div class="coming-soon">
+          <div class="cs-icon">⚠️</div>
+          <h3>No Data Yet</h3>
+          <p style="color:var(--muted)">Run the pipeline first to generate panchang data.</p>
+        </div>
+      </div></div>`;
+    return;
+  }
+
+  const cityKeys = Object.keys(state.cities);
+  const dateStr  = state.date || '—';
+
+  document.getElementById('panchang-tab-content').innerHTML = `
+    <!-- City selector -->
+    <div class="panchang-city-bar" id="pc-city-bar">
+      ${cityKeys.map((k, i) => `
+        <button class="pc-pill ${i === 0 ? 'active' : ''}"
+                id="pc-pill-${k}"
+                onclick="selectPanchangCity('${k}')">
+          ${state.cities[k].city || k}
+        </button>`).join('')}
+    </div>
+
+    <!-- Panchang detail panel -->
+    <div id="pc-detail-panel"></div>
+  `;
+
+  // Load first city
+  selectPanchangCity(cityKeys[0]);
+}
+
+function selectPanchangCity(cityKey) {
+  // Update pill styles
+  document.querySelectorAll('.pc-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('pc-pill-' + cityKey);
+  if (pill) pill.classList.add('active');
+
+  renderCityPanchang(cityKey);
+}
+
+function renderCityPanchang(cityKey) {
+  const state    = window._state;
+  const cityData = (state?.cities || {})[cityKey] || {};
+  const p        = cityData.panchang || {};
+  const dateStr  = state?.date || '—';
+  const isEditing = !!_editMode[cityKey];
+
+  // Load saved edits from localStorage
+  const savedEdits = _loadEdits(cityKey, dateStr);
+  const vals       = isEditing
+    ? (_editValues[cityKey] || savedEdits || {})
+    : (savedEdits || {});
+
+  const hasEdits = savedEdits && Object.keys(savedEdits).length > 0;
+
+  // Build sections HTML
+  const sectionsHtml = PANCHANG_SECTIONS.map(section => {
+    const fieldsHtml = section.fields.map(f => {
+      const raw      = p[f.key] || '';
+      const override = vals[f.key];
+      const display  = override !== undefined ? override : raw;
+
+      if (isEditing) {
+        return `
+          <div class="p-field">
+            <div class="pf-label">${f.label}</div>
+            <input class="pf-input"
+                   data-field="${f.key}"
+                   value="${(display || '').replace(/"/g, '&quot;')}"
+                   placeholder="${raw || 'Not available'}"/>
+          </div>`;
+      } else {
+        const changed = override !== undefined && override !== raw;
+        return `
+          <div class="p-field">
+            <div class="pf-label">${f.label}</div>
+            <div class="pf-value" style="${changed ? 'color:var(--amber)' : ''}">
+              ${display || '<span style="color:var(--muted);font-size:12px">—</span>'}
+              ${changed ? '<span style="font-size:10px;color:var(--amber);margin-left:4px">✏️</span>' : ''}
+            </div>
+          </div>`;
+      }
+    }).join('');
+
+    return `
+      <div class="p-section-hdr">${section.label}</div>
+      <div class="p-field-grid">${fieldsHtml}</div>`;
+  }).join('');
+
+  document.getElementById('pc-detail-panel').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span>🌙</span>
+        <h2>${cityData.city || cityKey}</h2>
+        ${hasEdits ? '<span class="modified-tag" style="margin-left:12px">⚡ Modified</span>' : ''}
+        <span style="margin-left:auto;color:var(--muted);font-size:13px">${dateStr}</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Toolbar -->
+        <div class="p-toolbar">
+          <div>
+            <div class="p-city-name">${cityData.city || cityKey}</div>
+            <div class="p-city-meta">
+              ${p.weekday || ''} · ${p.timezone || ''} · ${p.paksha || ''}
+            </div>
+          </div>
+          <div class="p-btn-group">
+            ${hasEdits && !isEditing ? `
+              <button class="btn-reset" onclick="resetEdits('${cityKey}')">
+                ↩ Reset
+              </button>` : ''}
+            <button class="btn-edit ${isEditing ? 'editing' : ''}"
+                    id="pc-edit-btn-${cityKey}"
+                    onclick="toggleEditMode('${cityKey}')">
+              ${isEditing ? '✅ Done Editing' : '✏️ Edit'}
+            </button>
+            ${isEditing ? `
+              <button class="btn-regen" onclick="saveAndRegenerate('${cityKey}')">
+                🔄 Save &amp; Regenerate Video
+              </button>` : ''}
+          </div>
+        </div>
+
+        <!-- All sections -->
+        ${sectionsHtml}
+
+      </div>
+    </div>
+  `;
+}
+
+function toggleEditMode(cityKey) {
+  const wasEditing = !!_editMode[cityKey];
+
+  if (wasEditing) {
+    // Collect input values and save
+    const inputs = document.querySelectorAll('#pc-detail-panel .pf-input');
+    const edits  = {};
+    inputs.forEach(inp => {
+      const key = inp.dataset.field;
+      const val = inp.value.trim();
+      const raw = ((window._state?.cities?.[cityKey]?.panchang) || {})[key] || '';
+      if (val !== raw) edits[key] = val;  // only store actual changes
+    });
+    _editValues[cityKey] = edits;
+    _saveEdits(cityKey, window._state?.date, edits);
+    _editMode[cityKey] = false;
+    showToast('✅ Edits saved. Click "Regenerate Video" to rebuild.', 'success');
+  } else {
+    // Enter edit mode — seed from saved edits
+    _editValues[cityKey] = _loadEdits(cityKey, window._state?.date) || {};
+    _editMode[cityKey] = true;
+  }
+
+  renderCityPanchang(cityKey);
+}
+
+function resetEdits(cityKey) {
+  if (!confirm('Reset all edits for this city and restore original scraped data?')) return;
+  _editValues[cityKey] = {};
+  _editMode[cityKey]   = false;
+  const dateStr = window._state?.date;
+  if (dateStr) localStorage.removeItem(`panchang_edits_${dateStr}_${cityKey}`);
+  renderCityPanchang(cityKey);
+  showToast('↩ Edits reset to original data.', 'success');
+}
+
+async function saveAndRegenerate(cityKey) {
+  // Collect current input values
+  const inputs = document.querySelectorAll('#pc-detail-panel .pf-input');
+  const edits  = {};
+  inputs.forEach(inp => {
+    const key = inp.dataset.field;
+    const val = inp.value.trim();
+    const raw = ((window._state?.cities?.[cityKey]?.panchang) || {})[key] || '';
+    if (val !== raw) edits[key] = val;
+  });
+  _editValues[cityKey] = edits;
+  _saveEdits(cityKey, window._state?.date, edits);
+  _editMode[cityKey] = false;
+  renderCityPanchang(cityKey);
+
+  // Ask for GitHub token
+  const token = prompt(
+    `🔄 Regenerate video for ${cityKey.replace('_',' ')}?\n\nEnter GitHub Personal Access Token (needs actions:write):`
+  );
+  if (!token) { showToast('Cancelled.', 'error'); return; }
+
+  const cfg    = window._config || {};
+  const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
+  if (!repo) return;
+
+  const overrides = {};
+  overrides[cityKey] = edits;
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: {
+            regenerate_city:     cityKey,
+            panchang_overrides:  JSON.stringify(overrides),
+          }
+        })
+      }
+    );
+
+    if (resp.ok || resp.status === 204) {
+      showToast(`🔄 Regeneration triggered for ${cityKey.replace('_',' ')}! Check GitHub Actions.`, 'success');
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub API error: ${err.message || resp.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+// localStorage helpers
+function _saveEdits(cityKey, dateStr, edits) {
+  if (!dateStr) return;
+  const key = `panchang_edits_${dateStr}_${cityKey}`;
+  if (Object.keys(edits).length === 0) localStorage.removeItem(key);
+  else localStorage.setItem(key, JSON.stringify(edits));
+}
+
+function _loadEdits(cityKey, dateStr) {
+  if (!dateStr) return null;
+  try {
+    const raw = localStorage.getItem(`panchang_edits_${dateStr}_${cityKey}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+// ════════════════════════════════════════════
 // Approval actions
 // ════════════════════════════════════════════
 async function handleApprove(cityKey, dateStr) {
@@ -877,7 +1316,8 @@ function handleReject(cityKey) {
       ? `${total} cities ready — ${pending} pending approval`
       : '⏳ Waiting for pipeline to run...';
 
-  // Render video review tab (pre-load so badge shows)
+  // Render both tabs (pre-load)
+  renderPanchangTab(state);
   renderVideoReview(state, config);
 })();
 </script>
