@@ -1931,8 +1931,8 @@ function _vrSetStatus(cityKey, status) {
 async function handleVrApprove(cityKey) {
   if (!confirm(`✅ Approve "${(window._state?.cities?.[cityKey]?.city) || cityKey}" for upload to YouTube & Instagram?`)) return;
 
-  const token = prompt('Enter GitHub Personal Access Token (needs actions:write):');
-  if (!token) { showToast('Cancelled.', 'error'); return; }
+  const token = _getGhToken();
+  if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
 
   const cfg    = window._config || {};
   const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
@@ -1986,8 +1986,8 @@ async function handleApproveAll() {
 
   if (!confirm(`✅ Approve ALL ${pending.length} pending cities and trigger upload to YouTube & Instagram?`)) return;
 
-  const token = prompt('Enter GitHub Personal Access Token (needs actions:write):');
-  if (!token) { showToast('Cancelled.', 'error'); return; }
+  const token = _getGhToken();
+  if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
 
   const cfg   = window._config || {};
   const repo  = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
@@ -2267,11 +2267,9 @@ async function saveAndRegenerate(cityKey) {
   _editMode[cityKey] = false;
   renderCityPanchang(cityKey);
 
-  // Ask for GitHub token
-  const token = prompt(
-    `🔄 Regenerate video for ${cityKey.replace('_',' ')}?\n\nEnter GitHub Personal Access Token (needs actions:write):`
-  );
-  if (!token) { showToast('Cancelled.', 'error'); return; }
+  // Ask for GitHub token (reuses cached token from localStorage)
+  const token = _getGhToken();
+  if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
 
   const cfg    = window._config || {};
   const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
@@ -2309,6 +2307,21 @@ async function saveAndRegenerate(cityKey) {
   } catch (e) {
     showToast(`Error: ${e.message}`, 'error');
   }
+}
+
+// GitHub token helpers (stored in localStorage, never committed to git)
+function _getGhToken(forcePrompt = false) {
+  let token = localStorage.getItem('panchang_gh_token') || '';
+  if (!token || forcePrompt) {
+    token = prompt('Enter GitHub Personal Access Token (needs actions:write):' +
+      (token ? '\n(Leave blank to keep existing token)' : '')) || token;
+    if (token) localStorage.setItem('panchang_gh_token', token);
+  }
+  return token || null;
+}
+function _clearGhToken() {
+  localStorage.removeItem('panchang_gh_token');
+  showToast('GitHub token cleared.', 'success');
 }
 
 // localStorage helpers
@@ -3653,6 +3666,23 @@ async function renderSettingsTab(state, config, analytics) {
           Required PAT scopes: <code>repo</code> · <code>workflow</code> · <code>secrets</code> (admin for secret names).<br>
           ⚠️ Do not commit <code>repo_config.json</code> with a real token. Use it locally only — the file is in <code>.gitignore</code>.
         </div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button onclick="_getGhToken(true)" style="background:var(--gold);color:#000;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px">
+            🔑 Set / Update Token
+          </button>
+          <button onclick="_clearGhToken()" style="background:transparent;color:var(--muted);border:1px solid var(--border);padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px">
+            🗑 Clear Saved Token
+          </button>
+          <span id="token-status" style="font-size:12px;color:var(--muted)"></span>
+        </div>
+        <script>
+          (function(){
+            const s = document.getElementById('token-status');
+            if (s) s.textContent = localStorage.getItem('panchang_gh_token')
+              ? '✅ Token saved in browser (localStorage)'
+              : '⚠️ No token saved — you will be prompted on first use';
+          })();
+        </script>
       </div>
     </div>
   `;
