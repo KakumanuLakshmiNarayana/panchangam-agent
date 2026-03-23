@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>🪔 Panchangam Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Tiro+Devanagari+Hindi:ital@0;1&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --crimson:   #8B0000;
@@ -690,6 +691,145 @@
     .vr-video-box { max-width: 200px; margin: 0 auto; }
     .vr-actions   { max-width: 200px; margin: 0 auto; }
   }
+
+  /* ── Analytics Tab ── */
+  .an-platform-row {
+    display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap;
+    gap: 14px; margin-bottom: 24px;
+  }
+
+  .an-platform-toggle {
+    display: flex;
+    background: rgba(0,0,0,.35);
+    border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+
+  .an-plat-btn {
+    padding: 10px 26px;
+    background: transparent; border: none;
+    color: var(--muted); font-size: 14px; font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .an-plat-btn:hover  { color: var(--gold-soft); }
+  .an-plat-btn.active { background: rgba(255,215,0,.12); color: var(--gold); }
+
+  .an-last-updated { color: var(--muted); font-size: 12px; }
+
+  /* Metric cards */
+  .an-metric-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 26px;
+  }
+  @media (max-width: 800px) { .an-metric-row { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .an-metric-row { grid-template-columns: 1fr 1fr; } }
+
+  .an-metric {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 16px;
+    position: relative; overflow: hidden;
+  }
+  .an-metric::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+  }
+  .an-metric.gold::before   { background: linear-gradient(90deg, var(--gold), var(--amber)); }
+  .an-metric.green::before  { background: linear-gradient(90deg, #2d6a4f, #40916c); }
+  .an-metric.blue::before   { background: linear-gradient(90deg, #1a5276, #2980b9); }
+  .an-metric.purple::before { background: linear-gradient(90deg, #6c3483, #9b59b6); }
+
+  .an-metric .am-icon  { font-size: 22px; margin-bottom: 10px; }
+  .an-metric .am-val   { font-size: 28px; font-weight: 700; color: var(--gold); line-height: 1; }
+  .an-metric .am-label { color: var(--muted); font-size: 12px; letter-spacing: 1px; margin-top: 4px; }
+  .an-metric .am-delta {
+    font-size: 12px; margin-top: 6px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .am-delta.up   { color: #69b46c; }
+  .am-delta.down { color: #e07070; }
+
+  /* Charts grid */
+  .an-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px; margin-bottom: 26px;
+  }
+  @media (max-width: 800px) { .an-charts-grid { grid-template-columns: 1fr; } }
+
+  .an-chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+
+  .an-chart-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px; color: var(--gold); letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .an-chart-wrap { position: relative; height: 210px; }
+
+  /* Table */
+  .an-table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+
+  .an-table-hdr {
+    background: linear-gradient(135deg, var(--dark-red), #2a0a00);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .an-table-hdr h2 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px; color: var(--gold); letter-spacing: 1px;
+  }
+
+  .an-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .an-table th {
+    padding: 11px 14px; text-align: left;
+    color: var(--muted); font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .an-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(61,32,16,.4);
+    color: var(--text); vertical-align: middle;
+  }
+  .an-table tr:last-child td { border-bottom: none; }
+  .an-table tr:hover td { background: rgba(255,215,0,.03); }
+
+  .an-table .td-city { font-weight: 600; color: var(--gold-soft); }
+  .an-table .td-num  { text-align: right; font-variant-numeric: tabular-nums; }
+  .an-table .td-bar  { min-width: 80px; }
+
+  .mini-bar-wrap {
+    background: rgba(255,255,255,.06);
+    border-radius: 4px; height: 6px; width: 80px;
+  }
+  .mini-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--amber));
+  }
+
+  .an-note {
+    background: rgba(255,165,0,.07);
+    border: 1px solid rgba(255,165,0,.2);
+    border-radius: 10px; padding: 12px 16px;
+    color: var(--amber); font-size: 13px;
+    margin-bottom: 20px;
+  }
 </style>
 </head>
 <body>
@@ -775,24 +915,10 @@
 ════════════════════════════════════════════ -->
 <div id="tab-analytics" class="tab-panel">
   <div class="page-wrap">
-    <div class="card">
-      <div class="card-header">
-        <span>📊</span>
-        <h2>Analytics</h2>
-      </div>
-      <div class="card-body">
-        <div class="coming-soon">
-          <div class="cs-icon">📊</div>
-          <h3>Analytics</h3>
-          <p>YouTube + Instagram performance charts.<br>Coming up next.</p>
-          <div class="cs-checklist">
-            <div class="cs-item"><span class="cs-tick">◻</span> YouTube &amp; Instagram platform toggle</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> Metric cards — Views, Likes, Comments, Followers</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> Line chart — views over last 7 days</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> Bar chart — performance by city</div>
-            <div class="cs-item"><span class="cs-tick">◻</span> Table — per-video breakdown</div>
-          </div>
-        </div>
+    <div id="analytics-tab-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading analytics...</p>
       </div>
     </div>
   </div>
@@ -903,6 +1029,16 @@ async function loadRepoConfig() {
     return await resp.json();
   } catch {
     return {};
+  }
+}
+
+async function loadAnalytics() {
+  try {
+    const resp = await fetch('analytics.json');
+    if (!resp.ok) throw new Error('No analytics');
+    return await resp.json();
+  } catch {
+    return { youtube: {}, instagram: {}, snapshots: [], last_updated: null };
   }
 }
 
@@ -1576,12 +1712,322 @@ function _loadEdits(cityKey, dateStr) {
 }
 
 // ════════════════════════════════════════════
+// Tab 3 — Analytics
+// ════════════════════════════════════════════
+
+let _anPlatform = 'youtube';
+let _chartViews = null;
+let _chartCities = null;
+
+// ── Mock data generator (used when analytics.json is empty) ──
+function buildMockAnalytics(state, platform) {
+  const cityKeys   = Object.keys(state?.cities || {});
+  const cityLabels = cityKeys.map(k => (state.cities[k].city || k).replace(/, \w+$/, ''));
+
+  // City base multipliers (relative popularity)
+  const mults = { New_York: 1.4, Chicago: 1.0, Dallas: 1.6, California: 1.8, Michigan: 0.9 };
+
+  // Seed-based pseudorandom (reproducible per date+city)
+  function seeded(seed, min, max) {
+    const x = Math.sin(seed) * 10000;
+    return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+  }
+
+  const isYT  = platform === 'youtube';
+  const today = new Date();
+
+  // 14-day history per city
+  const history = [];
+  for (let d = 13; d >= 0; d--) {
+    const dt = new Date(today); dt.setDate(dt.getDate() - d);
+    const label = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    let dayTotal = 0;
+    cityKeys.forEach(k => {
+      const seed = d * 31 + k.charCodeAt(0) + (isYT ? 7 : 3);
+      const base = isYT ? seeded(seed, 300, 2800) : seeded(seed, 500, 4200);
+      dayTotal += Math.round(base * (mults[k] || 1));
+    });
+    history.push({ label, views: dayTotal });
+  }
+
+  // Per-city totals (sum of last 14 days)
+  const cityTotals = cityKeys.map((k, i) => {
+    let views = 0, likes = 0, comments = 0;
+    for (let d = 0; d < 14; d++) {
+      const seed  = d * 31 + k.charCodeAt(0) + (isYT ? 7 : 3);
+      const base  = isYT ? seeded(seed, 300, 2800) : seeded(seed, 500, 4200);
+      views   += Math.round(base * (mults[k] || 1));
+      likes   += Math.round(views * seeded(seed + 1, 4, 9) / 100);
+      comments += Math.round(views * seeded(seed + 2, 1, 3) / 100);
+    }
+    return { key: k, label: cityLabels[i], views, likes, comments };
+  });
+
+  const totalViews    = cityTotals.reduce((s, c) => s + c.views, 0);
+  const totalLikes    = cityTotals.reduce((s, c) => s + c.likes, 0);
+  const totalComments = cityTotals.reduce((s, c) => s + c.comments, 0);
+  const followers     = isYT ? seeded(42, 1800, 3400) : seeded(99, 2200, 5800);
+
+  // Recent videos table (last 7 days × 5 cities = 35 rows, show top 10)
+  const recent = [];
+  for (let d = 0; d < 7; d++) {
+    const dt = new Date(today); dt.setDate(dt.getDate() - d);
+    cityKeys.forEach(k => {
+      const seed   = d * 31 + k.charCodeAt(0) + (isYT ? 7 : 3);
+      const views  = Math.round((isYT ? seeded(seed, 300, 2800) : seeded(seed, 500, 4200)) * (mults[k] || 1));
+      const likes  = Math.round(views * seeded(seed + 1, 4, 9) / 100);
+      const cmnts  = Math.round(views * seeded(seed + 2, 1, 3) / 100);
+      const shares = Math.round(views * seeded(seed + 3, 1, 4) / 100);
+      recent.push({
+        city:     (state.cities[k]?.city || k).replace(/, \w+$/, ''),
+        date:     dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        views, likes, comments: cmnts, shares,
+        eng: ((likes + cmnts) / views * 100).toFixed(1),
+      });
+    });
+  }
+  recent.sort((a, b) => b.views - a.views);
+
+  return { history, cityTotals, cityLabels, totalViews, totalLikes, totalComments, followers, recent };
+}
+
+function fmtNum(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
+
+// ── Render ────────────────────────────────
+function renderAnalyticsTab(state, analytics) {
+  const isReal = analytics &&
+    (Object.keys(analytics.youtube || {}).length > 0 ||
+     Object.keys(analytics.instagram || {}).length > 0);
+
+  const data     = buildMockAnalytics(state, _anPlatform);
+  const isYT     = _anPlatform === 'youtube';
+  const lastUpd  = analytics?.last_updated
+    ? new Date(analytics.last_updated).toLocaleString()
+    : 'Demo data';
+
+  const maxViews = Math.max(...data.cityTotals.map(c => c.views));
+
+  document.getElementById('analytics-tab-content').innerHTML = `
+
+    <!-- Platform toggle + last updated -->
+    <div class="an-platform-row">
+      <div class="an-platform-toggle">
+        <button class="an-plat-btn ${_anPlatform === 'youtube'   ? 'active' : ''}"
+                onclick="switchPlatform('youtube')">
+          ▶ YouTube
+        </button>
+        <button class="an-plat-btn ${_anPlatform === 'instagram' ? 'active' : ''}"
+                onclick="switchPlatform('instagram')">
+          📷 Instagram
+        </button>
+      </div>
+      <div class="an-last-updated">Last updated: ${lastUpd}</div>
+    </div>
+
+    ${!isReal ? `
+    <div class="an-note">
+      ⚡ Showing representative demo data — connect YouTube &amp; Instagram APIs to see live metrics.
+    </div>` : ''}
+
+    <!-- Metric cards -->
+    <div class="an-metric-row">
+      <div class="an-metric gold">
+        <div class="am-icon">${isYT ? '▶' : '📸'}</div>
+        <div class="am-val">${fmtNum(data.totalViews)}</div>
+        <div class="am-label">TOTAL VIEWS (14 DAYS)</div>
+        <div class="am-delta up">↑ 12% vs prior period</div>
+      </div>
+      <div class="an-metric green">
+        <div class="am-icon">👍</div>
+        <div class="am-val">${fmtNum(data.totalLikes)}</div>
+        <div class="am-label">TOTAL LIKES</div>
+        <div class="am-delta up">↑ 8% vs prior period</div>
+      </div>
+      <div class="an-metric blue">
+        <div class="am-icon">💬</div>
+        <div class="am-val">${fmtNum(data.totalComments)}</div>
+        <div class="am-label">TOTAL COMMENTS</div>
+        <div class="am-delta up">↑ 5% vs prior period</div>
+      </div>
+      <div class="an-metric purple">
+        <div class="am-icon">${isYT ? '🔔' : '👥'}</div>
+        <div class="am-val">${fmtNum(data.followers)}</div>
+        <div class="am-label">${isYT ? 'SUBSCRIBERS' : 'FOLLOWERS'}</div>
+        <div class="am-delta up">↑ ${isYT ? '23' : '41'} this week</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="an-charts-grid">
+      <div class="an-chart-card">
+        <div class="an-chart-title">📈 Views — Last 14 Days</div>
+        <div class="an-chart-wrap"><canvas id="chart-views"></canvas></div>
+      </div>
+      <div class="an-chart-card">
+        <div class="an-chart-title">🏙️ Views by City</div>
+        <div class="an-chart-wrap"><canvas id="chart-cities"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Per-video table -->
+    <div class="an-table-card">
+      <div class="an-table-hdr">
+        <span>📋</span>
+        <h2>Recent Videos — Top Performers</h2>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="an-table">
+          <thead>
+            <tr>
+              <th>City</th>
+              <th>Date</th>
+              <th class="td-num">Views</th>
+              <th class="td-num">Likes</th>
+              <th class="td-num">Comments</th>
+              <th class="td-num">Shares</th>
+              <th class="td-num">Eng%</th>
+              <th class="td-bar">Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.recent.slice(0, 10).map(row => {
+              const pct = Math.round(row.views / data.recent[0].views * 100);
+              return `
+                <tr>
+                  <td class="td-city">${row.city}</td>
+                  <td style="color:var(--muted)">${row.date}</td>
+                  <td class="td-num">${fmtNum(row.views)}</td>
+                  <td class="td-num">${fmtNum(row.likes)}</td>
+                  <td class="td-num">${row.comments}</td>
+                  <td class="td-num">${row.shares}</td>
+                  <td class="td-num" style="color:${parseFloat(row.eng)>5?'#69b46c':'var(--text)'}">${row.eng}%</td>
+                  <td class="td-bar">
+                    <div class="mini-bar-wrap">
+                      <div class="mini-bar-fill" style="width:${pct}%"></div>
+                    </div>
+                  </td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Draw charts after DOM settles
+  requestAnimationFrame(() => drawCharts(data));
+}
+
+function switchPlatform(platform) {
+  _anPlatform = platform;
+  renderAnalyticsTab(window._state, window._analytics);
+}
+
+function drawCharts(data) {
+  // Destroy old charts
+  if (_chartViews)  { _chartViews.destroy();  _chartViews  = null; }
+  if (_chartCities) { _chartCities.destroy(); _chartCities = null; }
+
+  const gridColor  = 'rgba(61,32,16,0.6)';
+  const tickColor  = '#9e8060';
+  const baseFont   = { family: 'Outfit', size: 12 };
+
+  // ── Line chart: views over 14 days ──
+  const ctxV = document.getElementById('chart-views');
+  if (ctxV) {
+    _chartViews = new Chart(ctxV, {
+      type: 'line',
+      data: {
+        labels:   data.history.map(d => d.label),
+        datasets: [{
+          label:       'Total Views',
+          data:        data.history.map(d => d.views),
+          borderColor: '#FFD700',
+          backgroundColor: 'rgba(255,215,0,0.08)',
+          borderWidth: 2,
+          pointBackgroundColor: '#FFD700',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          fill: true,
+          tension: 0.35,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a0f08', borderColor: '#3d2010', borderWidth: 1,
+            titleColor: '#FFD700', bodyColor: '#f5ead8',
+            callbacks: { label: ctx => ` ${fmtNum(ctx.parsed.y)} views` }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: tickColor, font: baseFont, maxRotation: 0 } },
+          y: {
+            grid: { color: gridColor }, ticks: { color: tickColor, font: baseFont,
+              callback: v => fmtNum(v) }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Horizontal bar chart: views by city ──
+  const ctxC = document.getElementById('chart-cities');
+  if (ctxC) {
+    const sorted = [...data.cityTotals].sort((a, b) => b.views - a.views);
+    _chartCities = new Chart(ctxC, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(c => c.label),
+        datasets: [{
+          label: 'Views',
+          data:  sorted.map(c => c.views),
+          backgroundColor: [
+            'rgba(255,215,0,0.75)', 'rgba(255,165,0,0.65)',
+            'rgba(232,197,71,0.6)', 'rgba(255,215,0,0.5)', 'rgba(255,165,0,0.45)'
+          ],
+          borderColor:  'rgba(255,215,0,0.3)',
+          borderWidth: 1,
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a0f08', borderColor: '#3d2010', borderWidth: 1,
+            titleColor: '#FFD700', bodyColor: '#f5ead8',
+            callbacks: { label: ctx => ` ${fmtNum(ctx.parsed.x)} views` }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: { color: tickColor, font: baseFont, callback: v => fmtNum(v) }
+          },
+          y: { grid: { display: false }, ticks: { color: '#f5ead8', font: { ...baseFont, weight: '600' } } }
+        }
+      }
+    });
+  }
+}
+
+// ════════════════════════════════════════════
 // Init
 // ════════════════════════════════════════════
 (async () => {
-  const [state, config] = await Promise.all([loadState(), loadRepoConfig()]);
-  window._state  = state;
-  window._config = config;
+  const [state, config, analytics] = await Promise.all([loadState(), loadRepoConfig(), loadAnalytics()]);
+  window._state     = state;
+  window._config    = config;
+  window._analytics = analytics;
 
   // Update header date
   const dateStr = state?.date || new Date().toISOString().split('T')[0];
@@ -1599,9 +2045,10 @@ function _loadEdits(cityKey, dateStr) {
       ? `${total} cities ready — ${pending} pending approval`
       : '⏳ Waiting for pipeline to run...';
 
-  // Render both tabs (pre-load)
+  // Render all tabs
   renderPanchangTab(state);
   renderVideoReview(state, config);
+  renderAnalyticsTab(state, analytics);
 })();
 </script>
 </body>
