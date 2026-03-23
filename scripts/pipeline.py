@@ -17,9 +17,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import scraper
 from script_generator import generate_video_script
-from voice_generator  import generate_voiceover
-from video_creator    import create_panchang_video, create_thumbnail
-from remotion_renderer import render_with_remotion
 
 # ── Output dir: use env var if set (GitHub Actions), else go up one level from scripts/
 _default_output = Path(__file__).parent.parent / "output"
@@ -132,6 +129,10 @@ def run_data_pipeline(use_tomorrow=False, city_key=None, overrides=None):
 
 def render_city(city_key, city_data, date_str):
     """Generate voice + render video + create thumbnail for one city."""
+    from voice_generator  import generate_voiceover
+    from video_creator    import create_panchang_video, create_thumbnail
+    from remotion_renderer import render_with_remotion
+
     panchang = city_data["panchang"]
     script   = city_data["script"]
 
@@ -222,6 +223,10 @@ def run_render_and_upload():
 
 def process_city(city_key, today, date_str, driver):
     """Single-shot: scrape + script + audio + video in one go."""
+    from voice_generator  import generate_voiceover
+    from video_creator    import create_panchang_video, create_thumbnail
+    from remotion_renderer import render_with_remotion
+
     print(f"\n  🏙️  Processing {scraper.CITIES[city_key]['display']}...")
     panchang = scraper.run(today, city_key, driver=driver)
 
