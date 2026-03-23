@@ -1241,6 +1241,172 @@
     background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.2);
     color: var(--gold-soft); font-size: 11px;
   }
+
+  /* ═══════════════════════════════════════════
+     Tab 7 — Script & Content Studio
+  ═══════════════════════════════════════════ */
+
+  /* City pill bar (reused from panchang tab) */
+  .sc-city-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .sc-pill {
+    padding: 8px 18px; border-radius: 20px;
+    background: rgba(255,215,0,.06); border: 1px solid rgba(255,215,0,.18);
+    color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all .18s; font-family: 'Outfit', sans-serif;
+  }
+  .sc-pill:hover { color: var(--gold-soft); border-color: rgba(255,215,0,.35); }
+  .sc-pill.active {
+    background: rgba(255,215,0,.15); border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Content blocks */
+  .sc-block {
+    background: rgba(255,255,255,.02);
+    border: 1px solid var(--border); border-radius: 12px;
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .sc-block-hdr {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: rgba(255,215,0,.03);
+  }
+  .sc-block-title {
+    font-weight: 700; font-size: 13px; color: var(--gold-soft); flex: 1;
+  }
+  .sc-copy-btn {
+    padding: 5px 14px; border-radius: 8px;
+    background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.22);
+    color: var(--gold-soft); font-size: 11px; font-weight: 700;
+    cursor: pointer; font-family: 'Outfit', sans-serif;
+    transition: all .18s; white-space: nowrap;
+  }
+  .sc-copy-btn:hover { background: rgba(255,215,0,.18); color: var(--gold); }
+  .sc-copy-btn.copied { background: rgba(45,106,79,.18); border-color: rgba(45,106,79,.4); color: #69b46c; }
+
+  /* Expand toggle */
+  .sc-expand-btn {
+    padding: 4px 12px; border-radius: 8px;
+    background: transparent; border: 1px solid rgba(255,255,255,.1);
+    color: var(--muted); font-size: 11px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; transition: all .18s;
+  }
+  .sc-expand-btn:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+
+  .sc-block-body { padding: 16px 18px; }
+
+  /* Title field */
+  .sc-title-text {
+    color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.5;
+  }
+
+  /* Description */
+  .sc-desc-text {
+    color: var(--muted); font-size: 13px; line-height: 1.7;
+    white-space: pre-wrap; word-break: break-word;
+  }
+
+  /* On-screen lines grid */
+  .sc-lines-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 8px;
+  }
+  .sc-line-row {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 14px; background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.06); border-radius: 8px;
+  }
+  .sc-line-num {
+    width: 22px; height: 22px; min-width: 22px;
+    background: rgba(255,215,0,.12); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--gold-soft);
+  }
+  .sc-line-text {
+    color: var(--text); font-size: 13px; line-height: 1.5;
+  }
+
+  /* Narration text */
+  .sc-narration-wrap {
+    position: relative;
+  }
+  .sc-narration-text {
+    color: var(--muted); font-size: 13px; line-height: 1.8;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 220px; overflow: hidden; transition: max-height .3s ease;
+  }
+  .sc-narration-text.expanded { max-height: 2000px; }
+  .sc-narration-fade {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 56px;
+    background: linear-gradient(transparent, var(--surface));
+    pointer-events: none; transition: opacity .3s;
+  }
+  .sc-narration-fade.hidden { opacity: 0; pointer-events: none; }
+
+  /* Pause tokens */
+  .sc-pause {
+    display: inline-block; background: rgba(255,215,0,.1);
+    border: 1px solid rgba(255,215,0,.2); border-radius: 4px;
+    padding: 0 5px; font-size: 10px; color: var(--gold-soft);
+    vertical-align: middle; margin: 0 2px;
+  }
+
+  /* Scene cards */
+  .sc-scenes-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+    gap: 12px;
+  }
+  .sc-scene-card {
+    background: rgba(255,215,0,.03); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .sc-scene-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--gold-soft); text-transform: uppercase;
+  }
+  .sc-scene-text {
+    color: var(--text); font-size: 12px; line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  /* Status summary bar */
+  .sc-summary-bar {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+    padding: 14px 18px; background: rgba(255,215,0,.03);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .sc-summary-item {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .sc-summary-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .sc-summary-val   { font-size: 14px; font-weight: 700; color: var(--text); }
+  .sc-summary-val.ok   { color: #69b46c; }
+  .sc-summary-val.warn { color: #f0a500; }
+  .sc-summary-val.err  { color: #e05a5a; }
+
+  /* Upload result links */
+  .sc-upload-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .sc-upload-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid rgba(106,176,245,.25); color: #6ab0f5;
+    background: rgba(106,176,245,.07); font-size: 12px;
+    text-decoration: none; transition: all .18s;
+  }
+  .sc-upload-pill:hover { background: rgba(106,176,245,.15); }
+  .sc-upload-pill.yt   {
+    border-color: rgba(255,80,80,.25); color: #ff6b6b;
+    background: rgba(255,80,80,.07);
+  }
+  .sc-upload-pill.yt:hover { background: rgba(255,80,80,.15); }
+
+  @media(max-width:640px) {
+    .sc-lines-grid { grid-template-columns: 1fr; }
+    .sc-scenes-grid { grid-template-columns: 1fr; }
+    .sc-summary-bar { gap: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -1301,6 +1467,11 @@
           aria-controls="tab-settings" id="btn-settings"
           onclick="switchTab('settings')">
     ⚙️ Settings
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-script" id="btn-script"
+          onclick="switchTab('script')">
+    📝 Script
   </button>
 </nav>
 
@@ -1385,6 +1556,17 @@
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════
+     TAB 7 — Script & Content Studio
+════════════════════════════════════════════ -->
+<div id="tab-script" class="tab-panel">
+  <div class="page-wrap">
+    <div id="script-tab-content">
+      <div class="loading"><div class="spinner"></div><p>Loading scripts...</p></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
@@ -1412,7 +1594,7 @@ function switchTab(name) {
 // Restore tab from URL hash on load
 window.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash.replace('#', '');
-  const valid = ['panchang', 'videos', 'analytics', 'hashtags', 'publish', 'settings'];
+  const valid = ['panchang', 'videos', 'analytics', 'hashtags', 'publish', 'settings', 'script'];
   if (hash && valid.includes(hash)) switchTab(hash);
 });
 
@@ -3506,6 +3688,285 @@ async function settingsDispatch(presetIdx) {
 }
 
 // ════════════════════════════════════════════
+// Tab 7 — Script & Content Studio
+// ════════════════════════════════════════════
+
+// Formats narration text: highlights pause tokens as chips
+function _formatNarration(text) {
+  if (!text) return '<span style="color:var(--muted);font-style:italic">No narration generated.</span>';
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\[SHORT_PAUSE\]/g, '<span class="sc-pause">⏱ SHORT</span>')
+    .replace(/\[LONG_PAUSE\]/g, '<span class="sc-pause">⏸ LONG</span>')
+    .replace(/\[PAUSE\]/g, '<span class="sc-pause">⏸ PAUSE</span>')
+    .replace(/\[BREATH\]/g, '<span class="sc-pause">💨 BREATH</span>');
+}
+
+function _scriptCopy(id, btnEl) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.dataset.raw || el.innerText).then(() => {
+    btnEl.textContent = '✓ Copied!';
+    btnEl.classList.add('copied');
+    setTimeout(() => {
+      btnEl.textContent = '⎘ Copy';
+      btnEl.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+function _toggleNarration(contentId, fadeId, btnEl) {
+  const el   = document.getElementById(contentId);
+  const fade = document.getElementById(fadeId);
+  const exp  = el.classList.toggle('expanded');
+  if (fade) fade.classList.toggle('hidden', exp);
+  btnEl.textContent = exp ? '▲ Collapse' : '▼ Expand';
+}
+
+function renderScriptTab(state) {
+  const el = document.getElementById('script-tab-content');
+  if (!el) return;
+
+  if (!state || !state.cities) {
+    el.innerHTML = `<div class="card"><div class="card-body">
+      <div class="coming-soon">
+        <div class="cs-icon">📝</div>
+        <h3>No Scripts Yet</h3>
+        <p style="color:var(--muted)">Run the pipeline to generate scripts.</p>
+      </div></div></div>`;
+    return;
+  }
+
+  const cityKeys = Object.keys(state.cities);
+  const dateStr  = state.date || '—';
+
+  // Summary counts
+  const hasScript = cityKeys.filter(k => state.cities[k].script?.title).length;
+  const hasUpload = cityKeys.filter(k => state.cities[k].upload_result?.youtube ||
+                                         state.cities[k].upload_result?.instagram).length;
+
+  el.innerHTML = `
+    <!-- Summary bar -->
+    <div class="sc-summary-bar">
+      <div class="sc-summary-item">
+        <span class="sc-summary-label">Date</span>
+        <span class="sc-summary-val">${dateStr}</span>
+      </div>
+      <div class="sc-summary-item">
+        <span class="sc-summary-label">Cities</span>
+        <span class="sc-summary-val">${cityKeys.length}</span>
+      </div>
+      <div class="sc-summary-item">
+        <span class="sc-summary-label">Scripts</span>
+        <span class="sc-summary-val ${hasScript === cityKeys.length ? 'ok' : 'warn'}">${hasScript}/${cityKeys.length}</span>
+      </div>
+      <div class="sc-summary-item">
+        <span class="sc-summary-label">Uploaded</span>
+        <span class="sc-summary-val ${hasUpload > 0 ? 'ok' : 'warn'}">${hasUpload}/${cityKeys.length}</span>
+      </div>
+      <div class="sc-summary-item">
+        <span class="sc-summary-label">Pipeline status</span>
+        <span class="sc-summary-val ${
+          state.approval_status === 'approved' ? 'ok' :
+          state.approval_status === 'rejected' ? 'err' : 'warn'}">
+          ${(state.approval_status || 'pending').toUpperCase()}
+        </span>
+      </div>
+    </div>
+
+    <!-- City pills -->
+    <div class="sc-city-bar" id="sc-city-bar">
+      ${cityKeys.map((k, i) => `
+        <button class="sc-pill ${i === 0 ? 'active' : ''}"
+                id="sc-pill-${k}"
+                onclick="selectScriptCity('${k}')">
+          ${state.cities[k].city || k}
+        </button>`).join('')}
+    </div>
+
+    <!-- Per-city content panel -->
+    <div id="sc-detail-panel"></div>
+  `;
+
+  selectScriptCity(cityKeys[0]);
+}
+
+function selectScriptCity(cityKey) {
+  document.querySelectorAll('.sc-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('sc-pill-' + cityKey);
+  if (pill) pill.classList.add('active');
+  renderScriptCity(cityKey);
+}
+
+function renderScriptCity(cityKey) {
+  const state    = window._state;
+  const city     = (state?.cities || {})[cityKey] || {};
+  const s        = city.script || {};
+  const upload   = city.upload_result || {};
+  const dateStr  = state?.date || '—';
+
+  const hasScript = !!s.title;
+
+  const onScreenLines  = Array.isArray(s.on_screen_lines)  ? s.on_screen_lines  : [];
+  const gttsScenes     = Array.isArray(s.gtts_scene_texts) ? s.gtts_scene_texts : [];
+  const fullNarration  = s.full_narration  || '';
+  const gttsNarration  = s.gtts_narration  || '';
+
+  // Unique IDs (safe for repeated re-renders)
+  const uid = cityKey.replace(/\W/g, '_');
+
+  document.getElementById('sc-detail-panel').innerHTML = `
+
+    ${!hasScript ? `<div class="an-note" style="margin-bottom:16px">
+      ⚠️ No script found for ${city.city || cityKey}. Run the pipeline to generate content.
+    </div>` : ''}
+
+    <!-- ① Title -->
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>🎬</span>
+        <span class="sc-block-title">Video Title</span>
+        <button class="sc-copy-btn" onclick="_scriptCopy('sc-title-${uid}',this)">⎘ Copy</button>
+      </div>
+      <div class="sc-block-body">
+        <div class="sc-title-text" id="sc-title-${uid}"
+             data-raw="${(s.title||'').replace(/"/g,'&quot;')}">
+          ${s.title ? s.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                     : '<span style="color:var(--muted);font-style:italic">No title generated.</span>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- ② Description -->
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>📄</span>
+        <span class="sc-block-title">Video Description</span>
+        <button class="sc-copy-btn" onclick="_scriptCopy('sc-desc-${uid}',this)">⎘ Copy</button>
+      </div>
+      <div class="sc-block-body">
+        <div class="sc-desc-text" id="sc-desc-${uid}"
+             data-raw="${(s.description||'').replace(/"/g,'&quot;')}">
+          ${s.description
+              ? s.description.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              : '<span style="color:var(--muted);font-style:italic">No description generated.</span>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ On-screen lines -->
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>📺</span>
+        <span class="sc-block-title">On-Screen Lines (${onScreenLines.length})</span>
+        <button class="sc-copy-btn"
+                onclick="_scriptCopy('sc-lines-raw-${uid}',this)">⎘ Copy All</button>
+      </div>
+      <div class="sc-block-body">
+        <textarea id="sc-lines-raw-${uid}" style="display:none">${onScreenLines.join('\n')}</textarea>
+        ${onScreenLines.length === 0
+          ? '<span style="color:var(--muted);font-style:italic;font-size:13px">No on-screen lines generated.</span>'
+          : `<div class="sc-lines-grid">
+              ${onScreenLines.map((line, i) => `
+                <div class="sc-line-row">
+                  <div class="sc-line-num">${i + 1}</div>
+                  <div class="sc-line-text">${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                </div>`).join('')}
+            </div>`}
+      </div>
+    </div>
+
+    <!-- ④ Voice narration (ElevenLabs) -->
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>🎙️</span>
+        <span class="sc-block-title">Voice Narration (ElevenLabs)</span>
+        <button class="sc-expand-btn" id="sc-exp-btn-${uid}"
+                onclick="_toggleNarration('sc-narr-${uid}','sc-narr-fade-${uid}',this)">▼ Expand</button>
+        <button class="sc-copy-btn"
+                onclick="_scriptCopy('sc-narr-raw-${uid}',this)">⎘ Copy</button>
+      </div>
+      <div class="sc-block-body">
+        <textarea id="sc-narr-raw-${uid}" style="display:none">${fullNarration.replace(/</g,'&lt;')}</textarea>
+        <div class="sc-narration-wrap">
+          <div class="sc-narration-text" id="sc-narr-${uid}">
+            ${_formatNarration(fullNarration)}
+          </div>
+          <div class="sc-narration-fade" id="sc-narr-fade-${uid}"></div>
+        </div>
+        <div style="margin-top:10px;color:var(--muted);font-size:11px">
+          ${fullNarration ? `${fullNarration.split(/\s+/).length} words · ${fullNarration.length} chars` : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ gTTS narration -->
+    ${gttsNarration ? `
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>🗣️</span>
+        <span class="sc-block-title">Telugu Narration (gTTS)</span>
+        <button class="sc-expand-btn" id="sc-exp-gtts-btn-${uid}"
+                onclick="_toggleNarration('sc-gtts-${uid}','sc-gtts-fade-${uid}',this)">▼ Expand</button>
+        <button class="sc-copy-btn"
+                onclick="_scriptCopy('sc-gtts-raw-${uid}',this)">⎘ Copy</button>
+      </div>
+      <div class="sc-block-body">
+        <textarea id="sc-gtts-raw-${uid}" style="display:none">${gttsNarration.replace(/</g,'&lt;')}</textarea>
+        <div class="sc-narration-wrap">
+          <div class="sc-narration-text" id="sc-gtts-${uid}">
+            ${_formatNarration(gttsNarration)}
+          </div>
+          <div class="sc-narration-fade" id="sc-gtts-fade-${uid}"></div>
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- ⑥ Scene breakdown (gTTS scenes) -->
+    ${gttsScenes.length > 0 ? `
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>🎞️</span>
+        <span class="sc-block-title">Scene Breakdown (${gttsScenes.length} scenes)</span>
+      </div>
+      <div class="sc-block-body">
+        <div class="sc-scenes-grid">
+          ${gttsScenes.map((scene, i) => `
+            <div class="sc-scene-card">
+              <div class="sc-scene-label">Scene ${i + 1}</div>
+              <div class="sc-scene-text">${scene.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- ⑦ Upload status & links -->
+    <div class="sc-block">
+      <div class="sc-block-hdr">
+        <span>📤</span>
+        <span class="sc-block-title">Upload Status</span>
+      </div>
+      <div class="sc-block-body">
+        ${!upload.youtube && !upload.instagram && !upload.youtube_error && !upload.instagram_error
+          ? '<span style="color:var(--muted);font-size:13px;font-style:italic">Not yet uploaded.</span>'
+          : `<div class="sc-upload-links">
+              ${upload.youtube
+                ? `<a href="${upload.youtube}" target="_blank" class="sc-upload-pill yt">▶ YouTube Shorts</a>`
+                : upload.youtube_error
+                ? `<span class="sc-upload-pill" style="border-color:rgba(224,90,90,.25);color:#e05a5a;background:rgba(224,90,90,.07)">✗ YT: ${upload.youtube_error.slice(0,60)}</span>`
+                : ''}
+              ${upload.instagram
+                ? `<a href="${upload.instagram}" target="_blank" class="sc-upload-pill">📷 Instagram Reel</a>`
+                : upload.instagram_error
+                ? `<span class="sc-upload-pill" style="border-color:rgba(224,90,90,.25);color:#e05a5a;background:rgba(224,90,90,.07)">✗ IG: ${upload.instagram_error.slice(0,60)}</span>`
+                : ''}
+            </div>`}
+      </div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════
 // Init
 // ════════════════════════════════════════════
 (async () => {
@@ -3537,6 +3998,7 @@ async function settingsDispatch(presetIdx) {
   renderHashtagTab(state);
   renderPublishTab(state, config);
   renderSettingsTab(state, config, analytics);
+  renderScriptTab(state);
 })();
 </script>
 </body>
