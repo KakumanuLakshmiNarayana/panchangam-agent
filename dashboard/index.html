@@ -1950,7 +1950,7 @@ async function handleVrApprove(cityKey) {
           'Accept': 'application/vnd.github+json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true', date: dateStr } })
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true' } })
       }
     );
     if (resp.ok || resp.status === 204) {
@@ -2005,7 +2005,7 @@ async function handleApproveAll() {
           'Accept': 'application/vnd.github+json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true', date: dateStr } })
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true' } })
       }
     );
     if (resp.ok || resp.status === 204) {
