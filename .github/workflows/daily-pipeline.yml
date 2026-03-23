@@ -18,6 +18,14 @@ on:
         description: 'Generate for tomorrow instead of today (true/false)'
         required: false
         default: 'true'
+      regenerate_city:
+        description: 'Regenerate a specific city (city key string)'
+        required: false
+        default: ''
+      panchang_overrides:
+        description: 'JSON string of panchangam overrides'
+        required: false
+        default: '{}'
 
 permissions:
   contents: write
