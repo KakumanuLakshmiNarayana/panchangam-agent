@@ -2,22 +2,30 @@ name: Daily Panchangam Pipeline
 
 on:
   schedule:
-    # 01:00 UTC = 8 PM EST / 9 PM EDT — generates TOMORROW's videos each evening
+    # 01:00 UTC = 8 PM EST / 9 PM EDT — scrapes TOMORROW's data each evening
     - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       skip_approval:
-        description: 'Skip approval and auto-upload (true/false)'
+        description: 'Legacy: skip approval and auto-upload in one shot (true/false)'
         required: false
         default: 'false'
       upload_approved:
-        description: 'Upload already-approved video (true/false)'
+        description: 'Phase 2: render video + upload approved data (true/false)'
         required: false
         default: 'false'
       use_tomorrow:
         description: 'Generate for tomorrow instead of today (true/false)'
         required: false
         default: 'true'
+      regenerate_city:
+        description: 'Re-scrape data for a specific city key (leave blank for all cities)'
+        required: false
+        default: ''
+      panchang_overrides:
+        description: 'JSON string of panchangam field overrides keyed by city_key'
+        required: false
+        default: '{}'
 
 permissions:
   contents: write
@@ -25,8 +33,9 @@ permissions:
   id-token: write
 
 jobs:
-  generate-video:
-    name: Generate Daily Panchangam Video
+  # ── Phase 1: scrape data + generate scripts (no video render) ────────────────
+  scrape-data:
+    name: Scrape Panchangam Data
     runs-on: ubuntu-latest
     if: github.event.inputs.upload_approved != 'true'
 
@@ -43,8 +52,113 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg fontconfig chromium-chromedriver
+          sudo apt-get install -y chromium-chromedriver
+          echo "=== Chromium installed ==="
 
+      - name: Install Python dependencies
+        run: |
+          pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts \
+                      selenium webdriver-manager
+
+      - name: Scrape panchangam data
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          APPROVAL_EMAIL_FROM: ${{ secrets.APPROVAL_EMAIL_FROM }}
+          APPROVAL_EMAIL_TO:   ${{ secrets.APPROVAL_EMAIL_TO }}
+          SMTP_HOST:           smtp.gmail.com
+          SMTP_PORT:           587
+          SMTP_PASS:           ${{ secrets.SMTP_PASS }}
+        run: |
+          mkdir -p output
+          cd scripts
+
+          USE_TOMORROW="${{ github.event.inputs.use_tomorrow }}"
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "$USE_TOMORROW" = "true" ]; then
+            TOMORROW_FLAG="--tomorrow"
+          else
+            TOMORROW_FLAG=""
+          fi
+
+          REGEN_CITY="${{ github.event.inputs.regenerate_city }}"
+          OVERRIDES="${{ github.event.inputs.panchang_overrides }}"
+
+          if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
+            # Legacy single-shot mode
+            python pipeline.py --skip-approval $TOMORROW_FLAG
+          elif [ -n "$REGEN_CITY" ]; then
+            # Re-scrape a single city with optional overrides
+            python pipeline.py --data-only $TOMORROW_FLAG \
+              --city "$REGEN_CITY" \
+              --overrides "$OVERRIDES"
+          else
+            # Normal phase 1: scrape all cities
+            python pipeline.py --data-only $TOMORROW_FLAG
+          fi
+
+      - name: Copy state and thumbnails to dashboard
+        run: |
+          mkdir -p dashboard/thumbs
+          for f in output/thumb_*.jpg; do
+            [ -f "$f" ] && cp "$f" dashboard/thumbs/
+          done
+          cp output/pipeline_state.json dashboard/pipeline_state.json || true
+          echo '{
+            "owner": "${{ github.repository_owner }}",
+            "repo":  "${{ github.event.repository.name }}",
+            "run_id": "${{ github.run_id }}",
+            "workflow_file": "daily-pipeline.yml"
+          }' > dashboard/repo_config.json
+
+      - name: Commit dashboard state to repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/pipeline_state.json dashboard/thumbs/ dashboard/repo_config.json
+          git diff --cached --quiet || git commit -m "chore: update dashboard state [skip ci]"
+          git push
+
+      - name: Upload state artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: panchangam-state-${{ github.run_id }}
+          path: output/pipeline_state.json
+          retention-days: 7
+
+      - name: Deploy dashboard to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+
+      - name: Summary
+        run: |
+          echo "## 🕉 Panchangam Data Scraped" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Data is ready in the dashboard. **Review and approve to generate videos.**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Approval email sent — open dashboard to review/edit, then click Approve." >> $GITHUB_STEP_SUMMARY
+
+
+  # ── Phase 2: render video + upload (triggered from dashboard Approve button) ─
+  render-and-upload:
+    name: Render Video + Upload
+    runs-on: ubuntu-latest
+    if: github.event.inputs.upload_approved == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg fontconfig chromium-chromedriver
           echo "=== Installed ==="
           ffmpeg -version | head -1
 
@@ -67,7 +181,7 @@ jobs:
           curl -fsSL "${BASE2}/NotoSans-Bold.ttf"    -o /home/runner/fonts/telugu/NotoSans-Bold.ttf
           pip install pillow -q
           python3 -c "
-          from PIL import ImageFont, Image, ImageDraw
+          from PIL import ImageFont
           bold = ImageFont.truetype('/home/runner/fonts/telugu/NotoSansTelugu-Bold.ttf', 40)
           print('Telugu font OK')
           "
@@ -84,20 +198,15 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools selenium webdriver-manager elevenlabs \
+          pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools \
+                      selenium webdriver-manager elevenlabs \
                       boto3 google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
-      - name: Run Pipeline
+      - name: Render videos + upload
         env:
           ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
           ELEVENLABS_API_KEY:          ${{ secrets.ELEVENLABS_API_KEY }}
-          APPROVAL_EMAIL_FROM:         ${{ secrets.APPROVAL_EMAIL_FROM }}
-          APPROVAL_EMAIL_TO:           ${{ secrets.APPROVAL_EMAIL_TO }}
-          SMTP_HOST:                   smtp.gmail.com
-          SMTP_PORT:                   587
-          SMTP_PASS:                   ${{ secrets.SMTP_PASS }}
           REMOTION_BROWSER_EXECUTABLE: ${{ env.REMOTION_BROWSER_EXECUTABLE }}
-          # Upload secrets — only used when skip_approval=true triggers inline upload
           YOUTUBE_CREDENTIALS_JSON:    ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
           INSTAGRAM_ACCOUNT_ID:        ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
           INSTAGRAM_ACCESS_TOKEN:      ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
@@ -107,47 +216,9 @@ jobs:
           VIDEO_PUBLIC_URL:            ${{ secrets.VIDEO_PUBLIC_URL }}
         run: |
           mkdir -p output
-          cd scripts
-          # Scheduled runs always use --tomorrow; manual dispatch uses the input
-          USE_TOMORROW="${{ github.event.inputs.use_tomorrow }}"
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "$USE_TOMORROW" = "true" ]; then
-            TOMORROW_FLAG="--tomorrow"
-          else
-            TOMORROW_FLAG=""
-          fi
+          cd scripts && python pipeline.py --render-approved
 
-          if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
-            python pipeline.py --skip-approval $TOMORROW_FLAG
-          else
-            python pipeline.py $TOMORROW_FLAG
-          fi
-
-      - name: Copy thumbnails and state to dashboard
-        run: |
-          mkdir -p dashboard/thumbs
-          # Copy all thumbnails into dashboard/thumbs/
-          for f in output/thumb_*.jpg; do
-            [ -f "$f" ] && cp "$f" dashboard/thumbs/
-          done
-          # Copy state JSON
-          cp output/pipeline_state.json dashboard/pipeline_state.json || true
-          # Write repo config for the dashboard JS
-          echo '{
-            "owner": "${{ github.repository_owner }}",
-            "repo":  "${{ github.event.repository.name }}",
-            "run_id": "${{ github.run_id }}",
-            "workflow_file": "daily-pipeline.yml"
-          }' > dashboard/repo_config.json
-
-      - name: Commit dashboard assets to repo
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dashboard/pipeline_state.json dashboard/thumbs/ dashboard/repo_config.json
-          git diff --cached --quiet || git commit -m "chore: update dashboard state + thumbnails [skip ci]"
-          git push
-
-      - name: Upload video artifact
+      - name: Upload video artifacts
         uses: actions/upload-artifact@v4
         with:
           name: panchangam-video-${{ github.run_id }}
@@ -158,66 +229,9 @@ jobs:
             output/pipeline_state.json
           retention-days: 7
 
-      - name: Deploy dashboard to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dashboard
-
       - name: Summary
         run: |
-          echo "## 🕉 Panchangam Pipeline Done" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎬 Videos Rendered & Uploaded" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📧 Check your dashboard to approve." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Artifact ID:** \`${{ github.run_id }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Output Files**" >> $GITHUB_STEP_SUMMARY
+          echo "**Output files:**" >> $GITHUB_STEP_SUMMARY
           ls output/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY || true
-
-  upload-approved:
-    name: Upload Approved Video
-    runs-on: ubuntu-latest
-    if: github.event.inputs.upload_approved == 'true'
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install requests boto3 pytz anthropic google-api-python-client google-auth-httplib2 google-auth-oauthlib
-
-      - name: Download latest artifact
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          workflow: daily-pipeline.yml
-          name_is_regexp: true
-          name: panchangam-video-.*
-          path: output/
-
-      - name: Flatten artifact subdirectory
-        # dawidd6 extracts into output/<artifact-name>/... — move everything up to output/
-        run: |
-          find output/ -mindepth 2 -type f -exec mv -t output/ {} + || true
-          find output/ -mindepth 1 -type d -empty -delete || true
-          echo "=== output/ after flatten ==="
-          ls output/
-
-      - name: Upload approved video
-        env:
-          YOUTUBE_CREDENTIALS_JSON:   ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
-          INSTAGRAM_ACCOUNT_ID:       ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
-          INSTAGRAM_ACCESS_TOKEN:     ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID:          ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY:      ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          S3_BUCKET_NAME:             ${{ secrets.S3_BUCKET_NAME }}
-          VIDEO_PUBLIC_URL:           ${{ secrets.VIDEO_PUBLIC_URL }}
-        run: |
-          python3 -c "
-          import json
-          with open('output/pipeline_state.json') as f: s=json.load(f)
-          s['approval_status']='approved'
-          with open('output/pipeline_state.json','w') as f: json.dump(s,f)
-          print('Marked approved')
-          "
-          cd scripts && python pipeline.py --upload-approved

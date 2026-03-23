@@ -1,5 +1,11 @@
 """
 pipeline.py — Runs full pipeline for all 5 Telugu-American cities.
+
+Two-phase design:
+  Phase 1 (--data-only):   Scrape + script only. No audio/video. Saves state for dashboard review.
+  Phase 2 (--render-approved): Load approved state, render voice+video, upload.
+
+Legacy single-shot mode (--skip-approval) still works for testing.
 """
 import os, sys, json, smtplib
 from datetime import date
@@ -36,11 +42,189 @@ def load_state():
     return {}
 
 
+# ── Phase 1: scrape data + generate script (no audio/video) ──────────────────
+
+def scrape_city(city_key, today, date_str, driver, overrides=None):
+    """Scrape panchangam data and generate script. No audio or video rendering."""
+    print(f"\n  🏙️  Scraping {scraper.CITIES[city_key]['display']}...")
+    panchang = scraper.run(today, city_key, driver=driver)
+
+    required = ["tithi", "nakshatra", "rahukaal"]
+    empty = [f for f in required if not panchang.get(f) or panchang.get(f) == "N/A"]
+    if empty:
+        raise ValueError(f"Scraper returned empty/N/A for required fields: {empty}. "
+                         "Drikpanchang HTML may have changed.")
+
+    if overrides:
+        panchang.update(overrides)
+        print(f"     ✏️  Applied {len(overrides)} override(s)")
+
+    script = generate_video_script(panchang)
+    print(f"     Title: {script.get('title','')[:60]}")
+
+    return {
+        "city_key": city_key,
+        "city": panchang.get("city"),
+        "panchang": panchang,
+        "script": script,
+        "approval_status": "pending",
+        "upload_result": {},
+    }
+
+
+def run_data_pipeline(use_tomorrow=False, city_key=None, overrides=None):
+    """
+    Phase 1: scrape data for all (or one) city, save state, send approval email.
+    No audio or video is generated.
+    """
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    from datetime import timedelta
+    today    = date.today() + (timedelta(days=1) if use_tomorrow else timedelta(0))
+    date_str = today.isoformat()
+
+    print("\n" + "="*55)
+    print("  🕉  PANCHANGAM DATA PIPELINE — 5 CITIES (data only)")
+    print(f"  📁  Output → {OUTPUT_DIR.resolve()}")
+    print("="*55)
+
+    # If regenerating a single city, load existing state first
+    if city_key:
+        state = load_state()
+        all_cities = state.get("cities", {})
+        cities_to_process = [city_key]
+        city_overrides = (overrides or {}).get(city_key, {})
+    else:
+        all_cities = {}
+        cities_to_process = CITY_KEYS
+        city_overrides = None
+
+    driver = scraper.get_driver()
+    try:
+        for ck in cities_to_process:
+            ov = (overrides or {}).get(ck) if not city_key else city_overrides
+            try:
+                result = scrape_city(ck, today, date_str, driver, overrides=ov or None)
+                all_cities[ck] = result
+            except Exception as e:
+                print(f"  ❌ {ck} failed: {e}")
+                import traceback; traceback.print_exc()
+                all_cities[ck] = {
+                    "city_key": ck,
+                    "city": scraper.CITIES[ck]["display"],
+                    "error": str(e),
+                }
+            save_state({"date": date_str, "cities": all_cities, "approval_status": "pending"})
+    finally:
+        driver.quit()
+
+    state = {"date": date_str, "cities": all_cities, "approval_status": "pending"}
+    save_state(state)
+
+    if not city_key:
+        print("\n📧 Sending approval email...")
+        send_approval_email(all_cities, date_str)
+        print("\n✅ Data ready! Review in the dashboard, then approve to generate & upload videos.")
+
+    return state
+
+
+# ── Phase 2: render voice+video for approved state, then upload ───────────────
+
+def render_city(city_key, city_data, date_str):
+    """Generate voice + render video + create thumbnail for one city."""
+    panchang = city_data["panchang"]
+    script   = city_data["script"]
+
+    audio_path = str(OUTPUT_DIR / f"voice_{city_key}_{date_str}.mp3")
+    try:
+        result = generate_voiceover(script, audio_path)
+        if not result:
+            print(f"     ⚠️  All TTS methods failed — no audio file generated")
+            audio_path = ""
+    except Exception as e:
+        print(f"     ⚠️  Voice failed: {e}")
+        audio_path = ""
+
+    video_path     = str(OUTPUT_DIR / f"video_{city_key}_{date_str}.mp4")
+    thumbnail_path = str(OUTPUT_DIR / f"thumb_{city_key}_{date_str}.jpg")
+    try:
+        render_with_remotion(panchang, script, audio_path, video_path)
+    except Exception as e:
+        print(f"     ⚠️  Remotion render failed: {e}")
+        print(f"     ↩️  Falling back to Pillow renderer...")
+        create_panchang_video(panchang, script, audio_path, video_path)
+    create_thumbnail(panchang, thumbnail_path)
+
+    city_data.update({
+        "video_path": video_path,
+        "thumbnail_path": thumbnail_path,
+        "audio_path": audio_path,
+    })
+    return city_data
+
+
+def run_render_and_upload():
+    """
+    Phase 2: load approved state from dashboard/pipeline_state.json (has any dashboard edits),
+    render video for each non-rejected city, then upload.
+    """
+    # Prefer dashboard state (contains dashboard edits) over output state
+    dashboard_state = Path(__file__).parent.parent / "dashboard" / "pipeline_state.json"
+    if dashboard_state.exists():
+        with open(dashboard_state, encoding="utf-8") as f:
+            state = json.load(f)
+        print(f"📂 Loaded state from dashboard/pipeline_state.json")
+    else:
+        state = load_state()
+        print(f"📂 Loaded state from output/pipeline_state.json")
+
+    if not state:
+        print("❌ No state found. Run the data pipeline first.")
+        return
+
+    date_str = state.get("date", date.today().isoformat())
+    all_cities = state.get("cities", {})
+
+    print("\n" + "="*55)
+    print("  🎬  PANCHANGAM RENDER + UPLOAD PIPELINE")
+    print(f"  📅  Date: {date_str}")
+    print("="*55)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    for city_key, city_data in all_cities.items():
+        if "error" in city_data:
+            print(f"\n  ⏭️  Skipping {city_key} (has error)")
+            continue
+        city_status = city_data.get("approval_status", "pending")
+        if city_status == "rejected":
+            print(f"\n  ⏭️  Skipping {city_key} (rejected)")
+            continue
+
+        print(f"\n  🎬  Rendering {city_data.get('city', city_key)}...")
+        try:
+            city_data = render_city(city_key, city_data, date_str)
+            all_cities[city_key] = city_data
+        except Exception as e:
+            print(f"  ❌ Render failed for {city_key}: {e}")
+            import traceback; traceback.print_exc()
+
+    state["cities"] = all_cities
+    state["approval_status"] = "approved"
+    save_state(state)
+
+    print("\n🚀 Uploading...")
+    _upload_all(state)
+    return state
+
+
+# ── Legacy single-shot pipeline (--skip-approval) ────────────────────────────
+
 def process_city(city_key, today, date_str, driver):
+    """Single-shot: scrape + script + audio + video in one go."""
     print(f"\n  🏙️  Processing {scraper.CITIES[city_key]['display']}...")
     panchang = scraper.run(today, city_key, driver=driver)
 
-    # Validate scraper returned real data (guards against CSS changes on drikpanchang)
     required = ["tithi", "nakshatra", "rahukaal"]
     empty = [f for f in required if not panchang.get(f) or panchang.get(f) == "N/A"]
     if empty:
@@ -78,6 +262,68 @@ def process_city(city_key, today, date_str, driver):
     }
 
 
+def run_pipeline(skip_approval=False, use_tomorrow=False):
+    """Legacy single-shot pipeline. Use --skip-approval to auto-upload without review."""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    from datetime import timedelta
+    today    = date.today() + (timedelta(days=1) if use_tomorrow else timedelta(0))
+    date_str = today.isoformat()
+
+    print("\n" + "="*55)
+    print("  🕉  DAILY PANCHANGAM PIPELINE — 5 CITIES")
+    print(f"  📁  Output → {OUTPUT_DIR.resolve()}")
+    print("="*55)
+
+    driver     = scraper.get_driver()
+    all_cities = {}
+    try:
+        for city_key in CITY_KEYS:
+            try:
+                result = process_city(city_key, today, date_str, driver)
+                all_cities[city_key] = result
+            except Exception as e:
+                print(f"  ❌ {city_key} failed: {e}")
+                import traceback; traceback.print_exc()
+                all_cities[city_key] = {
+                    "city_key": city_key,
+                    "city": scraper.CITIES[city_key]["display"],
+                    "error": str(e)
+                }
+            save_state({
+                "date": date_str, "cities": all_cities,
+                "approval_status": "approved" if skip_approval else "pending",
+            })
+    finally:
+        driver.quit()
+
+    state = {
+        "date": date_str, "cities": all_cities,
+        "approval_status": "approved" if skip_approval else "pending",
+    }
+    save_state(state)
+
+    if skip_approval:
+        print("\n⏭️  Auto-uploading...")
+        _upload_all(state)
+    else:
+        print("\n📧 Sending approval email...")
+        send_approval_email(all_cities, date_str)
+        print("\n✅ Done! Check your email — 5 videos ready.")
+
+    return state
+
+
+def upload_approved():
+    """Legacy upload from saved state (no re-render)."""
+    state = load_state()
+    if not state:
+        print("❌ No state found.")
+        return
+    state["approval_status"] = "approved"
+    save_state(state)
+    _upload_all(state)
+
+
 def send_approval_email(all_cities, date_str):
     sender    = os.environ.get("APPROVAL_EMAIL_FROM", "")
     recipient = os.environ.get("APPROVAL_EMAIL_TO",   "")
@@ -109,12 +355,12 @@ def send_approval_email(all_cities, date_str):
 <html><body style="font-family:Georgia,serif;background:#fdf6ec;padding:16px;">
 <div style="max-width:900px;margin:auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
   <div style="background:#8B0000;color:gold;padding:20px;text-align:center;">
-    <h1 style="margin:0;font-size:28px;">🕉 5 Panchangam Videos Ready</h1>
+    <h1 style="margin:0;font-size:28px;">🕉 5 Panchangam Data Ready for Review</h1>
     <p style="color:#FFD700;margin:6px 0;">New York · Chicago · Dallas · Los Angeles · Detroit</p>
     <p style="color:#FFD700;margin:0;">{date_str}</p>
   </div>
   <div style="padding:20px;">
-    <p style="color:#444;">All 5 city-specific videos generated with <strong>exact local timings</strong>.</p>
+    <p style="color:#444;">Panchangam data scraped for all 5 cities. <strong>Review and approve in the dashboard</strong> — videos will be generated only after you approve.</p>
     <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       <tr style="background:#8B0000;color:white;">
@@ -130,14 +376,14 @@ def send_approval_email(all_cities, date_str):
     </table>
     </div>
     <div style="background:#e8f5e9;padding:16px;border-radius:8px;margin-top:20px;text-align:center;">
-      <strong>👁️ Watch videos:</strong> GitHub repo → Actions → click today's run → Artifacts → download zip<br><br>
-      <strong>✅ To publish all 5:</strong> Actions → Daily Panchangam Pipeline → Run workflow → <strong>upload_approved = true</strong>
+      <strong>👁️ Review data:</strong> Open the dashboard → Panchangam tab → edit any values if needed<br><br>
+      <strong>✅ To generate &amp; publish all 5 videos:</strong> Dashboard → Approve All
     </div>
   </div>
 </div></body></html>"""
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"🕉 5 Panchangam Videos Ready — {date_str}"
+    msg["Subject"] = f"🕉 5 Panchangam Data Ready for Review — {date_str}"
     msg["From"]    = sender
     msg["To"]      = recipient
     msg.attach(MIMEText(html, "html"))
@@ -149,67 +395,6 @@ def send_approval_email(all_cities, date_str):
         print(f"✅ Approval email sent to {recipient}")
     except Exception as e:
         print(f"❌ Email error: {e}")
-
-
-def run_pipeline(skip_approval=False, use_tomorrow=False):
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    from datetime import timedelta
-    today    = date.today() + (timedelta(days=1) if use_tomorrow else timedelta(0))
-    date_str = today.isoformat()
-
-    print("\n" + "="*55)
-    print("  🕉  DAILY PANCHANGAM PIPELINE — 5 CITIES")
-    print(f"  📁  Output → {OUTPUT_DIR.resolve()}")
-    print("="*55)
-
-    driver     = scraper.get_driver()
-    all_cities = {}
-    try:
-        for city_key in CITY_KEYS:
-            try:
-                result = process_city(city_key, today, date_str, driver)
-                all_cities[city_key] = result
-            except Exception as e:
-                print(f"  ❌ {city_key} failed: {e}")
-                import traceback; traceback.print_exc()
-                all_cities[city_key] = {
-                    "city_key": city_key,
-                    "city": scraper.CITIES[city_key]["display"],
-                    "error": str(e)
-                }
-            # Save after each city so a mid-run cancel doesn't lose completed work
-            save_state({
-                "date": date_str, "cities": all_cities,
-                "approval_status": "approved" if skip_approval else "pending",
-            })
-    finally:
-        driver.quit()
-
-    state = {
-        "date": date_str, "cities": all_cities,
-        "approval_status": "approved" if skip_approval else "pending",
-    }
-    save_state(state)
-
-    if skip_approval:
-        print("\n⏭️  Auto-uploading...")
-        _upload_all(state)
-    else:
-        print("\n📧 Sending approval email...")
-        send_approval_email(all_cities, date_str)
-        print("\n✅ Done! Check your email — 5 videos ready.")
-
-    return state
-
-
-def upload_approved():
-    state = load_state()
-    if not state:
-        print("❌ No state found.")
-        return
-    state["approval_status"] = "approved"
-    save_state(state)
-    _upload_all(state)
 
 
 def _upload_all(state):
@@ -237,12 +422,29 @@ def _upload_all(state):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--skip-approval",   action="store_true")
-    parser.add_argument("--upload-approved", action="store_true")
+    parser.add_argument("--data-only",       action="store_true",
+                        help="Phase 1: scrape data + script only, no video render")
+    parser.add_argument("--render-approved", action="store_true",
+                        help="Phase 2: render video + upload from approved dashboard state")
+    parser.add_argument("--skip-approval",   action="store_true",
+                        help="Legacy: single-shot scrape+render+upload without review")
+    parser.add_argument("--upload-approved", action="store_true",
+                        help="Legacy: upload from existing rendered artifact")
     parser.add_argument("--tomorrow",        action="store_true",
                         help="Fetch and generate for tomorrow's date (run at 8 PM)")
+    parser.add_argument("--city",            default=None,
+                        help="Regenerate data for a single city key (use with --data-only)")
+    parser.add_argument("--overrides",       default=None,
+                        help="JSON string of field overrides keyed by city_key")
     args = parser.parse_args()
-    if args.upload_approved:
+
+    overrides = json.loads(args.overrides) if args.overrides else None
+
+    if args.render_approved:
+        run_render_and_upload()
+    elif args.data_only:
+        run_data_pipeline(use_tomorrow=args.tomorrow, city_key=args.city, overrides=overrides)
+    elif args.upload_approved:
         upload_approved()
     else:
         run_pipeline(skip_approval=args.skip_approval, use_tomorrow=args.tomorrow)
