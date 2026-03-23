@@ -1131,6 +1131,116 @@
   .pub-hist-city { color: var(--gold-soft); font-weight: 600; min-width: 120px; }
   .pub-hist-plat { color: var(--muted); min-width: 80px; }
   .pub-hist-date { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+  /* ═══════════════════════════════════════════
+     Tab 6 — Settings & Pipeline Control
+  ═══════════════════════════════════════════ */
+
+  /* Reuse pub-section pattern; no new wrappers needed */
+
+  /* Secrets grid */
+  .sec-secrets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .sec-secret-row {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; font-size: 13px;
+  }
+  .sec-secret-row.ok     { border-color: rgba(45,106,79,.3); }
+  .sec-secret-row.miss   { border-color: rgba(224,90,90,.25); }
+  .sec-secret-row.unkn   { border-color: rgba(255,215,0,.12); }
+  .sec-secret-name { font-family: monospace; color: var(--text); flex: 1; }
+  .sec-secret-badge {
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; white-space: nowrap;
+  }
+  .sec-secret-badge.ok   { background: rgba(45,106,79,.2);  color: #69b46c; }
+  .sec-secret-badge.miss { background: rgba(224,90,90,.15); color: #e05a5a; }
+  .sec-secret-badge.unkn { background: rgba(255,215,0,.08); color: var(--gold-soft); }
+
+  /* Dispatch control cards */
+  .sec-dispatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+  }
+  .sec-dispatch-card {
+    background: rgba(255,215,0,.03);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; display: flex; flex-direction: column; gap: 8px;
+    transition: border-color .15s;
+  }
+  .sec-dispatch-card:hover { border-color: rgba(255,215,0,.22); }
+  .sec-dispatch-title { color: var(--gold); font-weight: 700; font-size: 14px; }
+  .sec-dispatch-desc  { color: var(--muted); font-size: 12px; line-height: 1.5; flex: 1; }
+  .sec-dispatch-btn {
+    margin-top: 4px; padding: 8px 0; border-radius: 8px;
+    background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.25);
+    color: var(--gold); font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s;
+    width: 100%;
+  }
+  .sec-dispatch-btn:hover { background: rgba(255,215,0,.2); }
+  .sec-dispatch-btn.blue  {
+    background: rgba(106,176,245,.1); border-color: rgba(106,176,245,.28); color: #6ab0f5;
+  }
+  .sec-dispatch-btn.blue:hover { background: rgba(106,176,245,.2); }
+  .sec-dispatch-btn.green {
+    background: rgba(45,106,79,.14); border-color: rgba(45,106,79,.38); color: #69b46c;
+  }
+  .sec-dispatch-btn.green:hover { background: rgba(45,106,79,.26); }
+
+  /* Schedule row */
+  .sec-sched-row {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 13px;
+  }
+  .sec-sched-row:last-child { border-bottom: none; }
+  .sec-sched-cron {
+    font-family: monospace; background: rgba(255,215,0,.07);
+    border: 1px solid rgba(255,215,0,.18); border-radius: 6px;
+    padding: 3px 10px; color: var(--gold-soft); font-size: 12px; white-space: nowrap;
+  }
+  .sec-sched-label { color: var(--text); }
+  .sec-sched-sub   { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  /* Info KV rows */
+  .sec-kv { display: flex; flex-direction: column; gap: 8px; }
+  .sec-kv-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 13px;
+  }
+  .sec-kv-row:last-child { border-bottom: none; }
+  .sec-kv-key  { color: var(--muted); min-width: 160px; flex-shrink: 0; }
+  .sec-kv-val  { color: var(--text); word-break: break-all; }
+  .sec-kv-val a { color: #6ab0f5; text-decoration: none; }
+  .sec-kv-val a:hover { text-decoration: underline; }
+
+  /* Cities table */
+  .sec-cities-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sec-cities-table th {
+    color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; padding: 6px 12px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .sec-cities-table td {
+    padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04);
+    color: var(--text);
+  }
+  .sec-cities-table tr:last-child td { border-bottom: none; }
+  .sec-cities-table tr:hover td { background: rgba(255,215,0,.03); }
+  .sec-tz-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.2);
+    color: var(--gold-soft); font-size: 11px;
+  }
 </style>
 </head>
 <body>
@@ -1186,6 +1296,11 @@
           onclick="switchTab('publish')">
     📤 Publish
     <span class="tab-badge" id="publish-badge" style="display:none">0</span>
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false"
+          aria-controls="tab-settings" id="btn-settings"
+          onclick="switchTab('settings')">
+    ⚙️ Settings
   </button>
 </nav>
 
@@ -1259,6 +1374,17 @@
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════
+     TAB 6 — Settings & Pipeline Control
+════════════════════════════════════════════ -->
+<div id="tab-settings" class="tab-panel">
+  <div class="page-wrap">
+    <div id="settings-tab-content">
+      <div class="loading"><div class="spinner"></div><p>Loading settings...</p></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div class="toast" id="toast"></div>
 
@@ -1286,7 +1412,7 @@ function switchTab(name) {
 // Restore tab from URL hash on load
 window.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash.replace('#', '');
-  const valid = ['panchang', 'videos', 'analytics', 'hashtags', 'publish'];
+  const valid = ['panchang', 'videos', 'analytics', 'hashtags', 'publish', 'settings'];
   if (hash && valid.includes(hash)) switchTab(hash);
 });
 
@@ -3042,6 +3168,344 @@ function pubSavePreview(cityKey) {
 }
 
 // ════════════════════════════════════════════
+// Tab 6 — Settings & Pipeline Control
+// ════════════════════════════════════════════
+
+// All secrets required by the workflows (in priority order)
+const REQUIRED_SECRETS = [
+  { name: 'ANTHROPIC_API_KEY',         label: 'Anthropic API Key',          feature: 'Script generation (Claude)' },
+  { name: 'ELEVENLABS_API_KEY',         label: 'ElevenLabs API Key',         feature: 'Voice synthesis' },
+  { name: 'YOUTUBE_CREDENTIALS_JSON',   label: 'YouTube Credentials JSON',   feature: 'YouTube upload + analytics' },
+  { name: 'INSTAGRAM_ACCESS_TOKEN',     label: 'Instagram Access Token',     feature: 'Instagram upload + analytics' },
+  { name: 'INSTAGRAM_ACCOUNT_ID',       label: 'Instagram Account ID',       feature: 'Instagram upload + analytics' },
+  { name: 'APPROVAL_EMAIL_FROM',        label: 'SMTP From Address',          feature: 'Approval email' },
+  { name: 'APPROVAL_EMAIL_TO',          label: 'SMTP To Address',            feature: 'Approval email' },
+  { name: 'SMTP_PASS',                  label: 'SMTP Password',              feature: 'Approval email' },
+  { name: 'AWS_ACCESS_KEY_ID',          label: 'AWS Access Key ID',          feature: 'S3 video hosting (Instagram)' },
+  { name: 'AWS_SECRET_ACCESS_KEY',      label: 'AWS Secret Access Key',      feature: 'S3 video hosting (Instagram)' },
+  { name: 'S3_BUCKET_NAME',             label: 'S3 Bucket Name',             feature: 'S3 video hosting (Instagram)' },
+  { name: 'VIDEO_PUBLIC_URL',           label: 'Video Public URL',           feature: 'Instagram Reel source URL' },
+];
+
+// Workflow dispatch presets
+const DISPATCH_PRESETS = [
+  {
+    title: '▶ Generate Tomorrow',
+    desc:  'Run the full pipeline for tomorrow\'s date — scrape, script, voice, render, thumbnail.',
+    color: '',
+    inputs: { use_tomorrow: 'true', skip_approval: 'false', upload_approved: 'false' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '▶ Generate Today',
+    desc:  'Run the pipeline for today\'s date (use for testing or re-generation).',
+    color: '',
+    inputs: { use_tomorrow: 'false', skip_approval: 'false', upload_approved: 'false' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '⚡ Skip Approval + Auto Upload',
+    desc:  'Generate tomorrow\'s video AND immediately upload to YouTube + Instagram (no review step).',
+    color: 'green',
+    inputs: { use_tomorrow: 'true', skip_approval: 'true', upload_approved: 'false' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '📤 Upload Already-Approved',
+    desc:  'Upload the previously generated and approved video. Skips re-generation.',
+    color: 'blue',
+    inputs: { use_tomorrow: 'true', skip_approval: 'false', upload_approved: 'true' },
+    workflow: 'daily-pipeline.yml',
+  },
+  {
+    title: '📊 Fetch Analytics Now',
+    desc:  'Pull latest YouTube + Instagram analytics and update dashboard data.',
+    color: 'blue',
+    inputs: {},
+    workflow: 'fetch-analytics.yml',
+  },
+];
+
+let _settingsSecretsCache = null; // null = not fetched, [] = fetched (names)
+
+async function renderSettingsTab(state, config, analytics) {
+  const el = document.getElementById('settings-tab-content');
+  if (!el) return;
+
+  // Try to fetch secret names from GitHub API
+  let secretNames = _settingsSecretsCache;
+  if (secretNames === null && config?.token && config?.owner && config?.repo) {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${config.owner}/${config.repo}/actions/secrets`,
+        { headers: { Authorization: `Bearer ${config.token}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        secretNames = (data.secrets || []).map(s => s.name);
+        _settingsSecretsCache = secretNames;
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  const cities = state?.cities ? Object.values(state.cities) : [];
+  const owner  = config?.owner || '—';
+  const repo   = config?.repo  || '—';
+  const runId  = config?.run_id || '—';
+  const ghBase = `https://github.com/${owner}/${repo}`;
+  const pagesUrl = `https://${owner}.github.io/${repo}`;
+
+  el.innerHTML = `
+
+    <!-- ① Repo & Dashboard info -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🔗</span>
+        <h2>Repo & Dashboard Info</h2>
+      </div>
+      <div class="pub-section-body">
+        <div class="sec-kv">
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Repository</span>
+            <span class="sec-kv-val">
+              <a href="${ghBase}" target="_blank">${owner}/${repo}</a>
+            </span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">GitHub Pages</span>
+            <span class="sec-kv-val">
+              <a href="${pagesUrl}" target="_blank">${pagesUrl}</a>
+            </span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Last Run ID</span>
+            <span class="sec-kv-val">
+              ${runId !== '—'
+                ? `<a href="${ghBase}/actions/runs/${runId}" target="_blank">${runId}</a>`
+                : '—'}
+            </span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Pipeline date</span>
+            <span class="sec-kv-val">${state?.date || '—'}</span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Analytics updated</span>
+            <span class="sec-kv-val">${analytics?.last_updated
+              ? new Date(analytics.last_updated).toLocaleString()
+              : '—'}</span>
+          </div>
+          <div class="sec-kv-row">
+            <span class="sec-kv-key">Cities active</span>
+            <span class="sec-kv-val">${cities.length}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② Pipeline schedule -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🕐</span>
+        <h2>Automation Schedule</h2>
+      </div>
+      <div class="pub-section-body">
+        <div class="sec-sched-row">
+          <div>
+            <div><span class="sec-sched-cron">0 1 * * *</span></div>
+          </div>
+          <div>
+            <div class="sec-sched-label">Daily Panchangam Pipeline</div>
+            <div class="sec-sched-sub">1:00 AM UTC · 8:00 PM ET · 5:00 PM PT — generates tomorrow's videos nightly</div>
+          </div>
+        </div>
+        <div class="sec-sched-row">
+          <div>
+            <div><span class="sec-sched-cron">0 6 * * *</span></div>
+          </div>
+          <div>
+            <div class="sec-sched-label">Fetch Analytics</div>
+            <div class="sec-sched-sub">6:00 AM UTC · 1:00 AM ET — pulls YouTube + Instagram stats after uploads</div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <a href="${ghBase}/actions" target="_blank" class="pub-url-pill">
+            🔗 Open GitHub Actions
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ Workflow dispatch controls -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>⚙️</span>
+        <h2>Workflow Controls</h2>
+        <span class="psh-sub">Manual triggers via GitHub Actions dispatch</span>
+      </div>
+      <div class="pub-section-body">
+        ${!config?.token ? `<div class="an-note" style="margin-bottom:16px">
+          ⚠️ No GitHub token configured — dispatch buttons are disabled.<br>
+          Add a <strong>token</strong> field to <code>dashboard/repo_config.json</code> with a PAT that has
+          <code>actions:write</code> scope.
+        </div>` : ''}
+        <div class="sec-dispatch-grid">
+          ${DISPATCH_PRESETS.map((p, i) => `
+            <div class="sec-dispatch-card">
+              <div class="sec-dispatch-title">${p.title}</div>
+              <div class="sec-dispatch-desc">${p.desc}</div>
+              <button class="sec-dispatch-btn ${p.color}"
+                      onclick="settingsDispatch(${i})"
+                      ${!config?.token ? 'disabled title="No token configured"' : ''}>
+                Trigger Now
+              </button>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ④ Secrets health -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🔑</span>
+        <h2>Secrets Health</h2>
+        <span class="psh-sub" id="secrets-hdr-sub">
+          ${secretNames === null
+            ? 'Add a PAT token to repo_config.json to check secrets'
+            : `${secretNames.filter(n => REQUIRED_SECRETS.find(r=>r.name===n)).length}/${REQUIRED_SECRETS.length} configured`}
+        </span>
+      </div>
+      <div class="pub-section-body">
+        ${secretNames === null ? `
+          <div class="an-note">
+            Secret names can only be fetched from GitHub API with an authenticated token.
+            Add <code>"token": "ghp_…"</code> to <code>dashboard/repo_config.json</code>
+            (PAT with <code>secrets:read</code> or admin scope).
+          </div>` : ''}
+        <div class="sec-secrets-grid">
+          ${REQUIRED_SECRETS.map(s => {
+            const known = secretNames !== null;
+            const present = known && secretNames.includes(s.name);
+            const cls   = !known ? 'unkn' : present ? 'ok' : 'miss';
+            const label = !known ? 'UNKNOWN' : present ? '✓ SET' : '✗ MISSING';
+            return `
+              <div class="sec-secret-row ${cls}" title="${s.feature}">
+                <div class="sec-secret-name">${s.name}</div>
+                <div class="sec-secret-badge ${cls}">${label}</div>
+              </div>`;
+          }).join('')}
+        </div>
+        ${secretNames !== null ? `
+          <div style="margin-top:14px">
+            <a href="${ghBase}/settings/secrets/actions" target="_blank" class="pub-url-pill">
+              🔗 Manage Secrets on GitHub
+            </a>
+          </div>` : ''}
+      </div>
+    </div>
+
+    <!-- ⑤ Cities & timezones -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>🌍</span>
+        <h2>Active Cities</h2>
+        <span class="psh-sub">${cities.length} cities in pipeline</span>
+      </div>
+      <div class="pub-section-body">
+        ${cities.length === 0
+          ? '<div style="color:var(--muted);font-size:13px">No city data found. Run the pipeline first.</div>'
+          : `<table class="sec-cities-table">
+              <thead><tr>
+                <th>City</th>
+                <th>Timezone</th>
+                <th>TZ Label</th>
+                <th>Sunrise</th>
+                <th>Sunset</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody>
+                ${cities.map(c => {
+                  const p = c.panchang || {};
+                  return `<tr>
+                    <td style="color:var(--gold-soft);font-weight:600">${c.city||c.city_key}</td>
+                    <td style="color:var(--muted);font-size:12px">${p.timezone||'—'}</td>
+                    <td><span class="sec-tz-chip">${p.tz_label||'—'}</span></td>
+                    <td style="font-size:12px">${p.sunrise||'—'}</td>
+                    <td style="font-size:12px">${p.sunset||'—'}</td>
+                    <td>${c.approval_status==='approved'
+                          ? '<span style="color:#69b46c">✓ Approved</span>'
+                          : c.approval_status==='rejected'
+                          ? '<span style="color:#e05a5a">✗ Rejected</span>'
+                          : '<span style="color:#f0a500">⏳ Pending</span>'}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>`}
+        <div style="margin-top:14px;color:var(--muted);font-size:12px;line-height:1.7">
+          To add or remove cities, edit <code>scripts/pipeline.py</code> — the <code>CITIES</code> list at the top of the file.
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑥ Token setup guide -->
+    <div class="pub-section">
+      <div class="pub-section-hdr">
+        <span>📖</span>
+        <h2>Dashboard Token Setup</h2>
+      </div>
+      <div class="pub-section-body">
+        <div style="color:var(--muted);font-size:13px;line-height:1.9">
+          The dashboard reads <code>repo_config.json</code> at load time. To enable live secret checks
+          and workflow dispatch, add a GitHub Personal Access Token (PAT):
+        </div>
+        <pre style="background:rgba(255,215,0,.04);border:1px solid var(--border);
+                    border-radius:8px;padding:16px;margin:14px 0;font-size:12px;
+                    color:var(--text);overflow-x:auto;line-height:1.6">{
+  "owner": "${owner}",
+  "repo":  "${repo}",
+  "run_id": "${runId}",
+  "workflow_file": "daily-pipeline.yml",
+  "token": "ghp_YOUR_TOKEN_HERE"
+}</pre>
+        <div style="color:var(--muted);font-size:12px;line-height:1.7">
+          Required PAT scopes: <code>repo</code> · <code>workflow</code> · <code>secrets</code> (admin for secret names).<br>
+          ⚠️ Do not commit <code>repo_config.json</code> with a real token. Use it locally only — the file is in <code>.gitignore</code>.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Workflow dispatch ──────────────────────────────────────
+async function settingsDispatch(presetIdx) {
+  const config = window._config;
+  const preset = DISPATCH_PRESETS[presetIdx];
+  if (!config?.token) { showToast('No token — add token to repo_config.json.', 'error'); return; }
+
+  const confirmed = confirm(`Trigger: "${preset.title}"?\n\n${preset.desc}`);
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${preset.workflow}/dispatches`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: preset.inputs }),
+      }
+    );
+    if (res.status === 204) {
+      showToast(`✅ "${preset.title}" triggered! Check GitHub Actions.`, 'success');
+    } else {
+      const b = await res.json().catch(() => ({}));
+      throw new Error(b.message || res.statusText);
+    }
+  } catch (err) {
+    showToast(`Dispatch failed: ${err.message}`, 'error');
+  }
+}
+
+// ════════════════════════════════════════════
 // Init
 // ════════════════════════════════════════════
 (async () => {
@@ -3072,6 +3536,7 @@ function pubSavePreview(cityKey) {
   renderAnalyticsTab(state, analytics);
   renderHashtagTab(state);
   renderPublishTab(state, config);
+  renderSettingsTab(state, config, analytics);
 })();
 </script>
 </body>
