@@ -1631,7 +1631,7 @@ function fmtRange(us, startKey, endKey) {
 // ════════════════════════════════════════════
 async function loadState() {
   try {
-    const resp = await fetch('pipeline_state.json');
+    const resp = await fetch('pipeline_state.json?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error('No state');
     return await resp.json();
   } catch {

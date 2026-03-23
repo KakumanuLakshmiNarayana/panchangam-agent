@@ -110,12 +110,14 @@ jobs:
           }' > dashboard/repo_config.json
 
       - name: Commit dashboard state to repo
+        continue-on-error: true
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add dashboard/pipeline_state.json dashboard/thumbs/ dashboard/repo_config.json
           git diff --cached --quiet || git commit -m "chore: update dashboard state [skip ci]"
-          git push
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push || echo "⚠️  git push failed (branch protection or conflict) — gh-pages deploy will still run"
 
       - name: Upload state artifact
         uses: actions/upload-artifact@v4
