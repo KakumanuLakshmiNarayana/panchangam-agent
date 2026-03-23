@@ -533,6 +533,163 @@
     .p-field-grid { grid-template-columns: 1fr; }
     .p-toolbar { flex-direction: column; align-items: flex-start; }
   }
+
+  /* ── Video Review Tab ── */
+
+  /* Summary bar — 5 city status cards at a glance */
+  .vr-summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .vr-summary { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .vr-summary { grid-template-columns: repeat(2, 1fr); } }
+
+  .vr-city-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+  }
+  .vr-city-card:hover { border-color: var(--gold-soft); transform: translateY(-2px); }
+  .vr-city-card.active { border-color: var(--gold); background: rgba(255,215,0,0.07); }
+  .vr-city-card.status-approved { border-color: #2d6a4f; }
+  .vr-city-card.status-rejected { border-color: var(--crimson); }
+
+  .vr-city-card .vc-name {
+    font-size: 12px; font-weight: 700; color: var(--text);
+    margin-bottom: 6px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .vr-city-card .vc-status {
+    font-size: 11px; padding: 3px 8px; border-radius: 12px;
+    font-weight: 600; letter-spacing: .5px;
+  }
+  .vc-status.pending  { background: rgba(255,165,0,.15); color: var(--amber); }
+  .vc-status.approved { background: rgba(45,106,79,.2);  color: #69b46c; }
+  .vc-status.rejected { background: rgba(139,0,0,.2);    color: #e07070; }
+
+  /* Approve-all bar */
+  .vr-approve-bar {
+    background: linear-gradient(135deg, rgba(27,94,32,.25), rgba(45,106,79,.15));
+    border: 1px solid rgba(45,106,79,.4);
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .vr-approve-bar p { color: var(--text); font-size: 14px; }
+  .vr-approve-bar p span { color: #69b46c; font-weight: 700; }
+
+  .btn-approve-all {
+    padding: 11px 24px;
+    background: linear-gradient(135deg, #1b5e20, #2d6a4f);
+    border: 1px solid #2d6a4f;
+    border-radius: 10px;
+    color: #a8d8a8;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+    font-family: 'Outfit', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-approve-all:hover {
+    background: linear-gradient(135deg, #2d6a4f, #40916c);
+    color: #fff; transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(45,106,79,.4);
+  }
+  .btn-approve-all:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  /* 9:16 video player */
+  .vr-player-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .vr-video-box {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 9/16;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+    box-shadow: 0 12px 40px rgba(0,0,0,.7);
+    border: 2px solid var(--border);
+  }
+
+  .vr-video-box video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Thumbnail fallback — shows as background */
+  .vr-thumb-bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: .65;
+  }
+
+  /* Overlay on thumbnail state */
+  .vr-video-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    background: linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 50%);
+    padding: 20px;
+    text-align: center;
+  }
+  .vr-video-overlay .vov-icon { font-size: 40px; }
+  .vr-video-overlay .vov-label {
+    color: var(--gold); font-size: 13px; font-weight: 700;
+    background: rgba(0,0,0,.6); padding: 4px 10px; border-radius: 6px;
+  }
+  .vr-video-overlay a {
+    color: var(--amber); font-size: 12px; text-decoration: underline;
+  }
+
+  /* Action buttons under the player */
+  .vr-actions {
+    width: 100%; max-width: 280px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .vr-title {
+    background: rgba(255,215,0,.07); border: 1px solid rgba(255,215,0,.2);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: var(--gold); line-height: 1.4;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .vr-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Right panel */
+  .vr-right { display: flex; flex-direction: column; gap: 18px; }
+
+  .vr-main-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 700px) {
+    .vr-main-grid { grid-template-columns: 1fr; }
+    .vr-video-box { max-width: 200px; margin: 0 auto; }
+    .vr-actions   { max-width: 200px; margin: 0 auto; }
+  }
 </style>
 </head>
 <body>
@@ -752,185 +909,235 @@ async function loadRepoConfig() {
 // ════════════════════════════════════════════
 // Render Video Review tab
 // ════════════════════════════════════════════
+
+// In-memory approval state — keys: cityKey → 'pending'|'approved'|'rejected'
+const _vrStatus = {};
+
+function _vrGetStatus(cityKey) {
+  const fromState = (window._state?.cities?.[cityKey]?.approval_status) || 'pending';
+  return _vrStatus[cityKey] || fromState;
+}
+
+function _updatePendingBadge(cities) {
+  const pending = Object.keys(cities).filter(k => _vrGetStatus(k) === 'pending').length;
+  const badge   = document.getElementById('pending-badge');
+  badge.textContent    = pending;
+  badge.style.display  = pending > 0 ? 'inline' : 'none';
+}
+
 function renderVideoReview(state, config) {
-  if (!state) {
+  if (!state || !state.cities) {
     document.getElementById('video-review-content').innerHTML = `
-      <div class="card">
-        <div class="card-body">
-          <div class="loading" style="padding:60px">
-            <div style="font-size:48px">⚠️</div>
-            <p style="color:var(--amber)">No pipeline state found</p>
-            <p style="font-size:13px;color:var(--muted)">Run the pipeline first to generate videos.</p>
-          </div>
+      <div class="card"><div class="card-body">
+        <div class="loading" style="padding:60px">
+          <div style="font-size:48px">⚠️</div>
+          <p style="color:var(--amber)">No pipeline state found</p>
+          <p style="font-size:13px;color:var(--muted)">Run the pipeline first to generate videos.</p>
         </div>
-      </div>`;
+      </div></div>`;
     return;
   }
 
-  const dateStr  = state.date || '—';
-  const cities   = state.cities || {};
+  const cities   = state.cities;
   const cityKeys = Object.keys(cities);
+  const dateStr  = state.date || '—';
 
-  // Count pending
-  const pendingCount = cityKeys.filter(k => cities[k].approval_status === 'pending').length;
-  const badge = document.getElementById('pending-badge');
-  if (pendingCount > 0) {
-    badge.textContent = pendingCount;
-    badge.style.display = 'inline';
-  } else {
-    badge.style.display = 'none';
-  }
+  _updatePendingBadge(cities);
 
-  // Pick first city by default
-  const firstCity = cityKeys[0] || '';
+  const pendingCities  = cityKeys.filter(k => _vrGetStatus(k) === 'pending');
+  const approvedCities = cityKeys.filter(k => _vrGetStatus(k) === 'approved');
 
   document.getElementById('video-review-content').innerHTML = `
-    <!-- City pills -->
-    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px" id="city-pills">
-      ${cityKeys.map((k, i) => {
-        const c = cities[k];
-        const st = c.approval_status || 'pending';
-        const dot = st === 'approved' ? '✅' : st === 'rejected' ? '❌' : '⏳';
-        return `<button class="city-pill-btn ${i === 0 ? 'active' : ''}"
-          style="padding:9px 20px;background:rgba(255,215,0,${i===0?'0.12':'0.05'});
-          border:1px solid ${i===0?'var(--gold)':'var(--border)'};
-          border-radius:24px;color:${i===0?'var(--gold)':'var(--muted)'};
-          font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
-          font-family:'Outfit',sans-serif;"
-          onclick="selectCity('${k}', this)">
-          ${dot} ${c.city || k}
-        </button>`;
+
+    <!-- ① Summary cards (all 5 at a glance) -->
+    <div class="vr-summary" id="vr-summary-bar">
+      ${cityKeys.map(k => {
+        const st = _vrGetStatus(k);
+        const shortName = (cities[k].city || k).replace(', NY','').replace(', IL','').replace(', TX','').replace(', CA','').replace(', MI','');
+        return `
+          <div class="vr-city-card status-${st} ${k === cityKeys[0] ? 'active' : ''}"
+               id="vr-card-${k}"
+               onclick="vrSelectCity('${k}')">
+            <div class="vc-name">${shortName}</div>
+            <div class="vc-status ${st}">
+              ${st === 'approved' ? '✅ Approved' : st === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+            </div>
+          </div>`;
       }).join('')}
     </div>
 
-    <!-- Review panel (rendered per city) -->
-    <div id="city-review-panel"></div>
+    <!-- ② Approve-all bar (only shown when there are pending cities) -->
+    ${pendingCities.length > 0 ? `
+    <div class="vr-approve-bar">
+      <p><span>${pendingCities.length}</span> of ${cityKeys.length} cities pending — approve all at once?</p>
+      <button class="btn-approve-all" onclick="handleApproveAll()">
+        ✅ Approve All ${pendingCities.length} Cities &amp; Upload
+      </button>
+    </div>` : approvedCities.length === cityKeys.length ? `
+    <div style="background:rgba(45,106,79,.12);border:1px solid rgba(45,106,79,.35);
+         border-radius:12px;padding:14px 20px;margin-bottom:24px;color:#69b46c;font-size:14px">
+      ✅ All ${cityKeys.length} cities approved and queued for upload.
+    </div>` : ''}
+
+    <!-- ③ City selector pills -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px" id="vr-city-pills">
+      ${cityKeys.map((k, i) => {
+        const st  = _vrGetStatus(k);
+        const dot = st === 'approved' ? '✅' : st === 'rejected' ? '❌' : '⏳';
+        return `
+          <button class="pc-pill ${i === 0 ? 'active' : ''}"
+                  id="vr-pill-${k}"
+                  onclick="vrSelectCity('${k}')">
+            ${dot} ${cities[k].city || k}
+          </button>`;
+      }).join('')}
+    </div>
+
+    <!-- ④ Per-city panel -->
+    <div id="vr-city-panel"></div>
   `;
 
-  // Render first city
-  renderCityPanel(firstCity, state, config);
+  vrSelectCity(cityKeys[0]);
 }
 
-function selectCity(cityKey, btn) {
-  document.querySelectorAll('.city-pill-btn').forEach(b => {
-    b.style.background = 'rgba(255,215,0,0.05)';
-    b.style.borderColor = 'var(--border)';
-    b.style.color = 'var(--muted)';
-    b.classList.remove('active');
-  });
-  btn.style.background = 'rgba(255,215,0,0.12)';
-  btn.style.borderColor = 'var(--gold)';
-  btn.style.color = 'var(--gold)';
-  btn.classList.add('active');
-  renderCityPanel(cityKey, window._state, window._config);
+function vrSelectCity(cityKey) {
+  // Update summary cards
+  document.querySelectorAll('.vr-city-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById('vr-card-' + cityKey);
+  if (card) card.classList.add('active');
+
+  // Update pills
+  document.querySelectorAll('#vr-city-pills .pc-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('vr-pill-' + cityKey);
+  if (pill) pill.classList.add('active');
+
+  renderVrCityPanel(cityKey);
 }
 
-function renderCityPanel(cityKey, state, config) {
-  const city   = (state.cities || {})[cityKey] || {};
-  const script  = city.script   || {};
-  const panchang = city.panchang || {};
-  const raw     = panchang;
-  const dateStr = state.date || '—';
-  const status  = city.approval_status || 'pending';
+function renderVrCityPanel(cityKey) {
+  const state    = window._state;
+  const config   = window._config || {};
+  const city     = (state?.cities || {})[cityKey] || {};
+  const script   = city.script   || {};
+  const p        = city.panchang || {};
+  const dateStr  = state?.date   || '—';
+  const status   = _vrGetStatus(cityKey);
 
-  // Video URL: try pending folder, else artifact
-  const videoSrc = null; // will be loaded from pending/{date}/video_{city}_{date}.mp4
+  // Video & thumbnail paths (served from GitHub Pages)
+  const thumbSrc = `thumbs/thumb_${cityKey}_${dateStr}.jpg`;
+  const videoSrc = `pending/${dateStr}/video_${cityKey}_${dateStr}.mp4`;
 
   const artifactUrl = config.run_id
     ? `https://github.com/${config.owner}/${config.repo}/actions/runs/${config.run_id}`
     : null;
 
-  document.getElementById('city-review-panel').innerHTML = `
-    <div class="review-grid">
+  const canAct = status === 'pending';
 
-      <!-- LEFT: Video -->
-      <div>
-        <div class="card">
-          <div class="card-header">
-            <span>🎬</span>
-            <h2>${city.city || cityKey}</h2>
-            <span class="badge badge-${status}" style="margin-left:auto">
-              ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
-            </span>
+  document.getElementById('vr-city-panel').innerHTML = `
+    <div class="vr-main-grid">
+
+      <!-- LEFT: 9:16 player + actions -->
+      <div class="vr-player-wrap">
+
+        <!-- 9:16 video box -->
+        <div class="vr-video-box" id="vr-box-${cityKey}">
+          <!-- Try real video first; onerror shows thumbnail overlay -->
+          <video id="vr-vid-${cityKey}"
+                 controls playsinline preload="metadata"
+                 style="display:none"
+                 onerror="vrVideoError('${cityKey}')">
+            <source src="${videoSrc}" type="video/mp4"/>
+          </video>
+
+          <!-- Thumbnail background (always loaded) -->
+          <img class="vr-thumb-bg"
+               src="${thumbSrc}"
+               onerror="this.style.display='none'"
+               alt=""/>
+
+          <!-- Overlay (shown until video loads) -->
+          <div class="vr-video-overlay" id="vr-overlay-${cityKey}">
+            <div class="vov-icon">🎬</div>
+            <div class="vov-label">${city.city || cityKey}</div>
+            ${artifactUrl
+              ? `<a href="${artifactUrl}" target="_blank">View on GitHub Actions ↗</a>`
+              : `<span style="color:var(--muted);font-size:12px">Video not yet available</span>`}
           </div>
-          <div class="card-body" style="padding:16px">
-            <div class="video-wrapper">
-              <div class="video-placeholder">
-                <div class="icon">🪔</div>
-                <p style="color:var(--gold);font-size:16px;margin-bottom:8px">Video in Artifacts</p>
-                <p style="font-size:13px">
-                  ${artifactUrl
-                    ? `<a href="${artifactUrl}" target="_blank"
-                        style="color:var(--amber);text-decoration:underline">
-                        View on GitHub Actions ↗
-                      </a>`
-                    : 'Run the pipeline to generate videos.'}
-                </p>
-                <p style="margin-top:12px;font-size:12px;color:var(--muted)">
-                  ${raw.tithi ? `Tithi: ${raw.tithi}` : ''}
-                </p>
-              </div>
-            </div>
+        </div>
+
+        <!-- Title + buttons -->
+        <div class="vr-actions">
+          <div class="vr-title">"${script.title || 'Daily Panchangam — ' + (city.city || cityKey)}"</div>
+          <div class="vr-btn-row">
+            <button class="btn btn-approve" style="font-size:13px;padding:11px 8px"
+                    onclick="handleVrApprove('${cityKey}')"
+                    ${!canAct ? 'disabled' : ''}>
+              ✅ Approve
+            </button>
+            <button class="btn btn-reject" style="font-size:13px;padding:11px 8px"
+                    onclick="handleVrReject('${cityKey}')"
+                    ${!canAct ? 'disabled' : ''}>
+              ❌ Reject
+            </button>
           </div>
-          <div class="action-area">
-            <div class="video-title-display">
-              "${script.title || 'Daily Panchangam — ' + (city.city || cityKey)}"
-            </div>
-            <div class="btn-row">
-              <button class="btn btn-approve" onclick="handleApprove('${cityKey}', '${dateStr}')"
-                ${status !== 'pending' ? 'disabled' : ''}>
-                ✅ Approve &amp; Upload
-              </button>
-              <button class="btn btn-reject" onclick="handleReject('${cityKey}')"
-                ${status !== 'pending' ? 'disabled' : ''}>
-                ❌ Reject
-              </button>
-            </div>
-          </div>
+          ${status !== 'pending' ? `
+          <button style="width:100%;padding:8px;background:transparent;border:1px solid var(--border);
+                  border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;
+                  font-family:'Outfit',sans-serif;margin-top:2px"
+                  onclick="handleVrUndo('${cityKey}')">
+            ↩ Undo ${status === 'approved' ? 'Approval' : 'Rejection'}
+          </button>` : ''}
         </div>
       </div>
 
-      <!-- RIGHT: Panchang + Script -->
-      <div style="display:flex;flex-direction:column;gap:20px">
+      <!-- RIGHT: Details -->
+      <div class="vr-right">
 
-        <!-- Script preview -->
+        <!-- Status banner -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-family:'Cinzel Decorative',serif;font-size:18px;color:var(--gold)">
+            ${city.city || cityKey}
+          </div>
+          <span class="badge badge-${status}">
+            ${status === 'pending' ? '⏳ Pending' : status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+          </span>
+          <span style="margin-left:auto;color:var(--muted);font-size:13px">${dateStr}</span>
+        </div>
+
+        <!-- Script narration -->
         <div class="card">
-          <div class="card-header"><span>📜</span><h2>Script Preview</h2></div>
-          <div class="card-body">
+          <div class="card-header"><span>📜</span><h2>Script</h2></div>
+          <div class="card-body" style="padding:16px">
             <div class="script-block">
-              <h4>🎙️ Narration</h4>
+              <h4>🎙️ Narration (Telugu)</h4>
               <p>${script.full_narration || script.main_narration || '—'}</p>
             </div>
-            ${(script.hashtags||[]).length > 0 ? `
+            ${(script.on_screen_lines||[]).length > 0 ? `
             <div class="script-block">
-              <h4># Hashtags</h4>
-              <p style="line-height:2">${(script.hashtags||[]).map(h=>`<span style="color:var(--amber)">#${h}</span>`).join(' ')}</p>
+              <h4>📺 On-Screen Lines</h4>
+              ${(script.on_screen_lines||[]).map(l => `<p style="margin-bottom:6px">• ${l}</p>`).join('')}
             </div>` : ''}
           </div>
         </div>
 
-        <!-- Panchang details -->
+        <!-- Key timings quick-ref -->
         <div class="card">
-          <div class="card-header"><span>🌙</span><h2>Panchangam Details</h2></div>
-          <div class="card-body">
+          <div class="card-header"><span>🕐</span><h2>Key Timings</h2></div>
+          <div class="card-body" style="padding:16px">
             <div class="info-grid">
-              <div class="info-item"><div class="label">Tithi</div><div class="value">${raw.tithi||'—'}</div></div>
-              <div class="info-item"><div class="label">Nakshatra</div><div class="value">${raw.nakshatra||'—'}</div></div>
-              <div class="info-item"><div class="label">Yoga</div><div class="value">${raw.yoga||'—'}</div></div>
-              <div class="info-item"><div class="label">Karana</div><div class="value">${raw.karana||'—'}</div></div>
-              <div class="info-item"><div class="label">Paksha</div><div class="value">${raw.paksha||'—'}</div></div>
-              <div class="info-item"><div class="label">Sunrise</div><div class="value">${raw.sunrise||'—'}</div></div>
+              <div class="info-item"><div class="label">Tithi</div><div class="value">${p.tithi||'—'}</div></div>
+              <div class="info-item"><div class="label">Nakshatra</div><div class="value">${p.nakshatra||'—'}</div></div>
+              <div class="info-item"><div class="label">Sunrise</div><div class="value">${p.sunrise||'—'}</div></div>
+              <div class="info-item"><div class="label">Sunset</div><div class="value">${p.sunset||'—'}</div></div>
             </div>
             <div class="timing-section">
-              <h4>⚠️ Inauspicious</h4>
-              <div class="timing-row inauspicious"><span class="t-label">🚫 Rahu Kalam</span><span class="t-zones">${raw.rahukaal||'N/A'}</span></div>
-              <div class="timing-row inauspicious"><span class="t-label">🚫 Dur Muhurtam</span><span class="t-zones">${raw.durmuhurtam||'N/A'}</span></div>
-              <div class="timing-row inauspicious"><span class="t-label">🚫 Yamagandam</span><span class="t-zones">${raw.yamagandam||'N/A'}</span></div>
-              <div class="timing-row inauspicious"><span class="t-label">🚫 Gulikai</span><span class="t-zones">${raw.gulika||'N/A'}</span></div>
+              <h4>⚠️ Avoid</h4>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Rahu Kalam</span><span class="t-zones">${p.rahukaal||'N/A'}</span></div>
+              <div class="timing-row inauspicious"><span class="t-label">🚫 Dur Muhurtam</span><span class="t-zones">${p.durmuhurtam||'N/A'}</span></div>
               <h4>✅ Auspicious</h4>
-              <div class="timing-row auspicious"><span class="t-label">🌟 Abhijit Muhurta</span><span class="t-zones">${raw.abhijit||'N/A'}</span></div>
-              <div class="timing-row auspicious"><span class="t-label">🌟 Amrit Kalam</span><span class="t-zones">${raw.amrit_kalam||'N/A'}</span></div>
-              <div class="timing-row auspicious"><span class="t-label">🌟 Brahma Muhurta</span><span class="t-zones">${raw.brahma_muhurta||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Abhijit Muhurta</span><span class="t-zones">${p.abhijit||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Amrit Kalam</span><span class="t-zones">${p.amrit_kalam||'N/A'}</span></div>
+              <div class="timing-row auspicious"><span class="t-label">🌟 Brahma Muhurta</span><span class="t-zones">${p.brahma_muhurta||'N/A'}</span></div>
             </div>
           </div>
         </div>
@@ -938,6 +1145,128 @@ function renderCityPanel(cityKey, state, config) {
       </div>
     </div>
   `;
+
+  // Attempt to load actual video
+  vrTryLoadVideo(cityKey, videoSrc);
+}
+
+// Try to load the video — if it loads, show it; otherwise keep thumbnail overlay
+function vrTryLoadVideo(cityKey, src) {
+  const vid     = document.getElementById('vr-vid-' + cityKey);
+  const overlay = document.getElementById('vr-overlay-' + cityKey);
+  if (!vid) return;
+
+  vid.addEventListener('canplay', () => {
+    vid.style.display = 'block';
+    if (overlay) overlay.style.display = 'none';
+  }, { once: true });
+
+  vid.load();
+}
+
+function vrVideoError(cityKey) {
+  // Keep thumbnail + overlay visible, hide broken video element
+  const vid = document.getElementById('vr-vid-' + cityKey);
+  if (vid) vid.style.display = 'none';
+}
+
+// ── Approve / Reject / Undo ────────────────
+function _vrSetStatus(cityKey, status) {
+  _vrStatus[cityKey] = status;
+  _updatePendingBadge(window._state?.cities || {});
+}
+
+async function handleVrApprove(cityKey) {
+  if (!confirm(`✅ Approve "${(window._state?.cities?.[cityKey]?.city) || cityKey}" for upload to YouTube & Instagram?`)) return;
+
+  const token = prompt('Enter GitHub Personal Access Token (needs actions:write):');
+  if (!token) { showToast('Cancelled.', 'error'); return; }
+
+  const cfg    = window._config || {};
+  const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
+  if (!repo) return;
+
+  const dateStr = window._state?.date || '';
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true', date: dateStr } })
+      }
+    );
+    if (resp.ok || resp.status === 204) {
+      _vrSetStatus(cityKey, 'approved');
+      showToast(`✅ ${cityKey.replace('_',' ')} approved — upload triggered!`, 'success');
+      renderVideoReview(window._state, window._config);
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub error: ${err.message || resp.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
+}
+
+function handleVrReject(cityKey) {
+  if (!confirm(`❌ Reject "${(window._state?.cities?.[cityKey]?.city) || cityKey}"? This city won't be uploaded.`)) return;
+  _vrSetStatus(cityKey, 'rejected');
+  showToast(`❌ ${cityKey.replace('_',' ')} rejected.`, 'error');
+  renderVideoReview(window._state, window._config);
+}
+
+function handleVrUndo(cityKey) {
+  _vrSetStatus(cityKey, 'pending');
+  showToast(`↩ ${cityKey.replace('_',' ')} reset to pending.`, 'success');
+  renderVideoReview(window._state, window._config);
+}
+
+async function handleApproveAll() {
+  const cities    = window._state?.cities || {};
+  const pending   = Object.keys(cities).filter(k => _vrGetStatus(k) === 'pending');
+  if (pending.length === 0) { showToast('No pending cities.', 'error'); return; }
+
+  if (!confirm(`✅ Approve ALL ${pending.length} pending cities and trigger upload to YouTube & Instagram?`)) return;
+
+  const token = prompt('Enter GitHub Personal Access Token (needs actions:write):');
+  if (!token) { showToast('Cancelled.', 'error'); return; }
+
+  const cfg   = window._config || {};
+  const repo  = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
+  if (!repo) return;
+
+  const dateStr = window._state?.date || '';
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true', date: dateStr } })
+      }
+    );
+    if (resp.ok || resp.status === 204) {
+      pending.forEach(k => _vrSetStatus(k, 'approved'));
+      showToast(`✅ All ${pending.length} cities approved — upload triggered!`, 'success');
+      renderVideoReview(window._state, window._config);
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      showToast(`GitHub error: ${err.message || resp.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Error: ${e.message}`, 'error');
+  }
 }
 
 // ════════════════════════════════════════════
@@ -1244,52 +1573,6 @@ function _loadEdits(cityKey, dateStr) {
     const raw = localStorage.getItem(`panchang_edits_${dateStr}_${cityKey}`);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
-}
-
-// ════════════════════════════════════════════
-// Approval actions
-// ════════════════════════════════════════════
-async function handleApprove(cityKey, dateStr) {
-  if (!confirm(`✅ Approve ${cityKey.replace('_',' ')} video for upload?`)) return;
-
-  const token = prompt('Enter GitHub Personal Access Token (needs repo + actions:write):');
-  if (!token) { showToast('Upload cancelled.', 'error'); return; }
-
-  const cfg = window._config || {};
-  const repo = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter GitHub repo (user/repo):');
-  if (!repo) return;
-
-  try {
-    const resp = await fetch(
-      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file||'daily-pipeline.yml'}/dispatches`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ref: 'main', inputs: { date: dateStr, upload_approved: 'true' } })
-      }
-    );
-
-    if (resp.ok || resp.status === 204) {
-      showToast('✅ Upload triggered! Check GitHub Actions.', 'success');
-      document.getElementById('status-msg').textContent = '✅ Approved — uploading to YouTube & Instagram...';
-      // Refresh UI
-      renderVideoReview(window._state, window._config);
-    } else {
-      const err = await resp.json().catch(() => ({}));
-      showToast(`GitHub API error: ${err.message || resp.status}`, 'error');
-    }
-  } catch (e) {
-    showToast(`Error: ${e.message}`, 'error');
-  }
-}
-
-function handleReject(cityKey) {
-  if (!confirm(`❌ Reject ${cityKey.replace('_',' ')} video?`)) return;
-  showToast(`❌ ${cityKey.replace('_',' ')} rejected.`, 'error');
 }
 
 // ════════════════════════════════════════════
