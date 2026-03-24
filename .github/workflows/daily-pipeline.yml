@@ -77,21 +77,22 @@ jobs:
           SMTP_HOST:           smtp.gmail.com
           SMTP_PORT:           587
           SMTP_PASS:           ${{ secrets.SMTP_PASS }}
+          REGEN_CITY:          ${{ github.event.inputs.regenerate_city }}
+          OVERRIDES:           ${{ github.event.inputs.panchang_overrides }}
+          SKIP_APPROVAL:       ${{ github.event.inputs.skip_approval }}
+          USE_TOMORROW:        ${{ github.event.inputs.use_tomorrow }}
+          EVENT_NAME:          ${{ github.event_name }}
         run: |
           mkdir -p output
           cd scripts
 
-          USE_TOMORROW="${{ github.event.inputs.use_tomorrow }}"
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "$USE_TOMORROW" = "true" ]; then
+          if [ "$EVENT_NAME" = "schedule" ] || [ "$USE_TOMORROW" = "true" ]; then
             TOMORROW_FLAG="--tomorrow"
           else
             TOMORROW_FLAG=""
           fi
 
-          REGEN_CITY="${{ github.event.inputs.regenerate_city }}"
-          OVERRIDES="${{ github.event.inputs.panchang_overrides }}"
-
-          if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
+          if [ "$SKIP_APPROVAL" = "true" ]; then
             python pipeline.py --skip-approval $TOMORROW_FLAG
           elif [ -n "$REGEN_CITY" ]; then
             python pipeline.py --data-only $TOMORROW_FLAG \
