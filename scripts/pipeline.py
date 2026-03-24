@@ -219,6 +219,96 @@ def run_render_and_upload():
     return state
 
 
+# ── Phase 2a: render only (no upload) ────────────────────────────────────────
+
+def run_render_only():
+    """Phase 2a: render voice+video for all non-rejected cities. No upload."""
+    dashboard_state = Path(__file__).parent.parent / "dashboard" / "pipeline_state.json"
+    if dashboard_state.exists():
+        with open(dashboard_state, encoding="utf-8") as f:
+            state = json.load(f)
+        print(f"📂 Loaded state from dashboard/pipeline_state.json")
+    else:
+        state = load_state()
+        print(f"📂 Loaded state from output/pipeline_state.json")
+
+    if not state:
+        print("❌ No state found. Run --data-only first.")
+        return
+
+    date_str   = state.get("date", date.today().isoformat())
+    all_cities = state.get("cities", {})
+
+    print("\n" + "="*55)
+    print("  🎬  PANCHANGAM RENDER PIPELINE")
+    print(f"  📅  Date: {date_str}")
+    print("="*55)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    for city_key, city_data in all_cities.items():
+        if "error" in city_data:
+            print(f"\n  ⏭️  Skipping {city_key} (has error)")
+            continue
+        if city_data.get("approval_status") == "rejected":
+            print(f"\n  ⏭️  Skipping {city_key} (rejected)")
+            continue
+        print(f"\n  🎬  Rendering {city_data.get('city', city_key)}...")
+        try:
+            city_data = render_city(city_key, city_data, date_str)
+            city_data["approval_status"] = "rendered"
+            all_cities[city_key] = city_data
+        except Exception as e:
+            print(f"  ❌ Render failed for {city_key}: {e}")
+            import traceback; traceback.print_exc()
+
+    state["cities"]          = all_cities
+    state["approval_status"] = "rendered"
+    state["render_run_id"]   = os.environ.get("GITHUB_RUN_ID", "")
+    save_state(state)
+    print("\n✅ Videos rendered! Review thumbnails in the dashboard, then approve to upload.")
+    return state
+
+
+# ── Phase 2b: upload only (expects rendered artifacts in output/) ─────────────
+
+def run_upload_only():
+    """Phase 2b: upload already-rendered videos. Normalises paths to OUTPUT_DIR."""
+    dashboard_state = Path(__file__).parent.parent / "dashboard" / "pipeline_state.json"
+    if dashboard_state.exists():
+        with open(dashboard_state, encoding="utf-8") as f:
+            state = json.load(f)
+        print(f"📂 Loaded state from dashboard/pipeline_state.json")
+    else:
+        state = load_state()
+        print(f"📂 Loaded state from output/pipeline_state.json")
+
+    if not state:
+        print("❌ No state found.")
+        return
+
+    date_str   = state.get("date", date.today().isoformat())
+    all_cities = state.get("cities", {})
+
+    print("\n" + "="*55)
+    print("  🚀  PANCHANGAM UPLOAD PIPELINE")
+    print(f"  📅  Date: {date_str}")
+    print("="*55)
+
+    # Normalise absolute render-runner paths → current OUTPUT_DIR
+    for city_data in all_cities.values():
+        for key in ("video_path", "thumbnail_path", "audio_path"):
+            val = city_data.get(key)
+            if val:
+                city_data[key] = str(OUTPUT_DIR / os.path.basename(val))
+
+    state["cities"] = all_cities
+    _upload_all(state)
+    state["approval_status"] = "uploaded"
+    save_state(state)
+    return state
+
+
 # ── Legacy single-shot pipeline (--skip-approval) ────────────────────────────
 
 def process_city(city_key, today, date_str, driver):
@@ -429,8 +519,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-only",       action="store_true",
                         help="Phase 1: scrape data + script only, no video render")
+    parser.add_argument("--render-only",     action="store_true",
+                        help="Phase 2a: render videos only, no upload")
+    parser.add_argument("--upload-only",     action="store_true",
+                        help="Phase 2b: upload already-rendered videos")
     parser.add_argument("--render-approved", action="store_true",
-                        help="Phase 2: render video + upload from approved dashboard state")
+                        help="Legacy: render + upload in one shot from approved state")
     parser.add_argument("--skip-approval",   action="store_true",
                         help="Legacy: single-shot scrape+render+upload without review")
     parser.add_argument("--upload-approved", action="store_true",
@@ -445,7 +539,11 @@ if __name__ == "__main__":
 
     overrides = json.loads(args.overrides) if args.overrides else None
 
-    if args.render_approved:
+    if args.render_only:
+        run_render_only()
+    elif args.upload_only:
+        run_upload_only()
+    elif args.render_approved:
         run_render_and_upload()
     elif args.data_only:
         run_data_pipeline(use_tomorrow=args.tomorrow, city_key=args.city, overrides=overrides)

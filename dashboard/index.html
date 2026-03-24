@@ -1713,24 +1713,37 @@ function renderVideoReview(state, config) {
                onclick="vrSelectCity('${k}')">
             <div class="vc-name">${shortName}</div>
             <div class="vc-status ${st}">
-              ${st === 'approved' ? '✅ Approved' : st === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+              ${st === 'uploaded' ? '✅ Uploaded' : st === 'rendered' ? '🎬 Rendered' : st === 'approved' ? '✅ Approved' : st === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
             </div>
           </div>`;
       }).join('')}
     </div>
 
-    <!-- ② Approve-all bar (only shown when there are pending cities) -->
-    ${pendingCities.length > 0 ? `
-    <div class="vr-approve-bar">
-      <p><span>${pendingCities.length}</span> of ${cityKeys.length} cities pending — approve all at once?</p>
-      <button class="btn-approve-all" onclick="handleApproveAll()">
-        ✅ Approve All ${pendingCities.length} Cities &amp; Upload
-      </button>
-    </div>` : approvedCities.length === cityKeys.length ? `
-    <div style="background:rgba(45,106,79,.12);border:1px solid rgba(45,106,79,.35);
-         border-radius:12px;padding:14px 20px;margin-bottom:24px;color:#69b46c;font-size:14px">
-      ✅ All ${cityKeys.length} cities approved and queued for upload.
-    </div>` : ''}
+    <!-- ② Phase-aware action bar -->
+    ${(() => {
+      const phase = state?.approval_status || 'pending';
+      const nonRejected = cityKeys.filter(k => _vrGetStatus(k) !== 'rejected').length;
+      if (phase === 'uploaded') {
+        return `<div style="background:rgba(45,106,79,.12);border:1px solid rgba(45,106,79,.35);
+             border-radius:12px;padding:14px 20px;margin-bottom:24px;color:#69b46c;font-size:14px">
+          ✅ All videos uploaded successfully!
+        </div>`;
+      } else if (phase === 'rendered') {
+        return `<div class="vr-approve-bar" style="border-color:rgba(45,106,79,.5)">
+          <p>🎬 <strong>Videos rendered!</strong> Review the thumbnails below, then upload.</p>
+          <button class="btn-approve-all" onclick="handleApproveAll()">
+            🚀 Upload All Videos to YouTube &amp; Instagram
+          </button>
+        </div>`;
+      } else {
+        return `<div class="vr-approve-bar">
+          <p>Review the panchangam data. Reject any cities you want to skip, then generate.</p>
+          <button class="btn-approve-all" onclick="handleApproveAll()">
+            🎬 Generate Videos for ${nonRejected} Cities
+          </button>
+        </div>`;
+      }
+    })()}
 
     <!-- ③ City selector pills -->
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px" id="vr-city-pills">
@@ -1784,7 +1797,11 @@ function renderVrCityPanel(cityKey) {
     ? `https://github.com/${config.owner}/${config.repo}/actions/runs/${config.run_id}`
     : null;
 
-  const canAct = status === 'pending';
+  const phase      = window._state?.approval_status || 'pending';
+  const canApprove = phase === 'pending' && status === 'pending';
+  const canReject  = (phase === 'pending' || phase === 'rendered') && status !== 'rejected';
+  const baseStatus = phase === 'rendered' ? 'rendered' : 'pending';
+  const showUndo   = status !== baseStatus && status !== 'uploaded';
 
   document.getElementById('vr-city-panel').innerHTML = `
     <div class="vr-main-grid">
@@ -1824,21 +1841,21 @@ function renderVrCityPanel(cityKey) {
           <div class="vr-btn-row">
             <button class="btn btn-approve" style="font-size:13px;padding:11px 8px"
                     onclick="handleVrApprove('${cityKey}')"
-                    ${!canAct ? 'disabled' : ''}>
+                    ${!canApprove ? 'disabled' : ''}>
               ✅ Approve
             </button>
             <button class="btn btn-reject" style="font-size:13px;padding:11px 8px"
                     onclick="handleVrReject('${cityKey}')"
-                    ${!canAct ? 'disabled' : ''}>
-              ❌ Reject
+                    ${!canReject ? 'disabled' : ''}>
+              ${phase === 'rendered' ? '❌ Exclude' : '❌ Reject'}
             </button>
           </div>
-          ${status !== 'pending' ? `
+          ${showUndo ? `
           <button style="width:100%;padding:8px;background:transparent;border:1px solid var(--border);
                   border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;
                   font-family:'Outfit',sans-serif;margin-top:2px"
                   onclick="handleVrUndo('${cityKey}')">
-            ↩ Undo ${status === 'approved' ? 'Approval' : 'Rejection'}
+            ↩ Undo ${status === 'approved' ? 'Approval' : 'Exclusion'}
           </button>` : ''}
         </div>
       </div>
@@ -1929,42 +1946,10 @@ function _vrSetStatus(cityKey, status) {
   _updatePendingBadge(window._state?.cities || {});
 }
 
-async function handleVrApprove(cityKey) {
-  if (!confirm(`✅ Approve "${(window._state?.cities?.[cityKey]?.city) || cityKey}"?\n\nThis will render the video and upload to YouTube & Instagram.`)) return;
-
-  const token = _getGhToken();
-  if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
-
-  const cfg    = window._config || {};
-  const repo   = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
-  if (!repo) return;
-
-  const dateStr = window._state?.date || '';
-
-  try {
-    const resp = await fetch(
-      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true' } })
-      }
-    );
-    if (resp.ok || resp.status === 204) {
-      _vrSetStatus(cityKey, 'approved');
-      showToast(`✅ ${cityKey.replace('_',' ')} approved — upload triggered!`, 'success');
-      renderVideoReview(window._state, window._config);
-    } else {
-      const err = await resp.json().catch(() => ({}));
-      showToast(`GitHub error: ${err.message || resp.status}`, 'error');
-    }
-  } catch (e) {
-    showToast(`Error: ${e.message}`, 'error');
-  }
+function handleVrApprove(cityKey) {
+  _vrSetStatus(cityKey, 'approved');
+  showToast(`✅ ${(window._state?.cities?.[cityKey]?.city || cityKey)} marked for render.`, 'success');
+  renderVideoReview(window._state, window._config);
 }
 
 function handleVrReject(cityKey) {
@@ -1975,51 +1960,107 @@ function handleVrReject(cityKey) {
 }
 
 function handleVrUndo(cityKey) {
-  _vrSetStatus(cityKey, 'pending');
-  showToast(`↩ ${cityKey.replace('_',' ')} reset to pending.`, 'success');
+  const phase   = window._state?.approval_status || 'pending';
+  const resetTo = phase === 'rendered' ? 'rendered' : 'pending';
+  _vrSetStatus(cityKey, resetTo);
+  showToast(`↩ ${(window._state?.cities?.[cityKey]?.city || cityKey)} reset.`, 'success');
   renderVideoReview(window._state, window._config);
 }
 
+// Save the current in-memory state (including any edits) back to the repo via GitHub API
+async function saveStateToRepo(token, owner, repo, state) {
+  // Merge local city approval statuses into a deep copy of state
+  const s = JSON.parse(JSON.stringify(state));
+  Object.keys(s.cities || {}).forEach(k => {
+    if (_vrStatus[k]) s.cities[k].approval_status = _vrStatus[k];
+  });
+
+  // Get the current file SHA so we can update it
+  const getResp = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/dashboard/pipeline_state.json`,
+    { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' } }
+  );
+  if (!getResp.ok) throw new Error(`Cannot read file from repo: ${getResp.status}`);
+  const { sha } = await getResp.json();
+
+  // Encode content as base64 (handles Unicode correctly)
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(s, null, 2))));
+  const putResp = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/dashboard/pipeline_state.json`,
+    {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'chore: save approved state for render', content, sha })
+    }
+  );
+  if (!putResp.ok && putResp.status !== 201) throw new Error(`Save failed: ${putResp.status}`);
+}
+
 async function handleApproveAll() {
-  const cities    = window._state?.cities || {};
-  const pending   = Object.keys(cities).filter(k => _vrGetStatus(k) === 'pending');
-  if (pending.length === 0) { showToast('No pending cities.', 'error'); return; }
-
-  if (!confirm(`✅ Approve ALL ${pending.length} pending cities?\n\nThis will render the videos and upload to YouTube & Instagram.`)) return;
-
-  const token = _getGhToken();
+  const state  = window._state;
+  const phase  = state?.approval_status || 'pending';
+  const cities = state?.cities || {};
+  const token  = _getGhToken();
   if (!token) { showToast('Cancelled — no token provided.', 'error'); return; }
 
-  const cfg   = window._config || {};
+  const cfg  = window._config || {};
+  const owner = cfg.owner;
   const repo  = cfg.owner && cfg.repo ? `${cfg.owner}/${cfg.repo}` : prompt('Enter repo (user/repo):');
   if (!repo) return;
 
-  const dateStr = window._state?.date || '';
+  const workflow = cfg.workflow_file || 'daily-pipeline.yml';
+
+  // ── Phase 2b: upload rendered videos ──────────────────────────────────────
+  if (phase === 'rendered') {
+    if (!confirm(`🚀 Upload all rendered videos to YouTube & Instagram?`)) return;
+    try {
+      const resp = await fetch(
+        `https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true' } })
+        }
+      );
+      if (resp.ok || resp.status === 204) {
+        showToast(`🚀 Upload triggered! Check GitHub Actions for progress.`, 'success');
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        showToast(`GitHub error: ${err.message || resp.status}`, 'error');
+      }
+    } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+    return;
+  }
+
+  // ── Phase 1: save edited state → trigger render ────────────────────────────
+  const nonRejected = Object.keys(cities).filter(k => _vrGetStatus(k) !== 'rejected');
+  if (nonRejected.length === 0) { showToast('All cities are rejected — nothing to render.', 'error'); return; }
+  if (!confirm(`🎬 Generate videos for ${nonRejected.length} cities?\n\nAny edits you made to the script will be saved first.`)) return;
+
+  showToast('Saving edited state to repo…', 'success');
+  try {
+    await saveStateToRepo(token, owner, cfg.repo, state);
+  } catch (e) {
+    showToast(`Failed to save state: ${e.message}`, 'error');
+    return;
+  }
 
   try {
     const resp = await fetch(
-      `https://api.github.com/repos/${repo}/actions/workflows/${cfg.workflow_file || 'daily-pipeline.yml'}/dispatches`,
+      `https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`,
       {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true' } })
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: 'main', inputs: { render_approved: 'true' } })
       }
     );
     if (resp.ok || resp.status === 204) {
-      pending.forEach(k => _vrSetStatus(k, 'approved'));
-      showToast(`✅ All ${pending.length} cities approved — upload triggered!`, 'success');
-      renderVideoReview(window._state, window._config);
+      showToast(`🎬 Render triggered for ${nonRejected.length} cities! Check GitHub Actions.`, 'success');
     } else {
       const err = await resp.json().catch(() => ({}));
       showToast(`GitHub error: ${err.message || resp.status}`, 'error');
     }
-  } catch (e) {
-    showToast(`Error: ${e.message}`, 'error');
-  }
+  } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
 }
 
 // ════════════════════════════════════════════
