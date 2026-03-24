@@ -255,6 +255,15 @@ def run_render_only():
             continue
         print(f"\n  🎬  Rendering {city_data.get('city', city_key)}...")
         try:
+            # Always regenerate script from panchang so dashboard edits
+            # (saved back into panchang via saveStateToRepo) are reflected
+            # in both on-screen text AND the voice narration
+            try:
+                city_data["script"] = generate_video_script(city_data["panchang"])
+                print(f"     ✅ Script regenerated from latest panchang data")
+            except Exception as e:
+                print(f"     ⚠️  Script regen failed ({e}) — using cached script")
+
             city_data = render_city(city_key, city_data, date_str)
             city_data["approval_status"] = "rendered"
             all_cities[city_key] = city_data
