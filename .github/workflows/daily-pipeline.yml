@@ -6,24 +6,28 @@ on:
     - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
-      skip_approval:
-        description: 'Legacy: skip approval and auto-upload in one shot (true/false)'
-        required: false
-        default: 'false'
-      upload_approved:
-        description: 'Phase 2: render video + upload approved data (true/false)'
-        required: false
-        default: 'false'
       use_tomorrow:
         description: 'Generate for tomorrow instead of today (true/false)'
         required: false
         default: 'true'
+      render_approved:
+        description: 'Phase 2a: render videos after you reviewed the data (true/false)'
+        required: false
+        default: 'false'
+      upload_approved:
+        description: 'Phase 2b: upload rendered videos after you reviewed thumbnails (true/false)'
+        required: false
+        default: 'false'
+      skip_approval:
+        description: 'Legacy: scrape + render + upload in one shot (true/false)'
+        required: false
+        default: 'false'
       regenerate_city:
-        description: 'Re-scrape data for a specific city key (leave blank for all cities)'
+        description: 'Re-scrape a single city key (leave blank for all cities)'
         required: false
         default: ''
       panchang_overrides:
-        description: 'JSON string of panchangam field overrides keyed by city_key'
+        description: 'JSON overrides keyed by city_key'
         required: false
         default: '{}'
 
@@ -31,13 +35,19 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  actions: read
 
 jobs:
-  # ── Phase 1: scrape data + generate scripts (no video render) ────────────────
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Phase 1: Scrape data + generate scripts → deploy to dashboard (pending)
+  # ─────────────────────────────────────────────────────────────────────────────
   scrape-data:
     name: Scrape Panchangam Data
     runs-on: ubuntu-latest
-    if: github.event.inputs.upload_approved != 'true'
+    if: |
+      github.event.inputs.render_approved != 'true' &&
+      github.event.inputs.upload_approved != 'true'
 
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +63,6 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y chromium-chromedriver
-          echo "=== Chromium installed ==="
 
       - name: Install Python dependencies
         run: |
@@ -62,7 +71,7 @@ jobs:
 
       - name: Scrape panchangam data
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
           APPROVAL_EMAIL_FROM: ${{ secrets.APPROVAL_EMAIL_FROM }}
           APPROVAL_EMAIL_TO:   ${{ secrets.APPROVAL_EMAIL_TO }}
           SMTP_HOST:           smtp.gmail.com
@@ -83,25 +92,18 @@ jobs:
           OVERRIDES="${{ github.event.inputs.panchang_overrides }}"
 
           if [ "${{ github.event.inputs.skip_approval }}" = "true" ]; then
-            # Legacy single-shot mode
             python pipeline.py --skip-approval $TOMORROW_FLAG
           elif [ -n "$REGEN_CITY" ]; then
-            # Re-scrape a single city with optional overrides
             python pipeline.py --data-only $TOMORROW_FLAG \
               --city "$REGEN_CITY" \
               --overrides "$OVERRIDES"
           else
-            # Normal phase 1: scrape all cities
             python pipeline.py --data-only $TOMORROW_FLAG
           fi
 
-      - name: Copy state and thumbnails to dashboard
+      - name: Copy state to dashboard
         run: |
-          mkdir -p dashboard/thumbs
-          for f in output/thumb_*.jpg; do
-            [ -f "$f" ] && cp "$f" dashboard/thumbs/
-          done
-          cp output/pipeline_state.json dashboard/pipeline_state.json || true
+          cp output/pipeline_state.json dashboard/pipeline_state.json
           echo '{
             "owner": "${{ github.repository_owner }}",
             "repo":  "${{ github.event.repository.name }}",
@@ -109,15 +111,15 @@ jobs:
             "workflow_file": "daily-pipeline.yml"
           }' > dashboard/repo_config.json
 
-      - name: Commit dashboard state to repo
+      - name: Commit state to repo
         continue-on-error: true
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dashboard/pipeline_state.json dashboard/thumbs/ dashboard/repo_config.json
+          git add dashboard/pipeline_state.json dashboard/repo_config.json
           git diff --cached --quiet || git commit -m "chore: update dashboard state"
           git pull --rebase origin ${{ github.ref_name }} || true
-          git push || echo "⚠️  git push failed (branch protection or conflict) — gh-pages deploy will still run"
+          git push || echo "⚠️  git push failed — gh-pages deploy will still run"
 
       - name: Upload state artifact
         uses: actions/upload-artifact@v4
@@ -136,16 +138,16 @@ jobs:
         run: |
           echo "## 🕉 Panchangam Data Scraped" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Data is ready in the dashboard. **Review and approve to generate videos.**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Approval email sent — open dashboard to review/edit, then click Approve." >> $GITHUB_STEP_SUMMARY
+          echo "✅ Data is live in the dashboard. **Open it, review/edit the panchangam data, then click Generate Videos.**" >> $GITHUB_STEP_SUMMARY
 
 
-  # ── Phase 2: render video + upload (triggered from dashboard Approve button) ─
-  render-and-upload:
-    name: Render Video + Upload
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Phase 2a: Render videos → deploy thumbnails + state to dashboard (rendered)
+  # ─────────────────────────────────────────────────────────────────────────────
+  render-videos:
+    name: Render Videos
     runs-on: ubuntu-latest
-    if: github.event.inputs.upload_approved == 'true'
+    if: github.event.inputs.render_approved == 'true'
 
     steps:
       - uses: actions/checkout@v4
@@ -161,18 +163,14 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg fontconfig chromium-chromedriver
-          echo "=== Installed ==="
           ffmpeg -version | head -1
-
           CHROMIUM_BIN="$(which chromium-browser 2>/dev/null || which chromium 2>/dev/null || echo '')"
           if [ -n "$CHROMIUM_BIN" ]; then
             echo "REMOTION_BROWSER_EXECUTABLE=$CHROMIUM_BIN" >> $GITHUB_ENV
             echo "Using Chromium: $CHROMIUM_BIN"
-          else
-            echo "System Chromium not found — Remotion will download its own browser"
           fi
 
-      - name: Download NotoSansTelugu fonts
+      - name: Download Telugu fonts
         run: |
           mkdir -p /home/runner/fonts/telugu
           BASE="https://raw.githubusercontent.com/notofonts/noto-fonts/refs/heads/main/hinted/ttf/NotoSansTelugu"
@@ -201,24 +199,34 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install requests beautifulsoup4 lxml pytz anthropic pillow gtts scipy fonttools \
-                      selenium webdriver-manager elevenlabs \
-                      boto3 google-api-python-client google-auth-httplib2 google-auth-oauthlib
+                      selenium webdriver-manager elevenlabs numpy
 
-      - name: Render videos + upload
+      - name: Render videos
         env:
           ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
           ELEVENLABS_API_KEY:          ${{ secrets.ELEVENLABS_API_KEY }}
           REMOTION_BROWSER_EXECUTABLE: ${{ env.REMOTION_BROWSER_EXECUTABLE }}
-          YOUTUBE_CREDENTIALS_JSON:    ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
-          INSTAGRAM_ACCOUNT_ID:        ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
-          INSTAGRAM_ACCESS_TOKEN:      ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID:           ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY:       ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          S3_BUCKET_NAME:              ${{ secrets.S3_BUCKET_NAME }}
-          VIDEO_PUBLIC_URL:            ${{ secrets.VIDEO_PUBLIC_URL }}
         run: |
           mkdir -p output
-          cd scripts && python pipeline.py --render-approved
+          cd scripts && python pipeline.py --render-only
+
+      - name: Copy thumbnails + state to dashboard
+        run: |
+          mkdir -p dashboard/thumbs
+          for f in output/thumb_*.jpg; do
+            [ -f "$f" ] && cp "$f" dashboard/thumbs/
+          done
+          cp output/pipeline_state.json dashboard/pipeline_state.json
+
+      - name: Commit rendered state to repo
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/pipeline_state.json dashboard/thumbs/
+          git diff --cached --quiet || git commit -m "chore: update dashboard state after render"
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push || echo "⚠️  git push failed — gh-pages deploy will still run"
 
       - name: Upload video artifacts
         uses: actions/upload-artifact@v4
@@ -231,9 +239,102 @@ jobs:
             output/pipeline_state.json
           retention-days: 7
 
+      - name: Deploy dashboard to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+
       - name: Summary
         run: |
-          echo "## 🎬 Videos Rendered & Uploaded" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎬 Videos Rendered" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Output files:**" >> $GITHUB_STEP_SUMMARY
-          ls output/ | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY || true
+          echo "✅ Thumbnails are live in the dashboard. **Review them, then click Upload Videos.**" >> $GITHUB_STEP_SUMMARY
+
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Phase 2b: Upload rendered videos → deploy final state to dashboard (uploaded)
+  # ─────────────────────────────────────────────────────────────────────────────
+  upload-videos:
+    name: Upload Videos
+    runs-on: ubuntu-latest
+    if: github.event.inputs.upload_approved == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Read render run ID from state
+        id: render-run
+        run: |
+          RUN_ID=$(python3 -c "
+          import json
+          try:
+              with open('dashboard/pipeline_state.json') as f:
+                  print(json.load(f).get('render_run_id', ''))
+          except Exception:
+              print('')
+          ")
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "Render run ID: $RUN_ID"
+
+      - name: Download rendered video artifacts
+        if: steps.render-run.outputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: panchangam-video-${{ steps.render-run.outputs.run_id }}
+          path: output/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.render-run.outputs.run_id }}
+        continue-on-error: true
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests pytz anthropic \
+                      boto3 google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Upload to platforms
+        env:
+          ANTHROPIC_API_KEY:        ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_CREDENTIALS_JSON: ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
+          INSTAGRAM_ACCOUNT_ID:     ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          INSTAGRAM_ACCESS_TOKEN:   ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID:        ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY:    ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME:           ${{ secrets.S3_BUCKET_NAME }}
+          VIDEO_PUBLIC_URL:         ${{ secrets.VIDEO_PUBLIC_URL }}
+        run: |
+          mkdir -p output
+          cd scripts && python pipeline.py --upload-only
+
+      - name: Copy final state to dashboard
+        run: |
+          cp output/pipeline_state.json dashboard/pipeline_state.json || true
+
+      - name: Commit final state to repo
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/pipeline_state.json
+          git diff --cached --quiet || git commit -m "chore: update dashboard state after upload"
+          git pull --rebase origin ${{ github.ref_name }} || true
+          git push || echo "⚠️  git push failed — gh-pages deploy will still run"
+
+      - name: Deploy dashboard to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dashboard
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Videos Uploaded" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All approved videos have been uploaded to YouTube & Instagram." >> $GITHUB_STEP_SUMMARY
