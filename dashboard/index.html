@@ -1969,10 +1969,18 @@ function handleVrUndo(cityKey) {
 
 // Save the current in-memory state (including any edits) back to the repo via GitHub API
 async function saveStateToRepo(token, owner, repo, state) {
-  // Merge local city approval statuses into a deep copy of state
+  // Deep copy so we don't mutate window._state
   const s = JSON.parse(JSON.stringify(state));
+
   Object.keys(s.cities || {}).forEach(k => {
+    // Apply local city approval status toggles
     if (_vrStatus[k]) s.cities[k].approval_status = _vrStatus[k];
+
+    // Apply any panchang edits the user made in the Tomorrow's Panchangam tab
+    const edits = _loadEdits(k, s.date) || _editValues[k] || {};
+    if (Object.keys(edits).length > 0 && s.cities[k]?.panchang) {
+      Object.assign(s.cities[k].panchang, edits);
+    }
   });
 
   // Get the current file SHA so we can update it
