@@ -24,6 +24,16 @@ OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", str(_default_output)))
 STATE_FILE = OUTPUT_DIR / "pipeline_state.json"
 CITY_KEYS  = ["New_York", "Chicago", "Dallas", "California", "Michigan"]
 
+# Pre-recorded intro audio files stored in scripts/
+SCRIPTS_DIR = Path(__file__).parent
+CITY_AUDIO = {
+    "New_York":   SCRIPTS_DIR / "Newyork Audio.mp3",
+    "Chicago":    SCRIPTS_DIR / "Chicago Audio.mp3",
+    "Dallas":     SCRIPTS_DIR / "Dallas Audio.mp3",
+    "California": SCRIPTS_DIR / "California Audio.mp3",
+    "Michigan":   SCRIPTS_DIR / "Michigan Audio.mp3",
+}
+
 
 def save_state(state):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -132,19 +142,27 @@ def render_city(city_key, city_data, date_str):
     from voice_generator  import generate_voiceover
     from video_creator    import create_panchang_video, create_thumbnail
     from remotion_renderer import render_with_remotion
+    import shutil
 
     panchang = city_data["panchang"]
     script   = city_data["script"]
 
     audio_path = str(OUTPUT_DIR / f"voice_{city_key}_{date_str}.mp3")
-    try:
-        result = generate_voiceover(script, audio_path)
-        if not result:
-            print(f"     ⚠️  All TTS methods failed — no audio file generated")
+
+    # Use pre-recorded city audio if available, otherwise generate via TTS
+    prerecorded = CITY_AUDIO.get(city_key)
+    if prerecorded and prerecorded.exists():
+        print(f"     🎙️  Using pre-recorded audio: {prerecorded.name}")
+        shutil.copy(str(prerecorded), audio_path)
+    else:
+        try:
+            result = generate_voiceover(script, audio_path)
+            if not result:
+                print(f"     ⚠️  All TTS methods failed — no audio file generated")
+                audio_path = ""
+        except Exception as e:
+            print(f"     ⚠️  Voice failed: {e}")
             audio_path = ""
-    except Exception as e:
-        print(f"     ⚠️  Voice failed: {e}")
-        audio_path = ""
 
     video_path     = str(OUTPUT_DIR / f"video_{city_key}_{date_str}.mp4")
     thumbnail_path = str(OUTPUT_DIR / f"thumb_{city_key}_{date_str}.jpg")
@@ -322,6 +340,7 @@ def run_upload_only():
 
 def process_city(city_key, today, date_str, driver):
     """Single-shot: scrape + script + audio + video in one go."""
+    import shutil
     from voice_generator  import generate_voiceover
     from video_creator    import create_panchang_video, create_thumbnail
     from remotion_renderer import render_with_remotion
@@ -339,14 +358,21 @@ def process_city(city_key, today, date_str, driver):
     print(f"     Title: {script.get('title','')[:60]}")
 
     audio_path = str(OUTPUT_DIR / f"voice_{city_key}_{date_str}.mp3")
-    try:
-        result = generate_voiceover(script, audio_path)
-        if not result:
-            print(f"     ⚠️  All TTS methods failed — no audio file generated")
+
+    # Use pre-recorded city audio if available, otherwise generate via TTS
+    prerecorded = CITY_AUDIO.get(city_key)
+    if prerecorded and prerecorded.exists():
+        print(f"     🎙️  Using pre-recorded audio: {prerecorded.name}")
+        shutil.copy(str(prerecorded), audio_path)
+    else:
+        try:
+            result = generate_voiceover(script, audio_path)
+            if not result:
+                print(f"     ⚠️  All TTS methods failed — no audio file generated")
+                audio_path = ""
+        except Exception as e:
+            print(f"     ⚠️  Voice failed: {e}")
             audio_path = ""
-    except Exception as e:
-        print(f"     ⚠️  Voice failed: {e}")
-        audio_path = ""
 
     video_path     = str(OUTPUT_DIR / f"video_{city_key}_{date_str}.mp4")
     thumbnail_path = str(OUTPUT_DIR / f"thumb_{city_key}_{date_str}.jpg")
