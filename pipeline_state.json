@@ -68,7 +68,10 @@
         ]
       },
       "approval_status": "rendered",
-      "upload_result": {},
+      "upload_result": {
+        "youtube_error": "The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.",
+        "instagram_error": "INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_ACCOUNT_ID must be set"
+      },
       "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-03-28.mp4",
       "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-03-28.jpg",
       "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-03-28.mp3"
@@ -140,7 +143,10 @@
         ]
       },
       "approval_status": "rendered",
-      "upload_result": {},
+      "upload_result": {
+        "youtube_error": "The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.",
+        "instagram_error": "INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_ACCOUNT_ID must be set"
+      },
       "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-03-28.mp4",
       "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-03-28.jpg",
       "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-03-28.mp3"
@@ -212,7 +218,10 @@
         ]
       },
       "approval_status": "rendered",
-      "upload_result": {},
+      "upload_result": {
+        "youtube_error": "The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.",
+        "instagram_error": "INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_ACCOUNT_ID must be set"
+      },
       "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-03-28.mp4",
       "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-03-28.jpg",
       "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-03-28.mp3"
@@ -284,7 +293,10 @@
         ]
       },
       "approval_status": "rendered",
-      "upload_result": {},
+      "upload_result": {
+        "youtube_error": "The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.",
+        "instagram_error": "INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_ACCOUNT_ID must be set"
+      },
       "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-03-28.mp4",
       "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-03-28.jpg",
       "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-03-28.mp3"
@@ -356,12 +368,15 @@
         ]
       },
       "approval_status": "rendered",
-      "upload_result": {},
+      "upload_result": {
+        "youtube_error": "The credentials do not contain the necessary fields need to refresh the access token. You must specify refresh_token, token_uri, client_id, and client_secret.",
+        "instagram_error": "INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_ACCOUNT_ID must be set"
+      },
       "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-03-28.mp4",
       "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-03-28.jpg",
       "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-03-28.mp3"
     }
   },
-  "approval_status": "rendered",
+  "approval_status": "uploaded",
   "render_run_id": "23675282766"
 }
