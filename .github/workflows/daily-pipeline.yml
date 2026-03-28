@@ -163,12 +163,20 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg fontconfig chromium-chromedriver
+          sudo apt-get install -y ffmpeg fontconfig
           ffmpeg -version | head -1
-          CHROMIUM_BIN="$(which chromium-browser 2>/dev/null || which chromium 2>/dev/null || echo '')"
-          if [ -n "$CHROMIUM_BIN" ]; then
-            echo "REMOTION_BROWSER_EXECUTABLE=$CHROMIUM_BIN" >> $GITHUB_ENV
-            echo "Using Chromium: $CHROMIUM_BIN"
+          # GitHub Actions Ubuntu runners ship with google-chrome-stable pre-installed.
+          # Prefer it over chromium (which is a snap on Ubuntu 22.04 and won't run in CI).
+          CHROME_BIN="$(which google-chrome-stable 2>/dev/null \
+                     || which google-chrome 2>/dev/null \
+                     || which chromium-browser 2>/dev/null \
+                     || which chromium 2>/dev/null \
+                     || echo '')"
+          if [ -n "$CHROME_BIN" ]; then
+            echo "REMOTION_BROWSER_EXECUTABLE=$CHROME_BIN" >> $GITHUB_ENV
+            echo "Using Chrome: $CHROME_BIN"
+          else
+            echo "⚠️  No Chrome/Chromium found — Remotion will fall back to Pillow renderer"
           fi
 
       - name: Download Telugu fonts
@@ -210,6 +218,16 @@ jobs:
         run: |
           mkdir -p output
           cd scripts && python pipeline.py --render-only
+
+      - name: Verify videos were created
+        run: |
+          VIDEO_COUNT=$(ls output/video_*.mp4 2>/dev/null | wc -l)
+          echo "Videos created: $VIDEO_COUNT"
+          if [ "$VIDEO_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: No videos were rendered! Check the render step logs above."
+            exit 1
+          fi
+          echo "✅ $VIDEO_COUNT video(s) ready."
 
       - name: Copy thumbnails + state to dashboard
         run: |
