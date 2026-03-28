@@ -133,12 +133,15 @@ def render_with_remotion(panchang: dict, script: dict, audio_path: str, output_p
         audio_copy = remotion_public / Path(audio_path).name
         shutil.copy2(audio_path, str(audio_copy))
 
+    # --gl=angle: software (ANGLE) renderer — required on headless CI (no GPU).
+    # --concurrency=1: lower peak memory; 2 workers can OOM on 7 GB runners.
     cmd = [
         "npx", "--yes", "remotion", "render",
         "src/index.ts", "PanchangamVideo",
         str(Path(output_path).resolve()),
         "--codec=h264",
-        "--concurrency=2",
+        "--concurrency=1",
+        "--gl=angle",
         f"--props={json.dumps(props)}",
     ] + _browser_args()
 
