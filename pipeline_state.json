@@ -39,43 +39,43 @@
         "title": "Daily Panchangam Dallas, TX | Sunday 2026-03-29 | Rahu Kalam & All Timings",
         "description": "Today's complete Hindu Panchang for Dallas, TX. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
 =======
-    "California": {
-      "city_key": "California",
-      "city": "Los Angeles, CA",
+    "Michigan": {
+      "city_key": "Michigan",
+      "city": "Detroit, MI",
       "panchang": {
         "date": "2026-03-29",
         "weekday": "Sunday",
-        "city_key": "California",
-        "city": "Los Angeles, CA",
-        "timezone": "America/Los_Angeles",
-        "tz_label": "PT",
-        "tithi": "Dwadashi upto 06:39 PM PT → Trayodashi",
-        "nakshatra": "Magha upto 02:18 AM PT → Purva Phalguni",
-        "yoga": "Shula upto 04:21 AM PT → Ganda",
-        "karana": "Bava upto 06:55 AM PT → Taitila",
+        "city_key": "Michigan",
+        "city": "Detroit, MI",
+        "timezone": "America/Detroit",
+        "tz_label": "ET",
+        "tithi": "Dwadashi upto 09:39 PM ET → Trayodashi",
+        "nakshatra": "Magha upto 05:18 AM ET → Purva Phalguni",
+        "yoga": "Dhriti upto 08:50 AM ET → Shula",
+        "karana": "Bava upto 09:55 AM ET → Kaulava",
         "paksha": "Shukla Paksha",
-        "rahukaal": "05:38 PM – 07:12 PM PT",
-        "gulika": "04:05 PM – 05:38 PM PT",
-        "yamagandam": "12:58 PM – 02:31 PM PT",
-        "durmuhurtam": "06:46 AM – 08:25 AM PT",
-        "varjyam": "02:13 PM – 03:49 PM PT",
-        "abhijit": "12:33 PM – 01:23 PM PT",
-        "amrit_kalam": "11:53 PM – 01:29 AM PT",
-        "brahma_muhurta": "05:13 AM – 05:59 AM",
-        "vijaya_muhurta": "03:03 PM – 03:52 PM PT",
-        "godhuli_muhurta": "07:10 PM – 07:34 PM PT",
-        "pratah_sandhya": "05:35 AM – 06:44 AM PT",
-        "sayahna_sandhya": "07:12 PM – 08:21 PM PT",
-        "nishita_muhurta": "12:34 AM – 01:20 AM PT",
-        "sunrise": "06:44 AM PT",
-        "sunset": "07:12 PM PT",
-        "moonrise": "04:14 PM PT",
-        "moonset": "05:22 AM PT"
+        "rahukaal": "06:20 PM – 07:55 PM ET",
+        "gulika": "04:46 PM – 06:20 PM ET",
+        "yamagandam": "01:37 PM – 03:12 PM ET",
+        "durmuhurtam": "07:21 AM – 09:02 AM ET",
+        "varjyam": "05:13 PM – 06:49 PM ET",
+        "abhijit": "01:12 PM – 02:02 PM ET",
+        "amrit_kalam": "02:53 AM – 04:29 AM ET",
+        "brahma_muhurta": "05:50 AM – 06:36 AM",
+        "vijaya_muhurta": "03:43 PM – 04:33 PM ET",
+        "godhuli_muhurta": "07:53 PM – 08:16 PM ET",
+        "pratah_sandhya": "06:11 AM – 07:20 AM ET",
+        "sayahna_sandhya": "07:55 PM – 09:03 PM ET",
+        "nishita_muhurta": "01:14 AM – 01:59 AM ET",
+        "sunrise": "07:20 AM ET",
+        "sunset": "07:55 PM ET",
+        "moonrise": "04:36 PM ET",
+        "moonset": "06:06 AM ET"
       },
       "script": {
-        "title": "Daily Panchangam Los Angeles, CA | Sunday 2026-03-29 | Rahu Kalam & All Timings",
-        "description": "Today's complete Hindu Panchang for Los Angeles, CA. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
->>>>>>> 089659f (chore: update dashboard state)
+        "title": "Daily Panchangam Detroit, MI | Sunday 2026-03-29 | Rahu Kalam & All Timings",
+        "description": "Today's complete Hindu Panchang for Detroit, MI. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
+>>>>>>> 2d41037 (chore: update dashboard state)
         "hashtags": [
           "DailyPanchangam",
           "TeluguPanchang",
@@ -105,22 +105,22 @@
           "రాహు కాలం 06:12 సాయంత్రం నుండి 07:45 సాయంత్రం వరకు. దుర్ముహూర్తం 07:20 ఉదయం నుండి 09:00 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:47 ఉదయం నుండి 06:34 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:07 సాయంత్రం నుండి 01:57 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
 =======
-        "full_narration": "Namaskaram. [SHORT_PAUSE] Los Angeles Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Shukla Paksham, Dwadashi tithi. [SHORT_PAUSE] Nakshatram Magha. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
+        "full_narration": "Namaskaram. [SHORT_PAUSE] Detroit Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Shukla Paksham, Dwadashi tithi. [SHORT_PAUSE] Nakshatram Magha. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
         "on_screen_lines": [
           "తిథి: Dwadashi (Shukla Paksham)",
           "నక్షత్రం: Magha",
-          "రాహు కాలం: 05:38 PM – 07:12 PM PT",
-          "దుర్ముహూర్తం: 06:46 AM – 08:25 AM PT",
-          "బ్రహ్మ ముహూర్తం: 05:13 AM – 05:59 AM PT",
-          "అభిజిత్: 12:33 PM – 01:23 PM PT",
-          "సూర్యోదయం: 06:44 AM | సూర్యాస్తమయం: 07:12 PM PT"
+          "రాహు కాలం: 06:20 PM – 07:55 PM ET",
+          "దుర్ముహూర్తం: 07:21 AM – 09:02 AM ET",
+          "బ్రహ్మ ముహూర్తం: 05:50 AM – 06:36 AM ET",
+          "అభిజిత్: 01:12 PM – 02:02 PM ET",
+          "సూర్యోదయం: 07:20 AM | సూర్యాస్తమయం: 07:55 PM ET"
         ],
-        "gtts_narration": "నమస్కారం. లాస్ ఏంజెలెస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ. రాహు కాలం 05:38 సాయంత్రం నుండి 07:12 సాయంత్రం వరకు. దుర్ముహూర్తం 06:46 ఉదయం నుండి 08:25 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:13 ఉదయం నుండి 05:59 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:33 సాయంత్రం నుండి 01:23 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "gtts_narration": "నమస్కారం. డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ. రాహు కాలం 06:20 సాయంత్రం నుండి 07:55 సాయంత్రం వరకు. దుర్ముహూర్తం 07:21 ఉదయం నుండి 09:02 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:50 ఉదయం నుండి 06:36 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:12 సాయంత్రం నుండి 02:02 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
         "gtts_scene_texts": [
-          "నమస్కారం. లాస్ ఏంజెలెస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ.",
-          "రాహు కాలం 05:38 సాయంత్రం నుండి 07:12 సాయంత్రం వరకు. దుర్ముహూర్తం 06:46 ఉదయం నుండి 08:25 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
-          "బ్రహ్మ ముహూర్తం 05:13 ఉదయం నుండి 05:59 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:33 సాయంత్రం నుండి 01:23 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
->>>>>>> 089659f (chore: update dashboard state)
+          "నమస్కారం. డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ.",
+          "రాహు కాలం 06:20 సాయంత్రం నుండి 07:55 సాయంత్రం వరకు. దుర్ముహూర్తం 07:21 ఉదయం నుండి 09:02 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
+          "బ్రహ్మ ముహూర్తం 05:50 ఉదయం నుండి 06:36 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:12 సాయంత్రం నుండి 02:02 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
+>>>>>>> 2d41037 (chore: update dashboard state)
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
         ]
       },
