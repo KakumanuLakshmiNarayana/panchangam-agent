@@ -1,6 +1,7 @@
 {
   "date": "2026-03-29",
   "cities": {
+<<<<<<< HEAD
     "Chicago": {
       "city_key": "Chicago",
       "city": "Chicago, IL",
@@ -37,6 +38,44 @@
       "script": {
         "title": "Daily Panchangam Chicago, IL | Sunday 2026-03-29 | Rahu Kalam & All Timings",
         "description": "Today's complete Hindu Panchang for Chicago, IL. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
+=======
+    "New_York": {
+      "city_key": "New_York",
+      "city": "New York, NY",
+      "panchang": {
+        "date": "2026-03-29",
+        "weekday": "Sunday",
+        "city_key": "New_York",
+        "city": "New York, NY",
+        "timezone": "America/New_York",
+        "tz_label": "ET",
+        "tithi": "Dwadashi upto 09:39 PM ET → Trayodashi",
+        "nakshatra": "Magha upto 05:18 AM ET → Purva Phalguni",
+        "yoga": "Dhriti upto 08:50 AM ET → Shula",
+        "karana": "Bava upto 09:55 AM ET → Kaulava",
+        "paksha": "Shukla Paksha",
+        "rahukaal": "05:44 PM – 07:18 PM ET",
+        "gulika": "04:09 PM – 05:44 PM ET",
+        "yamagandam": "01:01 PM – 02:35 PM ET",
+        "durmuhurtam": "06:46 AM – 08:26 AM ET",
+        "varjyam": "05:13 PM – 06:49 PM ET",
+        "abhijit": "12:36 PM – 01:26 PM ET",
+        "amrit_kalam": "02:53 AM – 04:29 AM ET",
+        "brahma_muhurta": "05:14 AM – 06:00 AM",
+        "vijaya_muhurta": "03:07 PM – 03:57 PM ET",
+        "godhuli_muhurta": "07:16 PM – 07:39 PM ET",
+        "pratah_sandhya": "05:36 AM – 06:44 AM ET",
+        "sayahna_sandhya": "07:18 PM – 08:26 PM ET",
+        "nishita_muhurta": "12:37 AM – 01:23 AM ET",
+        "sunrise": "06:44 AM ET",
+        "sunset": "07:18 PM ET",
+        "moonrise": "04:00 PM ET",
+        "moonset": "05:28 AM ET"
+      },
+      "script": {
+        "title": "Daily Panchangam New York, NY | Sunday 2026-03-29 | Rahu Kalam & All Timings",
+        "description": "Today's complete Hindu Panchang for New York, NY. Rahu Kalam, Abhijit Muhurta, all auspicious and inauspicious timings.",
+>>>>>>> ba9e512 (chore: update dashboard state)
         "hashtags": [
           "DailyPanchangam",
           "TeluguPanchang",
@@ -49,6 +88,7 @@
           "HinduAmerica",
           "DailyBlessing"
         ],
+<<<<<<< HEAD
         "full_narration": "Namaskaram. [SHORT_PAUSE] Chicago Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Shukla Paksham, Dwadashi tithi. [SHORT_PAUSE] Nakshatram Magha. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
         "on_screen_lines": [
           "తిథి: Dwadashi (Shukla Paksham)",
@@ -64,6 +104,23 @@
           "నమస్కారం. చికాగో తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ.",
           "రాహు కాలం 05:39 సాయంత్రం నుండి 07:13 సాయంత్రం వరకు. దుర్ముహూర్తం 06:40 ఉదయం నుండి 08:20 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:54 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:31 సాయంత్రం నుండి 01:21 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
+=======
+        "full_narration": "Namaskaram. [SHORT_PAUSE] New York Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Shukla Paksham, Dwadashi tithi. [SHORT_PAUSE] Nakshatram Magha. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
+        "on_screen_lines": [
+          "తిథి: Dwadashi (Shukla Paksham)",
+          "నక్షత్రం: Magha",
+          "రాహు కాలం: 05:44 PM – 07:18 PM ET",
+          "దుర్ముహూర్తం: 06:46 AM – 08:26 AM ET",
+          "బ్రహ్మ ముహూర్తం: 05:14 AM – 06:00 AM ET",
+          "అభిజిత్: 12:36 PM – 01:26 PM ET",
+          "సూర్యోదయం: 06:44 AM | సూర్యాస్తమయం: 07:18 PM ET"
+        ],
+        "gtts_narration": "నమస్కారం. న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ. రాహు కాలం 05:44 సాయంత్రం నుండి 07:18 సాయంత్రం వరకు. దుర్ముహూర్తం 06:46 ఉదయం నుండి 08:26 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:14 ఉదయం నుండి 06:00 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:36 సాయంత్రం నుండి 01:26 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "gtts_scene_texts": [
+          "నమస్కారం. న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు శుక్ల పక్షం, ద్వాదశి తిథి. నక్షత్రం మఖ.",
+          "రాహు కాలం 05:44 సాయంత్రం నుండి 07:18 సాయంత్రం వరకు. దుర్ముహూర్తం 06:46 ఉదయం నుండి 08:26 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
+          "బ్రహ్మ ముహూర్తం 05:14 ఉదయం నుండి 06:00 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:36 సాయంత్రం నుండి 01:26 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
+>>>>>>> ba9e512 (chore: update dashboard state)
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
         ]
       },
