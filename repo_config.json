@@ -1,10 +1,6 @@
 {
   "owner": "KakumanuLakshmiNarayana",
   "repo":  "panchangam-agent",
-<<<<<<< HEAD
-  "run_id": "23672627824",
-=======
-  "run_id": "23672650807",
->>>>>>> ba9e512 (chore: update dashboard state)
+  "run_id": "23672675187",
   "workflow_file": "daily-pipeline.yml"
 }
