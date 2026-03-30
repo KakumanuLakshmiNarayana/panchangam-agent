@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:41 AM | సూర్యాస్తమయం: 07:20 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-03-31.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:35 AM | సూర్యాస్తమయం: 07:15 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-03-31.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:16 AM | సూర్యాస్తమయం: 07:47 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-03-31.mp3"
     },
     "California": {
       "city_key": "California",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:42 AM | సూర్యాస్తమయం: 07:13 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-03-31.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 07:16 AM | సూర్యాస్తమయం: 07:57 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-03-31.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "23773032534"
 }
