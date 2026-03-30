@@ -85,7 +85,8 @@ def upload_youtube(video_path: str, script_data: dict) -> str:
             "defaultLanguage": "te",
         },
         "status": {
-            "privacyStatus": "public",
+            # Saved as Private draft — open YouTube Studio and click Publish when ready.
+            "privacyStatus": "private",
             "selfDeclaredMadeForKids": False,
         },
     }
@@ -142,7 +143,7 @@ def upload_instagram(video_path: str, script_data: dict,
     caption = script_data.get("description") or script_data.get("video_description") or "Daily Panchangam"
     caption = caption[:2200]  # Instagram caption limit
 
-    # Step 1: Create media container
+    # Step 1: Create media container (unpublished — saves to drafts)
     container_url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media"
     params = {
         "media_type": "REELS",
@@ -150,6 +151,7 @@ def upload_instagram(video_path: str, script_data: dict,
         "caption": caption,
         "access_token": access_token,
         "share_to_feed": "true",
+        "published": "false",   # Save as draft — publish manually from the Instagram app
     }
     resp = requests.post(container_url, data=params, timeout=60)
     resp.raise_for_status()
@@ -171,17 +173,9 @@ def upload_instagram(video_path: str, script_data: dict,
         if status == "ERROR":
             raise RuntimeError(f"Instagram media processing failed: {status_resp.json()}")
 
-    # Step 3: Publish
-    publish_url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media_publish"
-    pub_resp = requests.post(
-        publish_url,
-        data={"creation_id": container_id, "access_token": access_token},
-        timeout=60,
-    )
-    pub_resp.raise_for_status()
-    media_id = pub_resp.json()["id"]
-    url = f"https://www.instagram.com/p/{media_id}/"
-    print(f"[uploader] Instagram Reel published: {url}")
+    # Draft is ready — do NOT call media_publish. User publishes manually from the app.
+    url = f"instagram://draft/{container_id}"
+    print(f"[uploader] Instagram Reel saved as draft (container_id={container_id}). Open the Instagram app to publish.")
     return url
 
 
