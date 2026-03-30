@@ -12,14 +12,14 @@
         "timezone": "America/New_York",
         "tz_label": "ET",
         "tithi": "Chaturdashi upto 09:36 PM ET → Purnima",
-        "nakshatra": "Uttara Phalguni upto Full Night → Dhruva",
+        "nakshatra": "Uttara Phalguni upto Full Night",
         "yoga": "Vriddhi upto 05:21 AM ET → Raudra",
         "karana": "Garaja upto 09:27 AM ET → Vishti",
         "paksha": "Shukla Paksha",
-        "rahukaal": "04:10 PM – 05:45 PM | 11:52 PM – 12:37 AM ET",
+        "rahukaal": "04:10 PM – 05:45 PM",
         "gulika": "01:01 PM – 02:35 PM ET",
         "yamagandam": "09:51 AM – 11:26 AM ET",
-        "durmuhurtam": "09:13 AM – 10:03 AM ET",
+        "durmuhurtam": "09:13 AM – 10:03 AM ET | 11:52 PM – 12:37 AM ET (APR-01)",
         "varjyam": "01:19 PM – 02:59 PM ET",
         "abhijit": "12:35 PM – 01:26 PM ET",
         "amrit_kalam": "11:18 PM – 12:58 AM ET",
@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:41 AM | సూర్యాస్తమయం: 07:20 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-03-31.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -75,14 +78,14 @@
         "timezone": "America/Chicago",
         "tz_label": "CT",
         "tithi": "Chaturdashi upto 08:36 PM CT → Purnima",
-        "nakshatra": "Uttara Phalguni upto 05:47 AM CT → Hasta",
+        "nakshatra": "Uttara Phalguni upto 05:47 AM CT (APR 01 ) → Hasta",
         "yoga": "Vriddhi upto 04:21 AM CT → Dhruva",
         "karana": "Garaja upto 08:27 AM CT → Vishti",
         "paksha": "Shukla Paksha",
-        "rahukaal": "04:05 PM – 05:40 PM | 05:47 AM – 06:33 AM CT",
+        "rahukaal": "04:05 PM – 05:40 PM",
         "gulika": "12:55 PM – 02:30 PM CT",
         "yamagandam": "09:45 AM – 11:20 AM CT",
-        "durmuhurtam": "09:07 AM – 09:58 AM | 11:46 PM – 12:32 AM CT",
+        "durmuhurtam": "09:07 AM – 09:58 AM | 11:46 PM – 12:32 AM CT (APR 01 )",
         "varjyam": "12:19 PM – 01:59 PM CT",
         "abhijit": "12:30 PM – 01:20 PM CT",
         "amrit_kalam": "10:18 PM – 11:58 PM CT",
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:35 AM | సూర్యాస్తమయం: 07:15 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-03-31.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -138,14 +144,14 @@
         "timezone": "America/Chicago",
         "tz_label": "CT",
         "tithi": "Chaturdashi upto 08:36 PM CT → Purnima",
-        "nakshatra": "Uttara Phalguni upto 05:47 AM CT → Hasta",
+        "nakshatra": "Uttara Phalguni upto 05:47 AM CT  (APR 01 )→ Hasta",
         "yoga": "Vriddhi upto 04:21 AM CT → Dhruva",
         "karana": "Garaja upto 08:27 AM CT → Vishti",
         "paksha": "Shukla Paksha",
-        "rahukaal": "04:39 PM – 06:13 PM | 05:47 AM – 07:15 AM CT",
+        "rahukaal": "04:39 PM – 06:13 PM",
         "gulika": "01:32 PM – 03:05 PM CT",
         "yamagandam": "10:24 AM – 11:58 AM CT",
-        "durmuhurtam": "09:47 AM – 10:37 AM | 12:22 AM – 01:08 AM CT",
+        "durmuhurtam": "09:47 AM – 10:37 AM | 12:22 AM (APR 01 )– 01:08 AM CT (APR 01 )",
         "varjyam": "12:19 PM – 01:59 PM CT",
         "abhijit": "01:07 PM – 01:57 PM CT",
         "amrit_kalam": "10:18 PM – 11:58 PM CT",
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:16 AM | సూర్యాస్తమయం: 07:47 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-03-31.mp3"
     },
     "California": {
       "city_key": "California",
@@ -205,10 +214,10 @@
         "yoga": "Vriddhi upto 02:21 AM PT → Dhruva",
         "karana": "Vanija upto 06:36 PM PT → Vishti upto Full Night",
         "paksha": "Shukla Paksha",
-        "rahukaal": "04:05 PM – 05:39 PM | 03:47 AM – 06:40 AM PT",
+        "rahukaal": "04:05 PM – 05:39 PM",
         "gulika": "12:57 PM – 02:31 PM PT",
         "yamagandam": "09:49 AM – 11:23 AM PT",
-        "durmuhurtam": "09:12 AM – 10:02 AM | 11:48 PM – 12:34 AM PT",
+        "durmuhurtam": "09:12 AM – 10:02 AM | 11:48 PM – 12:34 AM PT (APR 01 )",
         "varjyam": "10:19 AM – 11:59 AM PT",
         "abhijit": "12:32 PM – 01:22 PM PT",
         "amrit_kalam": "08:18 PM – 09:58 PM PT",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:42 AM | సూర్యాస్తమయం: 07:13 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-03-31.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -268,10 +280,10 @@
         "yoga": "Vriddhi upto 05:21 AM ET → Dhruva",
         "karana": "Garaja upto 09:27 AM ET → Vishti",
         "paksha": "Shukla Paksha",
-        "rahukaal": "04:47 PM – 06:22 PM | 06:47 AM – 07:15 AM ET",
+        "rahukaal": "04:47 PM – 06:22 PM",
         "gulika": "01:37 PM – 03:12 PM ET",
         "yamagandam": "10:27 AM – 12:02 PM ET",
-        "durmuhurtam": "09:48 AM – 10:39 AM | 12:28 AM – 01:13 AM ET",
+        "durmuhurtam": "09:48 AM – 10:39 AM | 12:28 AM (APR 01 )– 01:13 AM ET  (APR 01 )",
         "varjyam": "01:19 PM – 02:59 PM ET",
         "abhijit": "01:11 PM – 02:02 PM ET",
         "amrit_kalam": "11:18 PM – 12:58 AM ET",
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 07:16 AM | సూర్యాస్తమయం: 07:57 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-03-31.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-03-31.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-03-31.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "23773032534"
 }
