@@ -144,11 +144,17 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Phase 2a: Render videos → deploy thumbnails + state to dashboard (rendered)
+  # Runs automatically after scrape on schedule, OR manually via render_approved.
   # ─────────────────────────────────────────────────────────────────────────────
   render-videos:
     name: Render Videos
     runs-on: ubuntu-latest
-    if: github.event.inputs.render_approved == 'true'
+    needs: [scrape-data]
+    if: |
+      always() && (
+        github.event.inputs.render_approved == 'true' ||
+        (github.event_name == 'schedule' && needs.scrape-data.result == 'success')
+      )
 
     steps:
       - uses: actions/checkout@v4
@@ -266,18 +272,28 @@ jobs:
 
       - name: Summary
         run: |
-          echo "## 🎬 Videos Rendered" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Thumbnails are live in the dashboard. **Review them, then click Upload Videos.**" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "## 🎬 Videos Rendered (auto)" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Scheduled run — uploading to YouTube & Instagram automatically." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🎬 Videos Rendered" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Thumbnails are live in the dashboard. **Review them, then click Upload Videos.**" >> $GITHUB_STEP_SUMMARY
+          fi
 
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Phase 2b: Upload rendered videos → deploy final state to dashboard (uploaded)
+  # Runs automatically after render on schedule, OR manually via upload_approved.
   # ─────────────────────────────────────────────────────────────────────────────
   upload-videos:
     name: Upload Videos
     runs-on: ubuntu-latest
-    if: github.event.inputs.upload_approved == 'true'
+    needs: [render-videos]
+    if: |
+      always() && (
+        github.event.inputs.upload_approved == 'true' ||
+        (github.event_name == 'schedule' && needs.render-videos.result == 'success')
+      )
 
     steps:
       - uses: actions/checkout@v4
@@ -300,6 +316,12 @@ jobs:
           except Exception:
               print('')
           ")
+          # On scheduled runs render and upload are chained in the same workflow run.
+          # Fall back to the current run ID so artifact download always works.
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID="${{ github.run_id }}"
+            echo "render_run_id not in state — using current run: $RUN_ID"
+          fi
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
           echo "Render run ID: $RUN_ID"
 
