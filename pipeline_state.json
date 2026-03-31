@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:40 AM | సూర్యాస్తమయం: 07:21 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-04-01.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-04-01.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-04-01.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -75,7 +78,7 @@
         "timezone": "America/Chicago",
         "tz_label": "CT",
         "tithi": "Purnima upto 09:11 PM CT → Pratipada",
-        "nakshatra": "Hasta upto Full Night → Vyaghata",
+        "nakshatra": "Hasta upto Full Night",
         "yoga": "Dhruva upto 03:50 AM CT → Raudra",
         "karana": "Vishti upto 08:50 AM CT → Balava",
         "paksha": "Shukla Paksha",
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:33 AM | సూర్యాస్తమయం: 07:16 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-04-01.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-04-01.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-04-01.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:15 AM | సూర్యాస్తమయం: 07:48 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-04-01.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-04-01.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-04-01.mp3"
     },
     "California": {
       "city_key": "California",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:40 AM | సూర్యాస్తమయం: 07:14 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-04-01.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-04-01.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-04-01.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -264,7 +276,7 @@
         "timezone": "America/Detroit",
         "tz_label": "ET",
         "tithi": "Purnima upto 10:11 PM ET → Pratipada",
-        "nakshatra": "Hasta upto Full Night → Vyaghata",
+        "nakshatra": "Hasta upto Full Night",
         "yoga": "Dhruva upto 04:50 AM ET → Raudra",
         "karana": "Vishti upto 09:50 AM ET → Balava",
         "paksha": "Shukla Paksha",
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 07:15 AM | సూర్యాస్తమయం: 07:58 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-04-01.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-04-01.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-04-01.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "23820098376"
 }
