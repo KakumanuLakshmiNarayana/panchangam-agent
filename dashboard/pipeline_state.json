@@ -44,9 +44,9 @@
           "Shorts"
         ],
         "full_narration": "Namaskaram. [SHORT_PAUSE] New York Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Krishna Paksham, Padyami tithi. [SHORT_PAUSE] Nakshatram Hasta. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
-        "gtts_narration": "నమస్కారం. న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం హస్త. రాహు కాలం 02:35 సాయంత్రం నుండి 04:11 సాయంత్రం వరకు. దుర్ముహూర్తం 10:53 ఉదయం నుండి 11:44 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:53 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:34 సాయంత్రం నుండి 01:25 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "gtts_narration": "నమస్కారం. న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం హస్త. రాహు కాలం 02:35 సాయంత్రం నుండి 04:11 సాయంత్రం వరకు. దుర్ముహూర్తం 10:53 ఉదయం నుండి 11:44 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:53 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:34 సాయంత్రం నుండి 01:25 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
         "gtts_scene_texts": [
-          "నమస్కారం. న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం హస్త.",
+          "నమస్కారం. న్యూయార్క్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం హస్త.",
           "రాహు కాలం 02:35 సాయంత్రం నుండి 04:11 సాయంత్రం వరకు. దుర్ముహూర్తం 10:53 ఉదయం నుండి 11:44 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:53 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:34 సాయంత్రం నుండి 01:25 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:38 AM | సూర్యాస్తమయం: 07:22 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-04-02.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-04-02.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-04-02.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -107,9 +110,9 @@
           "Shorts"
         ],
         "full_narration": "Namaskaram. [SHORT_PAUSE] Chicago Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Krishna Paksham, Padyami tithi. [SHORT_PAUSE] Nakshatram Hasta. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
-        "gtts_narration": "నమస్కారం. చికాగో తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం హస్త. రాహు కాలం 02:30 సాయంత్రం నుండి 04:06 సాయంత్రం వరకు. దుర్ముహూర్తం 10:47 ఉదయం నుండి 11:38 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:02 ఉదయం నుండి 05:47 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:29 సాయంత్రం నుండి 01:20 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "gtts_narration": "నమస్కారం. చికాగో తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం హస్త. రాహు కాలం 02:30 సాయంత్రం నుండి 04:06 సాయంత్రం వరకు. దుర్ముహూర్తం 10:47 ఉదయం నుండి 11:38 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:02 ఉదయం నుండి 05:47 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:29 సాయంత్రం నుండి 01:20 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
         "gtts_scene_texts": [
-          "నమస్కారం. చికాగో తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం హస్త.",
+          "నమస్కారం. చికాగో తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం హస్త.",
           "రాహు కాలం 02:30 సాయంత్రం నుండి 04:06 సాయంత్రం వరకు. దుర్ముహూర్తం 10:47 ఉదయం నుండి 11:38 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:02 ఉదయం నుండి 05:47 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:29 సాయంత్రం నుండి 01:20 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:32 AM | సూర్యాస్తమయం: 07:17 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-04-02.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-04-02.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-04-02.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -170,9 +176,9 @@
           "Shorts"
         ],
         "full_narration": "Namaskaram. [SHORT_PAUSE] Dallas Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Krishna Paksham, Padyami tithi. [SHORT_PAUSE] Nakshatram Chitta. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
-        "gtts_narration": "నమస్కారం. డాల్లస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం చిత్ర. రాహు కాలం 03:05 సాయంత్రం నుండి 04:40 సాయంత్రం వరకు. దుర్ముహూర్తం 11:25 ఉదయం నుండి 12:16 సాయంత్రం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:42 ఉదయం నుండి 06:28 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:06 సాయంత్రం నుండి 01:56 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "gtts_narration": "నమస్కారం. డాల్లస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం చిత్ర. రాహు కాలం 03:05 సాయంత్రం నుండి 04:40 సాయంత్రం వరకు. దుర్ముహూర్తం 11:25 ఉదయం నుండి 12:16 సాయంత్రం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:42 ఉదయం నుండి 06:28 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:06 సాయంత్రం నుండి 01:56 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
         "gtts_scene_texts": [
-          "నమస్కారం. డాల్లస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం చిత్ర.",
+          "నమస్కారం. డాల్లస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం చిత్ర.",
           "రాహు కాలం 03:05 సాయంత్రం నుండి 04:40 సాయంత్రం వరకు. దుర్ముహూర్తం 11:25 ఉదయం నుండి 12:16 సాయంత్రం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:42 ఉదయం నుండి 06:28 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:06 సాయంత్రం నుండి 01:56 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:14 AM | సూర్యాస్తమయం: 07:48 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-04-02.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-04-02.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-04-02.mp3"
     },
     "California": {
       "city_key": "California",
@@ -232,17 +241,17 @@
           "HinduCalendar",
           "Shorts"
         ],
-        "full_narration": "Namaskaram. [SHORT_PAUSE] Los Angeles Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Krishna Paksham, Padyami tithi. [SHORT_PAUSE] Nakshatram Chitta. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
-        "gtts_narration": "నమస్కారం. లాస్ ఏంజెలెస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం చిత్ర. రాహు కాలం 02:31 సాయంత్రం నుండి 04:06 సాయంత్రం వరకు. దుర్ముహూర్తం 10:51 ఉదయం నుండి 11:41 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:53 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:32 సాయంత్రం నుండి 01:22 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "full_narration": "Namaskaram. [SHORT_PAUSE] Los Angeles Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Krishna Paksham, Padyami tithi. [SHORT_PAUSE] Nakshatram Chiththa. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
+        "gtts_narration": "నమస్కారం. లాస్ ఏంజెలెస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం Chiththa. రాహు కాలం 02:31 సాయంత్రం నుండి 04:06 సాయంత్రం వరకు. దుర్ముహూర్తం 10:51 ఉదయం నుండి 11:41 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:53 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:32 సాయంత్రం నుండి 01:22 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
         "gtts_scene_texts": [
-          "నమస్కారం. లాస్ ఏంజెలెస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం చిత్ర.",
+          "నమస్కారం. లాస్ ఏంజెలెస్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం Chiththa.",
           "రాహు కాలం 02:31 సాయంత్రం నుండి 04:06 సాయంత్రం వరకు. దుర్ముహూర్తం 10:51 ఉదయం నుండి 11:41 ఉదయం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:08 ఉదయం నుండి 05:53 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 12:32 సాయంత్రం నుండి 01:22 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
         ],
         "on_screen_lines": [
           "తిథి: Padyami (Krishna Paksham)",
-          "నక్షత్రం: Chitra",
+          "నక్షత్రం: Chiththa",
           "రాహు కాలం: 02:31 PM – 04:06 PM PT",
           "దుర్ముహూర్తం: 10:51 AM – 11:41 AM PT",
           "బ్రహ్మ ముహూర్తం: 05:08 AM – 05:53 AM PT",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:39 AM | సూర్యాస్తమయం: 07:15 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-04-02.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-04-02.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-04-02.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -296,9 +308,9 @@
           "Shorts"
         ],
         "full_narration": "Namaskaram. [SHORT_PAUSE] Detroit Telugu nesthalaku shubhodayam. [LONG_PAUSE] Eeroju Krishna Paksham, Padyami tithi. [SHORT_PAUSE] Nakshatram Hasta. [PAUSE] Rahu kalam mariyu Durmuhurtam samayamlo kotta panulu, shubhakaryaalu nivarinchandi. [PAUSE] Brahma muhurtam mariyu Abhijit muhurtam shubhapradamaina samayam. [PAUSE] Meeku ee roju shubhapradanga, anandanga gadavaalni manahpoorvanga aasisthunnanu. [PAUSE] Namaskaram. Like cheyandi, kutumba sabhyulato share cheyandi, MeePanthulu subscribe chesukundi.",
-        "gtts_narration": "నమస్కారం. డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం హస్త. రాహు కాలం 03:12 సాయంత్రం నుండి 04:48 సాయంత్రం వరకు. దుర్ముహూర్తం 11:28 ఉదయం నుండి 12:19 సాయంత్రం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:43 ఉదయం నుండి 06:28 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:11 సాయంత్రం నుండి 02:02 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
+        "gtts_narration": "నమస్కారం. డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం హస్త. రాహు కాలం 03:12 సాయంత్రం నుండి 04:48 సాయంత్రం వరకు. దుర్ముహూర్తం 11:28 ఉదయం నుండి 12:19 సాయంత్రం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి. బ్రహ్మ ముహూర్తం 05:43 ఉదయం నుండి 06:28 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:11 సాయంత్రం నుండి 02:02 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం. మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి.",
         "gtts_scene_texts": [
-          "నమస్కారం. డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, పాడ్యమి తిథి. నక్షత్రం హస్త.",
+          "నమస్కారం. డెట్రాయిట్ తెలుగు నేస్తాలకు శుభోదయం. ఈరోజు కృష్ణ పక్షం, Padyami తిథి. నక్షత్రం హస్త.",
           "రాహు కాలం 03:12 సాయంత్రం నుండి 04:48 సాయంత్రం వరకు. దుర్ముహూర్తం 11:28 ఉదయం నుండి 12:19 సాయంత్రం వరకు. ఈ సమయాలలో కొత్త పనులు మరియు శుభ కార్యాలు నివారించండి.",
           "బ్రహ్మ ముహూర్తం 05:43 ఉదయం నుండి 06:28 ఉదయం వరకు, ప్రార్థన మరియు ధ్యానానికి ఉత్తమం. అభిజిత్ ముహూర్తం 01:11 సాయంత్రం నుండి 02:02 సాయంత్రం వరకు, ముఖ్యమైన పనులకు శుభప్రదం.",
           "మీకు శుభదినం కలగాలని మనఃపూర్వంగా ఆశిస్తున్నాము. నమస్కారం. లైక్ చేయండి, కుటుంబ సభ్యులతో షేర్ చేయండి, మీపంతులు సబ్స్క్రైబ్ చేసుకోండి."
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 07:13 AM | సూర్యాస్తమయం: 07:59 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-04-02.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-04-02.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-04-02.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "23877000324"
 }
