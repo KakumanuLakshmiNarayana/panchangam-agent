@@ -344,7 +344,20 @@ def run_upload_only():
     print(f"  📦  Cities to upload: {', '.join(uploadable)}")
     state["cities"] = all_cities
     _upload_all(state)
-    state["approval_status"] = "uploaded"
+
+    # Only mark as "uploaded" if at least one platform actually succeeded
+    any_success = any(
+        result.get("upload_result", {}).get("youtube") or
+        result.get("upload_result", {}).get("instagram")
+        for result in state.get("cities", {}).values()
+        if "error" not in result
+    )
+    if any_success:
+        state["approval_status"] = "uploaded"
+        print("\n✅ Upload complete.")
+    else:
+        print("\n❌ All uploads failed — approval_status remains 'rendered'. "
+              "Check the error messages above and retry.")
     save_state(state)
     return state
 
@@ -563,6 +576,11 @@ def _upload_all(state):
                     date_str=state["date"],
                 )
                 result["upload_result"] = ur
+                if ur.get("youtube") or ur.get("instagram"):
+                    result["approval_status"] = "uploaded"
+                else:
+                    print(f"   ⚠️  {city_key}: no successful platform upload "
+                          f"(errors: {[v for k,v in ur.items() if 'error' in k]})")
             except Exception as e:
                 print(f"   ❌ {city_key}: {e}")
         save_state(state)
