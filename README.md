@@ -14,4 +14,4 @@ See SETUP.md for full step-by-step instructions.
 - scripts/uploader.py         — YouTube + Instagram upload
 - scripts/pipeline.py         — Main orchestrator
 - dashboard/index.html        — Approval dashboard (GitHub Pages)
-- .github/workflows/daily-pipeline.yml — Runs 5 AM Eastern daily
+- .github/workflows/daily-pipeline.yml — Runs 8:30 Pm CST
