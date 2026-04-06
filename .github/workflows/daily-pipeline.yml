@@ -296,7 +296,8 @@ jobs:
           import json
           try:
               with open('dashboard/pipeline_state.json') as f:
-                  print(json.load(f).get('render_run_id', ''))
+                  val = json.load(f).get('render_run_id') or ''
+                  print(val)
           except Exception:
               print('')
           ")

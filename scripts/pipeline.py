@@ -329,6 +329,19 @@ def run_upload_only():
             if val:
                 city_data[key] = str(OUTPUT_DIR / os.path.basename(val))
 
+    # Validate at least one city has a rendered video to upload
+    uploadable = [
+        ck for ck, cd in all_cities.items()
+        if cd.get("video_path") and Path(cd["video_path"]).exists()
+        and cd.get("approval_status") not in ("rejected",)
+        and "error" not in cd
+    ]
+    if not uploadable:
+        print("❌ No rendered video files found in output/. "
+              "Run --render-only first and ensure artifacts were downloaded.")
+        return
+
+    print(f"  📦  Cities to upload: {', '.join(uploadable)}")
     state["cities"] = all_cities
     _upload_all(state)
     state["approval_status"] = "uploaded"
@@ -532,12 +545,20 @@ def _upload_all(state):
         from uploader import upload_approved_video
         for city_key, result in state.get("cities", {}).items():
             if "error" in result:
+                print(f"\n  ⏭️  Skipping {city_key} (has error)")
+                continue
+            if result.get("approval_status") == "rejected":
+                print(f"\n  ⏭️  Skipping {city_key} (rejected)")
+                continue
+            video_path = result.get("video_path")
+            if not video_path or not Path(video_path).exists():
+                print(f"\n  ⏭️  Skipping {city_key} (video file missing: {video_path})")
                 continue
             print(f"\n🚀 Uploading {result.get('city','?')}...")
             try:
                 ur = upload_approved_video(
-                    video_path=result["video_path"],
-                    thumbnail_path=result["thumbnail_path"],
+                    video_path=video_path,
+                    thumbnail_path=result.get("thumbnail_path", ""),
                     script=result["script"],
                     date_str=state["date"],
                 )
