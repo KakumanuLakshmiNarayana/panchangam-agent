@@ -157,19 +157,26 @@ def upload_instagram(video_path: str, script_data: dict,
     print(f"[uploader] Instagram container created: {container_id}")
 
     # Step 2: Wait for processing
-    for attempt in range(20):
+    MAX_ATTEMPTS = 20
+    final_status = ""
+    for attempt in range(MAX_ATTEMPTS):
         time.sleep(10)
         status_resp = requests.get(
             f"https://graph.facebook.com/v19.0/{container_id}",
             params={"fields": "status_code", "access_token": access_token},
             timeout=30,
         )
-        status = status_resp.json().get("status_code", "")
-        print(f"  Instagram status: {status}")
-        if status == "FINISHED":
+        final_status = status_resp.json().get("status_code", "")
+        print(f"  Instagram status ({attempt+1}/{MAX_ATTEMPTS}): {final_status}")
+        if final_status == "FINISHED":
             break
-        if status == "ERROR":
+        if final_status == "ERROR":
             raise RuntimeError(f"Instagram media processing failed: {status_resp.json()}")
+    else:
+        raise RuntimeError(
+            f"Instagram media processing timed out after {MAX_ATTEMPTS * 10}s "
+            f"(last status: {final_status!r})"
+        )
 
     # Step 3: Publish
     publish_url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media_publish"
