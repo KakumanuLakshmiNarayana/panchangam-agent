@@ -1723,10 +1723,24 @@ function renderVideoReview(state, config) {
     ${(() => {
       const phase = state?.approval_status || 'pending';
       const nonRejected = cityKeys.filter(k => _vrGetStatus(k) !== 'rejected').length;
-      if (phase === 'uploaded') {
+      const anyUploaded = Object.values(state.cities || {}).some(
+        c => c.upload_result?.youtube || c.upload_result?.instagram
+      );
+      if (phase === 'uploaded' && anyUploaded) {
         return `<div style="background:rgba(45,106,79,.12);border:1px solid rgba(45,106,79,.35);
              border-radius:12px;padding:14px 20px;margin-bottom:24px;color:#69b46c;font-size:14px">
-          ✅ All videos uploaded successfully!
+          ✅ Videos uploaded successfully! Check the publish results below for links.
+        </div>`;
+      } else if (phase === 'uploaded' && !anyUploaded) {
+        return `<div style="background:rgba(224,90,90,.1);border:1px solid rgba(224,90,90,.4);
+             border-radius:12px;padding:14px 20px;margin-bottom:24px;color:#e05a5a;font-size:14px">
+          ❌ Upload was attempted but no videos were published to YouTube or Instagram.
+          Check the error details in the Publish tab, fix credentials/config, then retry.
+          <div style="margin-top:10px">
+            <button class="btn-approve-all" onclick="handleApproveAll()" style="background:#8B0000">
+              🔄 Retry Upload
+            </button>
+          </div>
         </div>`;
       } else if (phase === 'rendered') {
         return `<div class="vr-approve-bar" style="border-color:rgba(45,106,79,.5)">
