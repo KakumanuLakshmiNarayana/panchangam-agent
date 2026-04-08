@@ -19,11 +19,11 @@
         "rahukaal": "02:36 PM – 04:14 PM ET",
         "gulika": "09:42 AM – 11:20 AM ET",
         "yamagandam": "06:27 AM – 08:04 AM ET",
-        "durmuhurtam": "10:47 AM – 11:40 AM ET",
+        "durmuhurtam": "10:47 AM – 11:40 AM ET| 04:01 PM – 04:53 PM ET",
         "varjyam": "09:58 AM – 11:45 AM ET",
         "abhijit": "12:32 PM – 01:24 PM ET",
         "amrit_kalam": "08:38 PM – 10:24 PM ET",
-        "brahma_muhurta": "04:59 AM – 05:43 AM | 04:01 PM – 04:53 PM ET",
+        "brahma_muhurta": "04:59 AM – 05:43 AM",
         "vijaya_muhurta": "03:08 PM – 04:01 PM ET",
         "godhuli_muhurta": "07:28 PM – 07:50 PM ET",
         "pratah_sandhya": "05:21 AM – 06:27 AM ET",
@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:27 AM | సూర్యాస్తమయం: 07:29 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-04-09.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-04-09.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-04-09.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -82,11 +85,11 @@
         "rahukaal": "02:31 PM – 04:09 PM CT",
         "gulika": "09:36 AM – 11:14 AM CT",
         "yamagandam": "06:20 AM – 07:58 AM CT",
-        "durmuhurtam": "10:42 AM – 11:34 AM CT",
+        "durmuhurtam": "10:42 AM – 11:34 AM CT | 03:56 PM – 04:48 PM CT",
         "varjyam": "08:58 AM – 10:45 AM CT",
         "abhijit": "12:26 PM – 01:19 PM CT",
         "amrit_kalam": "07:38 PM – 09:24 PM CT",
-        "brahma_muhurta": "04:52 AM – 05:36 AM | 03:56 PM – 04:48 PM CT",
+        "brahma_muhurta": "04:52 AM – 05:36 AM",
         "vijaya_muhurta": "03:03 PM – 03:56 PM CT",
         "godhuli_muhurta": "07:24 PM – 07:46 PM CT",
         "pratah_sandhya": "05:14 AM – 06:20 AM CT",
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:20 AM | సూర్యాస్తమయం: 07:25 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-04-09.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-04-09.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-04-09.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -145,11 +151,11 @@
         "rahukaal": "03:05 PM – 04:41 PM CT",
         "gulika": "10:17 AM – 11:53 AM CT",
         "yamagandam": "07:05 AM – 08:41 AM CT",
-        "durmuhurtam": "11:21 AM – 12:12 PM CT",
+        "durmuhurtam": "11:21 AM – 12:12 PM CT | 04:28 PM – 05:20 PM CT",
         "varjyam": "08:58 AM – 10:45 AM CT",
         "abhijit": "01:03 PM – 01:55 PM CT",
         "amrit_kalam": "07:38 PM – 09:24 PM CT",
-        "brahma_muhurta": "05:35 AM – 06:20 AM | 04:28 PM – 05:20 PM CT",
+        "brahma_muhurta": "05:35 AM – 06:20 AM",
         "vijaya_muhurta": "03:37 PM – 04:28 PM CT",
         "godhuli_muhurta": "07:52 PM – 08:14 PM CT",
         "pratah_sandhya": "05:58 AM – 07:05 AM CT",
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:05 AM | సూర్యాస్తమయం: 07:53 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-04-09.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-04-09.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-04-09.mp3"
     },
     "California": {
       "city_key": "California",
@@ -208,11 +217,11 @@
         "rahukaal": "02:31 PM – 04:07 PM PT",
         "gulika": "09:42 AM – 11:18 AM PT",
         "yamagandam": "06:30 AM – 08:06 AM PT",
-        "durmuhurtam": "10:46 AM – 11:38 AM PT",
+        "durmuhurtam": "10:46 AM – 11:38 AM PT| 03:55 PM – 04:46 PM PT",
         "varjyam": "06:58 AM – 08:45 AM PT",
         "abhijit": "12:29 PM – 01:20 PM PT",
         "amrit_kalam": "05:38 PM – 07:24 PM PT",
-        "brahma_muhurta": "05:00 AM – 05:45 AM | 03:55 PM – 04:46 PM PT",
+        "brahma_muhurta": "05:00 AM – 05:45 AM",
         "vijaya_muhurta": "03:03 PM – 03:55 PM PT",
         "godhuli_muhurta": "07:19 PM – 07:41 PM PT",
         "pratah_sandhya": "05:23 AM – 06:30 AM PT",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:30 AM | సూర్యాస్తమయం: 07:20 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-04-09.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-04-09.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-04-09.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -271,11 +283,11 @@
         "rahukaal": "03:12 PM – 04:51 PM ET",
         "gulika": "10:18 AM – 11:56 AM ET",
         "yamagandam": "07:01 AM – 08:39 AM ET",
-        "durmuhurtam": "11:23 AM – 12:16 PM ET",
+        "durmuhurtam": "11:23 AM – 12:16 PM ET| 04:38 PM – 05:30 PM ET",
         "varjyam": "09:58 AM – 11:45 AM ET",
         "abhijit": "01:08 PM – 02:00 PM ET",
         "amrit_kalam": "08:38 PM – 10:24 PM ET",
-        "brahma_muhurta": "05:34 AM – 06:17 AM | 04:38 PM – 05:30 PM ET",
+        "brahma_muhurta": "05:34 AM – 06:17 AM",
         "vijaya_muhurta": "03:45 PM – 04:38 PM ET",
         "godhuli_muhurta": "08:06 PM – 08:28 PM ET",
         "pratah_sandhya": "05:56 AM – 07:01 AM ET",
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 07:01 AM | సూర్యాస్తమయం: 08:07 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-04-09.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-04-09.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-04-09.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "24163061254"
 }
