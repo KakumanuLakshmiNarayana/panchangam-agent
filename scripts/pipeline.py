@@ -301,6 +301,19 @@ def run_render_only():
 
 def run_upload_only():
     """Phase 2b: upload already-rendered videos. Normalises paths to OUTPUT_DIR."""
+    # ── Early credential check ────────────────────────────────────────────────
+    missing_creds = []
+    if not os.environ.get("YOUTUBE_CREDENTIALS_JSON"):
+        missing_creds.append("YOUTUBE_CREDENTIALS_JSON")
+    if not os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
+        missing_creds.append("INSTAGRAM_ACCESS_TOKEN")
+    if not os.environ.get("INSTAGRAM_ACCOUNT_ID"):
+        missing_creds.append("INSTAGRAM_ACCOUNT_ID")
+    if missing_creds:
+        print(f"❌ Missing required secrets: {', '.join(missing_creds)}")
+        print("   Set these as GitHub Actions secrets and re-run the upload job.")
+        sys.exit(1)
+
     dashboard_state = Path(__file__).parent.parent / "dashboard" / "pipeline_state.json"
     if dashboard_state.exists():
         with open(dashboard_state, encoding="utf-8") as f:
@@ -312,7 +325,7 @@ def run_upload_only():
 
     if not state:
         print("❌ No state found.")
-        return
+        sys.exit(1)
 
     date_str   = state.get("date", date.today().isoformat())
     all_cities = state.get("cities", {})
@@ -337,9 +350,12 @@ def run_upload_only():
         and "error" not in cd
     ]
     if not uploadable:
-        print("❌ No rendered video files found in output/. "
-              "Run --render-only first and ensure artifacts were downloaded.")
-        return
+        # List what files are actually in output/ to aid debugging
+        found = list(OUTPUT_DIR.glob("*.mp4")) if OUTPUT_DIR.exists() else []
+        print("❌ No rendered video files found in output/.")
+        print(f"   output/ contains: {[f.name for f in found] or 'nothing'}")
+        print("   Ensure the render job completed and artifacts were downloaded.")
+        sys.exit(1)
 
     print(f"  📦  Cities to upload: {', '.join(uploadable)}")
     state["cities"] = all_cities
@@ -356,8 +372,10 @@ def run_upload_only():
         state["approval_status"] = "uploaded"
         print("\n✅ Upload complete.")
     else:
-        print("\n❌ All uploads failed — approval_status remains 'rendered'. "
-              "Check the error messages above and retry.")
+        print("\n❌ All uploads failed — approval_status remains 'rendered'.")
+        print("   Check the error messages above (credential issues, API errors, etc.).")
+        save_state(state)
+        sys.exit(1)
     save_state(state)
     return state
 
