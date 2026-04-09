@@ -3309,7 +3309,7 @@ async function pubPublishCity(cityKey) {
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${config.token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ref: 'main', inputs: { action: 'upload', city: cityKey, platforms: platforms.join(',') } }),
+        body: JSON.stringify({ ref: 'main', inputs: { upload_approved: 'true' } }),
       }
     );
     if (res.status === 204) {
@@ -3327,8 +3327,10 @@ async function pubPublishCity(cityKey) {
 async function pubPublishAllApproved() {
   const state = window._state;
   if (!state?.cities) return;
-  const approved = Object.keys(state.cities).filter(k => pubGetState(k).approved);
-  for (const k of approved) await pubPublishCity(k);
+  const hasApproved = Object.keys(state.cities).some(k => pubGetState(k).approved);
+  if (!hasApproved) { showToast('No approved cities to publish.', 'error'); return; }
+  // Dispatch once — the upload job uploads all non-rejected cities in one run
+  await pubPublishCity('all');
 }
 
 // ── Trigger pipeline workflow ──────────────────────────────
