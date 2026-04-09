@@ -312,7 +312,24 @@ jobs:
           path: output/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ steps.render-run.outputs.run_id }}
-        continue-on-error: true
+
+      - name: Verify video artifacts exist
+        run: |
+          mkdir -p output
+          VIDEO_COUNT=$(ls output/video_*.mp4 2>/dev/null | wc -l)
+          echo "Video files in output/: $VIDEO_COUNT"
+          ls output/ || true
+          if [ "$VIDEO_COUNT" -eq 0 ]; then
+            echo "❌ No video files found in output/."
+            echo "   render_run_id from state: ${{ steps.render-run.outputs.run_id }}"
+            echo "   Possible causes:"
+            echo "   - render_run_id missing from pipeline_state.json (render job may not have run)"
+            echo "   - Artifact upload in the render job failed"
+            echo "   - Artifact expired (>7 days old)"
+            echo "   Fix: re-run the render job first (render_approved=true), then retry upload."
+            exit 1
+          fi
+          echo "✅ $VIDEO_COUNT video(s) ready for upload."
 
       - name: Install Python dependencies
         run: |
@@ -330,7 +347,6 @@ jobs:
           S3_BUCKET_NAME:           ${{ secrets.S3_BUCKET_NAME }}
           VIDEO_PUBLIC_URL:         ${{ secrets.VIDEO_PUBLIC_URL }}
         run: |
-          mkdir -p output
           cd scripts && python pipeline.py --upload-only
 
       - name: Copy final state to dashboard
