@@ -301,30 +301,37 @@ def run_render_only():
 
 def run_upload_only():
     """Phase 2b: upload already-rendered videos. Normalises paths to OUTPUT_DIR."""
-    # ── Early credential check ────────────────────────────────────────────────
-    missing_creds = []
-    if not os.environ.get("YOUTUBE_CREDENTIALS_JSON"):
-        missing_creds.append("YOUTUBE_CREDENTIALS_JSON")
-    if not os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
-        missing_creds.append("INSTAGRAM_ACCESS_TOKEN")
-    if not os.environ.get("INSTAGRAM_ACCOUNT_ID"):
-        missing_creds.append("INSTAGRAM_ACCOUNT_ID")
-    # Instagram Reels API requires a publicly reachable video URL.
-    # Validate that at least one strategy is configured.
+    # ── Per-platform credential check ─────────────────────────────────────────
+    # Determine which platforms are fully configured; warn about partial configs
+    # but don't block uploads to the platforms that ARE ready.
+    youtube_ready = bool(os.environ.get("YOUTUBE_CREDENTIALS_JSON"))
+
     has_public_url_strategy = (
         os.environ.get("VIDEO_PUBLIC_URL") or
         (os.environ.get("AWS_ACCESS_KEY_ID") and
          os.environ.get("AWS_SECRET_ACCESS_KEY") and
          os.environ.get("S3_BUCKET_NAME"))
     )
-    if not has_public_url_strategy:
-        missing_creds.append(
-            "VIDEO_PUBLIC_URL (or AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY + S3_BUCKET_NAME)"
-            " — required for Instagram to fetch the video file"
-        )
-    if missing_creds:
-        print(f"❌ Missing required secrets: {', '.join(missing_creds)}")
-        print("   Set these as GitHub Actions secrets and re-run the upload job.")
+    instagram_ready = (
+        bool(os.environ.get("INSTAGRAM_ACCESS_TOKEN")) and
+        bool(os.environ.get("INSTAGRAM_ACCOUNT_ID")) and
+        bool(has_public_url_strategy)
+    )
+
+    if not youtube_ready:
+        print("⚠️  YOUTUBE_CREDENTIALS_JSON not set — YouTube upload will be skipped.")
+    if not instagram_ready:
+        ig_missing = []
+        if not os.environ.get("INSTAGRAM_ACCESS_TOKEN"):
+            ig_missing.append("INSTAGRAM_ACCESS_TOKEN")
+        if not os.environ.get("INSTAGRAM_ACCOUNT_ID"):
+            ig_missing.append("INSTAGRAM_ACCOUNT_ID")
+        if not has_public_url_strategy:
+            ig_missing.append("VIDEO_PUBLIC_URL or S3 credentials")
+        print(f"⚠️  Instagram upload will be skipped — missing: {', '.join(ig_missing)}")
+
+    if not youtube_ready and not instagram_ready:
+        print("❌ No upload platform is configured. Set secrets and re-run.")
         sys.exit(1)
 
     dashboard_state = Path(__file__).parent.parent / "dashboard" / "pipeline_state.json"

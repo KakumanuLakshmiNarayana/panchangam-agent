@@ -206,27 +206,37 @@ def upload_approved_video(video_path: str, thumbnail_path: str,
     results = {}
 
     # ── YouTube ──────────────────────────────────────────────────
-    try:
-        results["youtube"] = upload_youtube(video_path, script)
-    except Exception as e:
-        print(f"[uploader] YouTube upload failed: {e}")
-        results["youtube_error"] = str(e)
+    if not os.environ.get("YOUTUBE_CREDENTIALS_JSON"):
+        print("[uploader] Skipping YouTube — YOUTUBE_CREDENTIALS_JSON not set.")
+    else:
+        try:
+            results["youtube"] = upload_youtube(video_path, script)
+        except Exception as e:
+            print(f"[uploader] YouTube upload failed: {e}")
+            results["youtube_error"] = str(e)
 
     # ── Instagram — resolve public URL first ──────────────────────
-    try:
-        # Prefer per-city S3 key so videos don't overwrite each other
-        p = Path(video_path)
-        s3_key = f"panchangam/{p.name}"   # e.g. panchangam/video_New_York_2026-03-23.mp4
+    ig_token   = os.environ.get("INSTAGRAM_ACCESS_TOKEN", "")
+    ig_account = os.environ.get("INSTAGRAM_ACCOUNT_ID", "")
+    if not ig_token or not ig_account:
+        missing = [k for k, v in [("INSTAGRAM_ACCESS_TOKEN", ig_token),
+                                   ("INSTAGRAM_ACCOUNT_ID", ig_account)] if not v]
+        print(f"[uploader] Skipping Instagram — {', '.join(missing)} not set.")
+    else:
+        try:
+            # Prefer per-city S3 key so videos don't overwrite each other
+            p = Path(video_path)
+            s3_key = f"panchangam/{p.name}"   # e.g. panchangam/video_New_York_2026-03-23.mp4
 
-        public_url = os.environ.get("VIDEO_PUBLIC_URL", "")
-        if not public_url and os.environ.get("S3_BUCKET_NAME"):
-            public_url = upload_to_s3(video_path, s3_key)
+            public_url = os.environ.get("VIDEO_PUBLIC_URL", "")
+            if not public_url and os.environ.get("S3_BUCKET_NAME"):
+                public_url = upload_to_s3(video_path, s3_key)
 
-        results["instagram"] = upload_instagram(video_path, script,
-                                                video_public_url=public_url)
-    except Exception as e:
-        print(f"[uploader] Instagram upload failed: {e}")
-        results["instagram_error"] = str(e)
+            results["instagram"] = upload_instagram(video_path, script,
+                                                    video_public_url=public_url)
+        except Exception as e:
+            print(f"[uploader] Instagram upload failed: {e}")
+            results["instagram_error"] = str(e)
 
     return results
 
