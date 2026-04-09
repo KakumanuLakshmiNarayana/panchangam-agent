@@ -16,10 +16,10 @@
         "yoga": "Shiva upto 09:01 AM ET → Siddha",
         "karana": "Kaulava upto 01:45 PM ET → Garaja",
         "paksha": "Krishna Paksha",
-        "rahukaal": "11:20 AM – 12:58 PM | 01:24 PM – 02:16 PM ET",
+        "rahukaal": "11:20 AM – 12:58 PM",
         "gulika": "08:03 AM – 09:41 AM ET",
         "yamagandam": "04:14 PM – 05:52 PM ET",
-        "durmuhurtam": "09:02 AM – 09:54 AM ET",
+        "durmuhurtam": "09:02 AM – 09:54 AM ET | 01:24 PM – 02:16 PM ET",
         "varjyam": "10:42 AM – 12:26 PM ET",
         "abhijit": "12:31 PM – 01:24 PM ET",
         "amrit_kalam": "09:10 PM – 10:55 PM ET",
@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:25 AM | సూర్యాస్తమయం: 07:30 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-04-10.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-04-10.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-04-10.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -79,10 +82,10 @@
         "yoga": "Shiva upto 08:01 AM CT → Siddha",
         "karana": "Kaulava upto 12:45 PM CT → Garaja",
         "paksha": "Krishna Paksha",
-        "rahukaal": "11:14 AM – 12:52 PM | 01:19 PM – 02:11 PM CT",
+        "rahukaal": "11:14 AM – 12:52 PM",
         "gulika": "07:57 AM – 09:35 AM CT",
         "yamagandam": "04:09 PM – 05:48 PM CT",
-        "durmuhurtam": "08:56 AM – 09:48 AM CT",
+        "durmuhurtam": "08:56 AM – 09:48 AM CT| 01:19 PM – 02:11 PM CT",
         "varjyam": "09:42 AM – 11:26 AM CT",
         "abhijit": "12:26 PM – 01:19 PM CT",
         "amrit_kalam": "08:10 PM – 09:55 PM CT",
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:18 AM | సూర్యాస్తమయం: 07:26 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-04-10.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-04-10.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-04-10.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -142,10 +148,10 @@
         "yoga": "Shiva upto 08:01 AM CT → Siddha",
         "karana": "Kaulava upto 12:45 PM CT → Garaja",
         "paksha": "Krishna Paksha",
-        "rahukaal": "11:52 AM – 01:29 PM | 01:54 PM – 02:46 PM CT",
+        "rahukaal": "11:52 AM – 01:29 PM",
         "gulika": "08:40 AM – 10:16 AM CT",
         "yamagandam": "04:41 PM – 06:18 PM CT",
-        "durmuhurtam": "09:38 AM – 10:29 AM CT",
+        "durmuhurtam": "09:38 AM – 10:29 AM CT| 01:54 PM – 02:46 PM CT",
         "varjyam": "09:42 AM – 11:26 AM CT",
         "abhijit": "01:03 PM – 01:54 PM CT",
         "amrit_kalam": "08:10 PM – 09:55 PM CT",
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:04 AM | సూర్యాస్తమయం: 07:54 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-04-10.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-04-10.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-04-10.mp3"
     },
     "California": {
       "city_key": "California",
@@ -205,10 +214,10 @@
         "yoga": "Siddha upto 06:09 AM PT → Sadhya",
         "karana": "Kaulava upto 10:45 AM PT → Garaja",
         "paksha": "Krishna Paksha",
-        "rahukaal": "11:18 AM – 12:55 PM | 01:20 PM – 02:12 PM | 05:25 AM – 07:07 AM PT",
+        "rahukaal": "11:18 AM – 12:55 PM",
         "gulika": "08:05 AM – 09:41 AM PT",
         "yamagandam": "04:08 PM – 05:44 PM PT",
-        "durmuhurtam": "09:03 AM – 09:54 AM PT",
+        "durmuhurtam": "09:03 AM – 09:54 AM PT| 01:20 PM – 02:12 PM",
         "varjyam": "07:42 AM – 09:26 AM PT",
         "abhijit": "12:29 PM – 01:20 PM PT",
         "amrit_kalam": "06:10 PM – 07:55 PM PT",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:28 AM | సూర్యాస్తమయం: 07:21 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-04-10.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-04-10.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-04-10.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -268,10 +280,10 @@
         "yoga": "Shiva upto 09:01 AM ET → Siddha",
         "karana": "Kaulava upto 01:45 PM ET → Garaja",
         "paksha": "Krishna Paksha",
-        "rahukaal": "11:55 AM – 01:34 PM | 02:00 PM – 02:53 PM ET",
+        "rahukaal": "11:55 AM – 01:34 PM",
         "gulika": "08:38 AM – 10:17 AM ET",
         "yamagandam": "04:51 PM – 06:30 PM ET",
-        "durmuhurtam": "09:37 AM – 10:30 AM ET",
+        "durmuhurtam": "09:37 AM – 10:30 AM ET| 02:00 PM – 02:53 PM ET",
         "varjyam": "10:42 AM – 12:26 PM ET",
         "abhijit": "01:08 PM – 02:00 PM ET",
         "amrit_kalam": "09:10 PM – 10:55 PM ET",
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 06:59 AM | సూర్యాస్తమయం: 08:08 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-04-10.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-04-10.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-04-10.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "24214191514"
 }
