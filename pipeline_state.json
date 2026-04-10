@@ -16,10 +16,10 @@
         "yoga": "Siddha upto 09:09 AM ET → Sadhya",
         "karana": "Garaja upto 03:07 PM ET → Vishti",
         "paksha": "Krishna Paksha",
-        "rahukaal": "09:40 AM – 11:19 AM | 07:16 AM – 08:08 AM ET",
+        "rahukaal": "09:40 AM – 11:19 AM",
         "gulika": "06:23 AM – 08:02 AM ET",
         "yamagandam": "02:36 PM – 04:14 PM ET",
-        "durmuhurtam": "06:23 AM – 07:16 AM ET",
+        "durmuhurtam": "06:23 AM – 07:16 AM ET | 07:16 AM – 08:08 AM ET",
         "varjyam": "08:25 AM – 10:07 AM ET",
         "abhijit": "12:31 PM – 01:24 PM ET",
         "amrit_kalam": "06:39 PM – 08:21 PM ET",
@@ -61,8 +61,11 @@
           "సూర్యోదయం: 06:23 AM | సూర్యాస్తమయం: 07:31 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_New_York_2026-04-11.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_New_York_2026-04-11.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_New_York_2026-04-11.mp3"
     },
     "Chicago": {
       "city_key": "Chicago",
@@ -82,7 +85,7 @@
         "rahukaal": "09:34 AM – 11:13 AM | 07:09 AM – 08:02 AM CT",
         "gulika": "06:17 AM – 07:56 AM CT",
         "yamagandam": "02:31 PM – 04:10 PM CT",
-        "durmuhurtam": "06:17 AM – 07:09 AM CT",
+        "durmuhurtam": "06:17 AM – 07:09 AM CT| 07:09 AM – 08:02 AM CT",
         "varjyam": "07:25 AM – 09:07 AM CT",
         "abhijit": "12:26 PM – 01:18 PM CT",
         "amrit_kalam": "05:39 PM – 07:21 PM CT",
@@ -124,8 +127,11 @@
           "సూర్యోదయం: 06:17 AM | సూర్యాస్తమయం: 07:27 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Chicago_2026-04-11.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Chicago_2026-04-11.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Chicago_2026-04-11.mp3"
     },
     "Dallas": {
       "city_key": "Dallas",
@@ -142,10 +148,10 @@
         "yoga": "Siddha upto 08:09 AM CT → Sadhya",
         "karana": "Garaja upto 02:07 PM CT → Vishti",
         "paksha": "Krishna Paksha",
-        "rahukaal": "10:15 AM – 11:52 AM | 07:54 AM – 08:45 AM CT",
+        "rahukaal": "10:15 AM – 11:52 AM",
         "gulika": "07:02 AM – 08:39 AM CT",
         "yamagandam": "03:05 PM – 04:42 PM CT",
-        "durmuhurtam": "07:02 AM – 07:54 AM CT",
+        "durmuhurtam": "07:02 AM – 07:54 AM CT | 07:54 AM – 08:45 AM CT",
         "varjyam": "07:25 AM – 09:07 AM CT",
         "abhijit": "01:03 PM – 01:54 PM CT",
         "amrit_kalam": "05:39 PM – 07:21 PM CT",
@@ -187,8 +193,11 @@
           "సూర్యోదయం: 07:02 AM | సూర్యాస్తమయం: 07:55 PM CT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Dallas_2026-04-11.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Dallas_2026-04-11.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Dallas_2026-04-11.mp3"
     },
     "California": {
       "city_key": "California",
@@ -205,10 +214,10 @@
         "yoga": "Sadhya upto 05:46 AM PT → Shubha",
         "karana": "Garaja upto 12:07 PM PT → Vishti",
         "paksha": "Krishna Paksha",
-        "rahukaal": "09:41 AM – 11:17 AM | 07:19 AM – 08:10 AM PT",
+        "rahukaal": "09:41 AM – 11:17 AM",
         "gulika": "06:27 AM – 08:04 AM PT",
         "yamagandam": "02:31 PM – 04:08 PM PT",
-        "durmuhurtam": "06:27 AM – 07:19 AM PT",
+        "durmuhurtam": "06:27 AM – 07:19 AM PT | 07:19 AM – 08:10 AM PT",
         "varjyam": "N/A",
         "abhijit": "12:28 PM – 01:20 PM PT",
         "amrit_kalam": "03:39 PM – 05:21 PM PT",
@@ -250,8 +259,11 @@
           "సూర్యోదయం: 06:27 AM | సూర్యాస్తమయం: 07:22 PM PT"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_California_2026-04-11.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_California_2026-04-11.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_California_2026-04-11.mp3"
     },
     "Michigan": {
       "city_key": "Michigan",
@@ -268,10 +280,10 @@
         "yoga": "Siddha upto 09:09 AM ET → Sadhya",
         "karana": "Garaja upto 03:07 PM ET → Vishti",
         "paksha": "Krishna Paksha",
-        "rahukaal": "10:16 AM – 11:55 AM | 07:51 AM – 08:43 AM ET",
+        "rahukaal": "10:16 AM – 11:55 AM",
         "gulika": "06:58 AM – 08:37 AM ET",
         "yamagandam": "03:13 PM – 04:52 PM ET",
-        "durmuhurtam": "06:58 AM – 07:51 AM ET",
+        "durmuhurtam": "06:58 AM – 07:51 AM ET | 07:51 AM – 08:43 AM ET",
         "varjyam": "08:25 AM – 10:07 AM ET",
         "abhijit": "01:07 PM – 02:00 PM ET",
         "amrit_kalam": "06:39 PM – 08:21 PM ET",
@@ -313,9 +325,13 @@
           "సూర్యోదయం: 06:58 AM | సూర్యాస్తమయం: 08:09 PM ET"
         ]
       },
-      "approval_status": "pending",
-      "upload_result": {}
+      "approval_status": "rendered",
+      "upload_result": {},
+      "video_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/video_Michigan_2026-04-11.mp4",
+      "thumbnail_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/thumb_Michigan_2026-04-11.jpg",
+      "audio_path": "/home/runner/work/panchangam-agent/panchangam-agent/output/voice_Michigan_2026-04-11.mp3"
     }
   },
-  "approval_status": "pending"
+  "approval_status": "rendered",
+  "render_run_id": "24267726824"
 }
